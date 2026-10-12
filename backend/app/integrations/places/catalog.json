@@ -1,0 +1,1415 @@
+[
+  {
+    "id": "nyc",
+    "name": "New York City",
+    "country": "New York",
+    "image": "https://images.unsplash.com/photo-1558369178-6556d97855d0?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=1000",
+    "blurb": "Five boroughs of museums, parks, skylines and late-night slices.",
+    "bestFor": [
+      "food",
+      "museums",
+      "architecture"
+    ],
+    "center": {
+      "lat": 40.74,
+      "lng": -73.985
+    },
+    "places": [
+      {
+        "id": "ny-met",
+        "name": "The Met",
+        "category": "museums",
+        "area": "Upper East Side",
+        "lat": 40.7794,
+        "lng": -73.9632,
+        "durationMin": 120,
+        "description": "Five thousand years of art along Museum Mile.",
+        "price": 2
+      },
+      {
+        "id": "ny-moma",
+        "name": "MoMA",
+        "category": "museums",
+        "area": "Midtown",
+        "lat": 40.7614,
+        "lng": -73.9776,
+        "durationMin": 90,
+        "description": "Van Gogh, Warhol and a sculpture garden.",
+        "price": 2
+      },
+      {
+        "id": "ny-amnh",
+        "name": "American Museum of Natural History",
+        "category": "museums",
+        "area": "Upper West Side",
+        "lat": 40.7813,
+        "lng": -73.974,
+        "durationMin": 105,
+        "description": "Dinosaur halls and the blue whale."
+      },
+      {
+        "id": "ny-central",
+        "name": "Central Park",
+        "category": "nature",
+        "area": "Central Park",
+        "lat": 40.7712,
+        "lng": -73.9742,
+        "durationMin": 75,
+        "description": "Bethesda Terrace, the Mall and Bow Bridge."
+      },
+      {
+        "id": "ny-highline",
+        "name": "The High Line",
+        "category": "nature",
+        "area": "Chelsea",
+        "lat": 40.748,
+        "lng": -74.0048,
+        "durationMin": 60,
+        "description": "A planted rail line floating above the West Side."
+      },
+      {
+        "id": "ny-brooklynbridge",
+        "name": "Brooklyn Bridge walk",
+        "category": "architecture",
+        "area": "DUMBO",
+        "lat": 40.7061,
+        "lng": -73.9969,
+        "durationMin": 60,
+        "description": "The classic stroll across the East River."
+      },
+      {
+        "id": "ny-dumbo",
+        "name": "DUMBO & Brooklyn Bridge Park",
+        "category": "nature",
+        "area": "DUMBO",
+        "lat": 40.7033,
+        "lng": -73.9881,
+        "durationMin": 60,
+        "description": "Cobblestones, Jane's Carousel and skyline views."
+      },
+      {
+        "id": "ny-911",
+        "name": "9/11 Memorial & Museum",
+        "category": "culture",
+        "area": "Financial District",
+        "lat": 40.7115,
+        "lng": -74.0134,
+        "durationMin": 90,
+        "description": "Reflecting pools in the footprints of the towers."
+      },
+      {
+        "id": "ny-liberty",
+        "name": "Statue of Liberty ferry",
+        "category": "culture",
+        "area": "Battery Park",
+        "lat": 40.7033,
+        "lng": -74.017,
+        "durationMin": 120,
+        "description": "The harbor ferry to Liberty and Ellis Islands.",
+        "price": 2
+      },
+      {
+        "id": "ny-grandcentral",
+        "name": "Grand Central Terminal",
+        "category": "architecture",
+        "area": "Midtown",
+        "lat": 40.7527,
+        "lng": -73.9772,
+        "durationMin": 40,
+        "description": "The celestial ceiling and whispering gallery."
+      },
+      {
+        "id": "ny-topofrock",
+        "name": "Top of the Rock",
+        "category": "architecture",
+        "area": "Midtown",
+        "lat": 40.7593,
+        "lng": -73.9794,
+        "durationMin": 60,
+        "description": "Open-air decks facing the Empire State.",
+        "price": 2
+      },
+      {
+        "id": "ny-vessel",
+        "name": "Hudson Yards & the Edge",
+        "category": "architecture",
+        "area": "Hudson Yards",
+        "lat": 40.7537,
+        "lng": -74.0021,
+        "durationMin": 60,
+        "description": "A glass-floored sky deck over the Hudson.",
+        "price": 3
+      },
+      {
+        "id": "ny-whitney",
+        "name": "Whitney Museum",
+        "category": "museums",
+        "area": "Meatpacking",
+        "lat": 40.7396,
+        "lng": -74.0089,
+        "durationMin": 90,
+        "description": "American art with terraces over the river.",
+        "price": 2
+      },
+      {
+        "id": "ny-soho",
+        "name": "SoHo shopping",
+        "category": "shopping",
+        "area": "SoHo",
+        "lat": 40.7233,
+        "lng": -74.003,
+        "durationMin": 75,
+        "description": "Cast-iron buildings and flagship stores.",
+        "price": 2
+      },
+      {
+        "id": "ny-village",
+        "name": "Greenwich Village",
+        "category": "culture",
+        "area": "West Village",
+        "lat": 40.7336,
+        "lng": -74.0027,
+        "durationMin": 60,
+        "description": "Washington Square Park and brownstone streets."
+      },
+      {
+        "id": "ny-broadway",
+        "name": "Broadway show",
+        "category": "nightlife",
+        "area": "Theater District",
+        "lat": 40.759,
+        "lng": -73.9845,
+        "durationMin": 150,
+        "description": "An evening musical off Times Square.",
+        "price": 3
+      },
+      {
+        "id": "ny-jazz",
+        "name": "Village Vanguard",
+        "category": "nightlife",
+        "area": "West Village",
+        "lat": 40.736,
+        "lng": -74.0017,
+        "durationMin": 90,
+        "description": "A legendary basement jazz club since 1935.",
+        "price": 2
+      },
+      {
+        "id": "ny-chelseamkt",
+        "name": "Chelsea Market",
+        "category": "food",
+        "area": "Chelsea",
+        "lat": 40.7424,
+        "lng": -74.0061,
+        "durationMin": 50,
+        "description": "Tacos, lobster rolls and donuts in an old biscuit factory.",
+        "food": [
+          "street-food",
+          "seafood"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ny-katz",
+        "name": "Katz's Delicatessen",
+        "category": "food",
+        "area": "Lower East Side",
+        "lat": 40.7223,
+        "lng": -73.9874,
+        "durationMin": 50,
+        "description": "Hand-cut pastrami on rye since 1888.",
+        "food": [
+          "local-classics"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ny-joes",
+        "name": "Joe's Pizza",
+        "category": "food",
+        "area": "West Village",
+        "lat": 40.7305,
+        "lng": -74.0021,
+        "durationMin": 25,
+        "description": "The definitive New York slice.",
+        "food": [
+          "street-food",
+          "local-classics"
+        ],
+        "price": 1
+      },
+      {
+        "id": "ny-russ",
+        "name": "Russ & Daughters Café",
+        "category": "food",
+        "area": "Lower East Side",
+        "lat": 40.7196,
+        "lng": -73.9898,
+        "durationMin": 60,
+        "description": "Bagels, lox and smoked fish boards.",
+        "food": [
+          "local-classics",
+          "seafood"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ny-timeout",
+        "name": "Time Out Market Brooklyn",
+        "category": "food",
+        "area": "DUMBO",
+        "lat": 40.7037,
+        "lng": -73.9917,
+        "durationMin": 50,
+        "description": "Local favorites under one roof by the bridge.",
+        "food": [
+          "street-food"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ny-urbanspace",
+        "name": "Urbanspace Vanderbilt",
+        "category": "food",
+        "area": "Midtown",
+        "lat": 40.7535,
+        "lng": -73.9767,
+        "durationMin": 40,
+        "description": "Food hall stalls next to Grand Central.",
+        "food": [
+          "street-food",
+          "vegetarian"
+        ],
+        "price": 1
+      },
+      {
+        "id": "ny-sarabeth",
+        "name": "Jacob's Pickles",
+        "category": "food",
+        "area": "Upper West Side",
+        "lat": 40.7868,
+        "lng": -73.9757,
+        "durationMin": 60,
+        "description": "Biscuits, fried chicken and house pickles.",
+        "food": [
+          "local-classics"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ny-blue",
+        "name": "Blue Bottle Coffee",
+        "category": "food",
+        "area": "Chelsea",
+        "lat": 40.7428,
+        "lng": -74.0049,
+        "durationMin": 25,
+        "description": "Pour-overs near the High Line.",
+        "food": [
+          "cafes"
+        ],
+        "price": 1
+      },
+      {
+        "id": "ny-lepain",
+        "name": "Le Pain Quotidien",
+        "category": "food",
+        "area": "Upper East Side",
+        "lat": 40.7782,
+        "lng": -73.9601,
+        "durationMin": 45,
+        "description": "Organic tartines steps from the Met.",
+        "food": [
+          "vegetarian",
+          "cafes"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ny-crown",
+        "name": "Le Bernardin",
+        "category": "food",
+        "area": "Midtown",
+        "lat": 40.7615,
+        "lng": -73.9818,
+        "durationMin": 105,
+        "description": "Three-Michelin-star seafood tasting menu.",
+        "food": [
+          "fine-dining",
+          "seafood"
+        ],
+        "price": 3
+      },
+      {
+        "id": "ny-dimsum",
+        "name": "Nom Wah Tea Parlor",
+        "category": "food",
+        "area": "Chinatown",
+        "lat": 40.7144,
+        "lng": -73.9982,
+        "durationMin": 50,
+        "description": "Dim sum on Doyers Street since 1920.",
+        "food": [
+          "local-classics",
+          "vegetarian"
+        ],
+        "price": 1
+      },
+      {
+        "id": "ny-lukes",
+        "name": "Luke's Lobster",
+        "category": "food",
+        "area": "Financial District",
+        "lat": 40.7048,
+        "lng": -74.0098,
+        "durationMin": 30,
+        "description": "Maine-style lobster rolls by the harbor.",
+        "food": [
+          "seafood",
+          "street-food"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ny-carbone",
+        "name": "Via Carota",
+        "category": "food",
+        "area": "West Village",
+        "lat": 40.7334,
+        "lng": -74.0037,
+        "durationMin": 75,
+        "description": "Rustic Italian in a candlelit Village room.",
+        "food": [
+          "local-classics",
+          "vegetarian"
+        ],
+        "price": 3
+      }
+    ]
+  },
+  {
+    "id": "san-francisco",
+    "name": "San Francisco",
+    "country": "California",
+    "image": "https://images.unsplash.com/photo-1521747116042-5a810fda9664?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=1000",
+    "blurb": "Fog, hills, cable cars and some of the country's best food.",
+    "bestFor": [
+      "food",
+      "nature",
+      "culture"
+    ],
+    "center": {
+      "lat": 37.785,
+      "lng": -122.43
+    },
+    "places": [
+      {
+        "id": "sf-ggb",
+        "name": "Golden Gate Bridge viewpoint",
+        "category": "architecture",
+        "area": "Presidio",
+        "lat": 37.8078,
+        "lng": -122.4748,
+        "durationMin": 60,
+        "description": "Walk out from the Welcome Center at Battery East."
+      },
+      {
+        "id": "sf-presidio",
+        "name": "Presidio Tunnel Tops",
+        "category": "nature",
+        "area": "Presidio",
+        "lat": 37.8014,
+        "lng": -122.4567,
+        "durationMin": 60,
+        "description": "New parkland with bay views and picnic lawns."
+      },
+      {
+        "id": "sf-ggp",
+        "name": "Golden Gate Park",
+        "category": "nature",
+        "area": "Golden Gate Park",
+        "lat": 37.7694,
+        "lng": -122.4862,
+        "durationMin": 75,
+        "description": "Japanese Tea Garden and the Conservatory of Flowers."
+      },
+      {
+        "id": "sf-deyoung",
+        "name": "de Young Museum",
+        "category": "museums",
+        "area": "Golden Gate Park",
+        "lat": 37.7715,
+        "lng": -122.4687,
+        "durationMin": 90,
+        "description": "American art and a free observation tower.",
+        "price": 2
+      },
+      {
+        "id": "sf-sfmoma",
+        "name": "SFMOMA",
+        "category": "museums",
+        "area": "SoMa",
+        "lat": 37.7857,
+        "lng": -122.4011,
+        "durationMin": 90,
+        "description": "Seven floors of modern art.",
+        "price": 2
+      },
+      {
+        "id": "sf-alcatraz",
+        "name": "Alcatraz Island",
+        "category": "culture",
+        "area": "Pier 33",
+        "lat": 37.8086,
+        "lng": -122.4098,
+        "durationMin": 150,
+        "description": "The audio tour of the former federal prison.",
+        "price": 2
+      },
+      {
+        "id": "sf-chinatown",
+        "name": "Chinatown",
+        "category": "culture",
+        "area": "Chinatown",
+        "lat": 37.7941,
+        "lng": -122.4078,
+        "durationMin": 60,
+        "description": "The oldest Chinatown in North America."
+      },
+      {
+        "id": "sf-mission",
+        "name": "Mission murals & Dolores Park",
+        "category": "culture",
+        "area": "Mission",
+        "lat": 37.7596,
+        "lng": -122.4269,
+        "durationMin": 75,
+        "description": "Balmy Alley murals, then the park's sunny slope."
+      },
+      {
+        "id": "sf-painted",
+        "name": "Painted Ladies & Alamo Square",
+        "category": "architecture",
+        "area": "Alamo Square",
+        "lat": 37.7763,
+        "lng": -122.4328,
+        "durationMin": 40,
+        "description": "Victorian row houses with a skyline backdrop."
+      },
+      {
+        "id": "sf-hayes",
+        "name": "Hayes Valley boutiques",
+        "category": "shopping",
+        "area": "Hayes Valley",
+        "lat": 37.7763,
+        "lng": -122.4242,
+        "durationMin": 60,
+        "description": "Independent shops along Hayes Street.",
+        "price": 2
+      },
+      {
+        "id": "sf-twinpeaks",
+        "name": "Twin Peaks",
+        "category": "nature",
+        "area": "Twin Peaks",
+        "lat": 37.7544,
+        "lng": -122.4477,
+        "durationMin": 40,
+        "description": "A 360° view of the whole city."
+      },
+      {
+        "id": "sf-cablecar",
+        "name": "Cable car & Lombard Street",
+        "category": "culture",
+        "area": "Russian Hill",
+        "lat": 37.8021,
+        "lng": -122.4187,
+        "durationMin": 60,
+        "description": "Ride the Powell-Hyde line to the crooked street.",
+        "price": 1
+      },
+      {
+        "id": "sf-ferry",
+        "name": "Ferry Building Marketplace",
+        "category": "food",
+        "area": "Embarcadero",
+        "lat": 37.7955,
+        "lng": -122.3937,
+        "durationMin": 50,
+        "description": "Oysters, cheese and local produce by the bay.",
+        "food": [
+          "seafood",
+          "local-classics"
+        ],
+        "price": 2
+      },
+      {
+        "id": "sf-burrito",
+        "name": "La Taqueria",
+        "category": "food",
+        "area": "Mission",
+        "lat": 37.7509,
+        "lng": -122.418,
+        "durationMin": 35,
+        "description": "The Mission burrito that started it all.",
+        "food": [
+          "street-food",
+          "local-classics"
+        ],
+        "price": 1
+      },
+      {
+        "id": "sf-tartine",
+        "name": "Tartine Bakery",
+        "category": "food",
+        "area": "Mission",
+        "lat": 37.7614,
+        "lng": -122.4241,
+        "durationMin": 30,
+        "description": "Morning buns and country loaves.",
+        "food": [
+          "cafes"
+        ],
+        "price": 1
+      },
+      {
+        "id": "sf-hogislandsf",
+        "name": "Hog Island Oyster Co.",
+        "category": "food",
+        "area": "Embarcadero",
+        "lat": 37.7962,
+        "lng": -122.3934,
+        "durationMin": 60,
+        "description": "Bay oysters and clam chowder.",
+        "food": [
+          "seafood"
+        ],
+        "price": 2
+      },
+      {
+        "id": "sf-greens",
+        "name": "Greens Restaurant",
+        "category": "food",
+        "area": "Marina",
+        "lat": 37.8065,
+        "lng": -122.4318,
+        "durationMin": 75,
+        "description": "Vegetarian cooking with Golden Gate views.",
+        "food": [
+          "vegetarian",
+          "fine-dining"
+        ],
+        "price": 3
+      },
+      {
+        "id": "sf-dimsum",
+        "name": "Good Mong Kok Bakery",
+        "category": "food",
+        "area": "Chinatown",
+        "lat": 37.7956,
+        "lng": -122.4075,
+        "durationMin": 25,
+        "description": "Takeout dim sum by the box.",
+        "food": [
+          "street-food"
+        ],
+        "price": 1
+      }
+    ]
+  },
+  {
+    "id": "chicago",
+    "name": "Chicago",
+    "country": "Illinois",
+    "image": "https://images.unsplash.com/photo-1596250410216-1ac77dc208e3?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=1000",
+    "blurb": "Lakefront parks, world-class architecture and deep-dish debates.",
+    "bestFor": [
+      "architecture",
+      "museums",
+      "food"
+    ],
+    "center": {
+      "lat": 41.885,
+      "lng": -87.63
+    },
+    "places": [
+      {
+        "id": "ch-arch",
+        "name": "Architecture river cruise",
+        "category": "architecture",
+        "area": "River North",
+        "lat": 41.8881,
+        "lng": -87.6233,
+        "durationMin": 90,
+        "description": "The city's skyline story from the water.",
+        "price": 2
+      },
+      {
+        "id": "ch-bean",
+        "name": "Millennium Park & the Bean",
+        "category": "architecture",
+        "area": "Loop",
+        "lat": 41.8827,
+        "lng": -87.6233,
+        "durationMin": 45,
+        "description": "Cloud Gate, Crown Fountain and the Pritzker Pavilion."
+      },
+      {
+        "id": "ch-artinst",
+        "name": "Art Institute of Chicago",
+        "category": "museums",
+        "area": "Loop",
+        "lat": 41.8796,
+        "lng": -87.6237,
+        "durationMin": 120,
+        "description": "Seurat, Hopper and the Thorne Miniature Rooms.",
+        "price": 2
+      },
+      {
+        "id": "ch-field",
+        "name": "Field Museum",
+        "category": "museums",
+        "area": "Museum Campus",
+        "lat": 41.8663,
+        "lng": -87.617,
+        "durationMin": 105,
+        "description": "Sue the T. rex and ancient Egypt."
+      },
+      {
+        "id": "ch-lincoln",
+        "name": "Lincoln Park Zoo & Conservatory",
+        "category": "nature",
+        "area": "Lincoln Park",
+        "lat": 41.9211,
+        "lng": -87.6339,
+        "durationMin": 75,
+        "description": "A free zoo beside a Victorian glasshouse."
+      },
+      {
+        "id": "ch-lakefront",
+        "name": "Lakefront Trail",
+        "category": "nature",
+        "area": "Streeterville",
+        "lat": 41.8925,
+        "lng": -87.6105,
+        "durationMin": 60,
+        "description": "Lake Michigan beaches and skyline views."
+      },
+      {
+        "id": "ch-skydeck",
+        "name": "Skydeck at Willis Tower",
+        "category": "architecture",
+        "area": "Loop",
+        "lat": 41.8789,
+        "lng": -87.6359,
+        "durationMin": 60,
+        "description": "Glass ledges 103 floors up.",
+        "price": 2
+      },
+      {
+        "id": "ch-magmile",
+        "name": "Magnificent Mile",
+        "category": "shopping",
+        "area": "Streeterville",
+        "lat": 41.8948,
+        "lng": -87.6242,
+        "durationMin": 60,
+        "description": "Michigan Avenue's flagship stores.",
+        "price": 2
+      },
+      {
+        "id": "ch-jazz",
+        "name": "Green Mill Cocktail Lounge",
+        "category": "nightlife",
+        "area": "Uptown",
+        "lat": 41.9691,
+        "lng": -87.6597,
+        "durationMin": 90,
+        "description": "Al Capone's old jazz haunt.",
+        "price": 2
+      },
+      {
+        "id": "ch-pilsen",
+        "name": "Pilsen murals",
+        "category": "culture",
+        "area": "Pilsen",
+        "lat": 41.8565,
+        "lng": -87.6564,
+        "durationMin": 60,
+        "description": "Mexican-American street art and the National Museum of Mexican Art."
+      },
+      {
+        "id": "ch-lou",
+        "name": "Lou Malnati's",
+        "category": "food",
+        "area": "River North",
+        "lat": 41.8903,
+        "lng": -87.6337,
+        "durationMin": 60,
+        "description": "Butter-crust deep dish pizza.",
+        "food": [
+          "local-classics"
+        ],
+        "price": 2
+      },
+      {
+        "id": "ch-portillos",
+        "name": "Portillo's",
+        "category": "food",
+        "area": "River North",
+        "lat": 41.8935,
+        "lng": -87.6283,
+        "durationMin": 35,
+        "description": "Chicago-style hot dogs and Italian beef.",
+        "food": [
+          "street-food",
+          "local-classics"
+        ],
+        "price": 1
+      },
+      {
+        "id": "ch-revival",
+        "name": "Revival Food Hall",
+        "category": "food",
+        "area": "Loop",
+        "lat": 41.8807,
+        "lng": -87.6305,
+        "durationMin": 40,
+        "description": "Chicago's local chefs in a food hall.",
+        "food": [
+          "street-food",
+          "vegetarian"
+        ],
+        "price": 1
+      },
+      {
+        "id": "ch-girl",
+        "name": "Girl & the Goat",
+        "category": "food",
+        "area": "West Loop",
+        "lat": 41.8841,
+        "lng": -87.6479,
+        "durationMin": 90,
+        "description": "Bold shared plates on Restaurant Row.",
+        "food": [
+          "fine-dining"
+        ],
+        "price": 3
+      },
+      {
+        "id": "ch-intel",
+        "name": "Intelligentsia Coffee",
+        "category": "food",
+        "area": "Loop",
+        "lat": 41.8837,
+        "lng": -87.6262,
+        "durationMin": 25,
+        "description": "Chicago's home-grown roaster.",
+        "food": [
+          "cafes"
+        ],
+        "price": 1
+      },
+      {
+        "id": "ch-shaw",
+        "name": "Shaw's Crab House",
+        "category": "food",
+        "area": "River North",
+        "lat": 41.8903,
+        "lng": -87.6276,
+        "durationMin": 75,
+        "description": "Oysters and king crab in a classic room.",
+        "food": [
+          "seafood"
+        ],
+        "price": 3
+      }
+    ]
+  },
+  {
+    "id": "new-orleans",
+    "name": "New Orleans",
+    "country": "Louisiana",
+    "image": "https://images.unsplash.com/photo-1568693059993-a239b9cd4957?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=1000",
+    "blurb": "Jazz on every corner, iron balconies and Creole kitchens.",
+    "bestFor": [
+      "food",
+      "nightlife",
+      "culture"
+    ],
+    "center": {
+      "lat": 29.95,
+      "lng": -90.075
+    },
+    "places": [
+      {
+        "id": "no-jackson",
+        "name": "Jackson Square & St. Louis Cathedral",
+        "category": "culture",
+        "area": "French Quarter",
+        "lat": 29.9575,
+        "lng": -90.0629,
+        "durationMin": 45,
+        "description": "Street artists in front of the oldest cathedral in the US."
+      },
+      {
+        "id": "no-quarter",
+        "name": "French Quarter walk",
+        "category": "architecture",
+        "area": "French Quarter",
+        "lat": 29.9584,
+        "lng": -90.0644,
+        "durationMin": 75,
+        "description": "Royal Street galleries and wrought-iron balconies."
+      },
+      {
+        "id": "no-ww2",
+        "name": "National WWII Museum",
+        "category": "museums",
+        "area": "Warehouse District",
+        "lat": 29.9431,
+        "lng": -90.0705,
+        "durationMin": 150,
+        "description": "An immersive, multi-building history museum.",
+        "price": 2
+      },
+      {
+        "id": "no-garden",
+        "name": "Garden District homes",
+        "category": "architecture",
+        "area": "Garden District",
+        "lat": 29.9277,
+        "lng": -90.0839,
+        "durationMin": 60,
+        "description": "Antebellum mansions under live oaks."
+      },
+      {
+        "id": "no-lafayette",
+        "name": "Lafayette Cemetery No. 1",
+        "category": "culture",
+        "area": "Garden District",
+        "lat": 29.9286,
+        "lng": -90.0855,
+        "durationMin": 40,
+        "description": "Above-ground tombs on Washington Avenue."
+      },
+      {
+        "id": "no-citypark",
+        "name": "City Park & Sculpture Garden",
+        "category": "nature",
+        "area": "Mid-City",
+        "lat": 29.9864,
+        "lng": -90.0934,
+        "durationMin": 75,
+        "description": "Old oaks, lagoons and the Besthoff sculptures."
+      },
+      {
+        "id": "no-streetcar",
+        "name": "St. Charles streetcar",
+        "category": "culture",
+        "area": "Uptown",
+        "lat": 29.9348,
+        "lng": -90.0786,
+        "durationMin": 45,
+        "description": "The oldest operating streetcar line in the world.",
+        "price": 1
+      },
+      {
+        "id": "no-frenchmen",
+        "name": "Frenchmen Street",
+        "category": "nightlife",
+        "area": "Marigny",
+        "lat": 29.9642,
+        "lng": -90.0577,
+        "durationMin": 120,
+        "description": "Live brass bands and jazz clubs, door to door."
+      },
+      {
+        "id": "no-prez",
+        "name": "Preservation Hall",
+        "category": "nightlife",
+        "area": "French Quarter",
+        "lat": 29.9585,
+        "lng": -90.0653,
+        "durationMin": 60,
+        "description": "Traditional jazz in an intimate 1750s house.",
+        "price": 2
+      },
+      {
+        "id": "no-magazine",
+        "name": "Magazine Street shops",
+        "category": "shopping",
+        "area": "Lower Garden District",
+        "lat": 29.9268,
+        "lng": -90.0796,
+        "durationMin": 60,
+        "description": "Six miles of boutiques and antique stores.",
+        "price": 2
+      },
+      {
+        "id": "no-dumonde",
+        "name": "Café du Monde",
+        "category": "food",
+        "area": "French Quarter",
+        "lat": 29.9574,
+        "lng": -90.0618,
+        "durationMin": 30,
+        "description": "Beignets and chicory café au lait.",
+        "food": [
+          "cafes",
+          "local-classics"
+        ],
+        "price": 1
+      },
+      {
+        "id": "no-commanders",
+        "name": "Commander's Palace",
+        "category": "food",
+        "area": "Garden District",
+        "lat": 29.9286,
+        "lng": -90.0843,
+        "durationMin": 90,
+        "description": "Turtle soup and jazz brunch in a blue mansion.",
+        "food": [
+          "fine-dining",
+          "local-classics"
+        ],
+        "price": 3
+      },
+      {
+        "id": "no-acme",
+        "name": "Acme Oyster House",
+        "category": "food",
+        "area": "French Quarter",
+        "lat": 29.9547,
+        "lng": -90.0688,
+        "durationMin": 50,
+        "description": "Chargrilled oysters and po'boys.",
+        "food": [
+          "seafood",
+          "local-classics"
+        ],
+        "price": 2
+      },
+      {
+        "id": "no-stclaude",
+        "name": "St. Roch Market",
+        "category": "food",
+        "area": "Marigny",
+        "lat": 29.9659,
+        "lng": -90.0528,
+        "durationMin": 40,
+        "description": "A restored 1875 market hall of food stalls.",
+        "food": [
+          "street-food",
+          "vegetarian"
+        ],
+        "price": 1
+      },
+      {
+        "id": "no-parkway",
+        "name": "Parkway Bakery",
+        "category": "food",
+        "area": "Mid-City",
+        "lat": 29.9766,
+        "lng": -90.0882,
+        "durationMin": 40,
+        "description": "The roast beef po'boy, debris and all.",
+        "food": [
+          "street-food",
+          "local-classics"
+        ],
+        "price": 1
+      }
+    ]
+  },
+  {
+    "id": "washington-dc",
+    "name": "Washington, D.C.",
+    "country": "District of Columbia",
+    "image": "https://images.unsplash.com/photo-1617581629397-a72507c3de9e?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=1000",
+    "blurb": "Free world-class museums, monuments and neighborhood food halls.",
+    "bestFor": [
+      "museums",
+      "culture",
+      "nature"
+    ],
+    "center": {
+      "lat": 38.895,
+      "lng": -77.03
+    },
+    "places": [
+      {
+        "id": "dc-lincoln",
+        "name": "Lincoln Memorial",
+        "category": "culture",
+        "area": "National Mall",
+        "lat": 38.8893,
+        "lng": -77.0502,
+        "durationMin": 45,
+        "description": "The Reflecting Pool view from the steps."
+      },
+      {
+        "id": "dc-airspace",
+        "name": "National Air and Space Museum",
+        "category": "museums",
+        "area": "National Mall",
+        "lat": 38.8882,
+        "lng": -77.0199,
+        "durationMin": 90,
+        "description": "The Wright Flyer and Apollo 11 command module."
+      },
+      {
+        "id": "dc-nmaahc",
+        "name": "African American History Museum",
+        "category": "museums",
+        "area": "National Mall",
+        "lat": 38.8911,
+        "lng": -77.0326,
+        "durationMin": 120,
+        "description": "A powerful, many-layered Smithsonian museum."
+      },
+      {
+        "id": "dc-natgallery",
+        "name": "National Gallery of Art",
+        "category": "museums",
+        "area": "National Mall",
+        "lat": 38.8913,
+        "lng": -77.02,
+        "durationMin": 90,
+        "description": "The only Leonardo in the Americas."
+      },
+      {
+        "id": "dc-capitol",
+        "name": "U.S. Capitol tour",
+        "category": "architecture",
+        "area": "Capitol Hill",
+        "lat": 38.8899,
+        "lng": -77.0091,
+        "durationMin": 75,
+        "description": "The rotunda and National Statuary Hall."
+      },
+      {
+        "id": "dc-library",
+        "name": "Library of Congress",
+        "category": "architecture",
+        "area": "Capitol Hill",
+        "lat": 38.8887,
+        "lng": -77.0047,
+        "durationMin": 60,
+        "description": "The gilded Great Hall of the Jefferson Building."
+      },
+      {
+        "id": "dc-tidal",
+        "name": "Tidal Basin & Jefferson Memorial",
+        "category": "nature",
+        "area": "West Potomac Park",
+        "lat": 38.8814,
+        "lng": -77.0365,
+        "durationMin": 60,
+        "description": "A loop past the cherry trees and memorials."
+      },
+      {
+        "id": "dc-georgetown",
+        "name": "Georgetown & the C&O Canal",
+        "category": "shopping",
+        "area": "Georgetown",
+        "lat": 38.9048,
+        "lng": -77.0631,
+        "durationMin": 75,
+        "description": "Rowhouse shops and a towpath walk.",
+        "price": 2
+      },
+      {
+        "id": "dc-arboretum",
+        "name": "U.S. Botanic Garden",
+        "category": "nature",
+        "area": "National Mall",
+        "lat": 38.8881,
+        "lng": -77.0129,
+        "durationMin": 45,
+        "description": "A glass conservatory full of orchids and jungle."
+      },
+      {
+        "id": "dc-ustreet",
+        "name": "U Street jazz",
+        "category": "nightlife",
+        "area": "U Street",
+        "lat": 38.917,
+        "lng": -77.0287,
+        "durationMin": 90,
+        "description": "Historic Black Broadway clubs.",
+        "price": 2
+      },
+      {
+        "id": "dc-union",
+        "name": "Union Market",
+        "category": "food",
+        "area": "NoMa",
+        "lat": 38.9083,
+        "lng": -76.9973,
+        "durationMin": 50,
+        "description": "Dozens of local vendors in a market hall.",
+        "food": [
+          "street-food",
+          "vegetarian"
+        ],
+        "price": 2
+      },
+      {
+        "id": "dc-bens",
+        "name": "Ben's Chili Bowl",
+        "category": "food",
+        "area": "U Street",
+        "lat": 38.917,
+        "lng": -77.0287,
+        "durationMin": 35,
+        "description": "The half-smoke, a D.C. institution.",
+        "food": [
+          "local-classics",
+          "street-food"
+        ],
+        "price": 1
+      },
+      {
+        "id": "dc-eastern",
+        "name": "Eastern Market",
+        "category": "food",
+        "area": "Capitol Hill",
+        "lat": 38.8865,
+        "lng": -76.9963,
+        "durationMin": 45,
+        "description": "Blueberry buckwheat pancakes and crab cakes.",
+        "food": [
+          "local-classics",
+          "seafood"
+        ],
+        "price": 1
+      },
+      {
+        "id": "dc-wharf",
+        "name": "The Wharf fish market",
+        "category": "food",
+        "area": "Southwest Waterfront",
+        "lat": 38.8784,
+        "lng": -77.0236,
+        "durationMin": 45,
+        "description": "Steamed crabs from the oldest open-air fish market.",
+        "food": [
+          "seafood"
+        ],
+        "price": 2
+      },
+      {
+        "id": "dc-compass",
+        "name": "Compass Coffee",
+        "category": "food",
+        "area": "Penn Quarter",
+        "lat": 38.8975,
+        "lng": -77.0225,
+        "durationMin": 25,
+        "description": "A local roaster near the Mall.",
+        "food": [
+          "cafes"
+        ],
+        "price": 1
+      }
+    ]
+  },
+  {
+    "id": "seattle",
+    "name": "Seattle",
+    "country": "Washington",
+    "image": "https://images.unsplash.com/photo-1565643118903-accd929fe2dd?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=80&w=1000",
+    "blurb": "Waterfront markets, mountain views and serious coffee.",
+    "bestFor": [
+      "nature",
+      "food",
+      "culture"
+    ],
+    "center": {
+      "lat": 47.615,
+      "lng": -122.34
+    },
+    "places": [
+      {
+        "id": "se-needle",
+        "name": "Space Needle",
+        "category": "architecture",
+        "area": "Seattle Center",
+        "lat": 47.6205,
+        "lng": -122.3493,
+        "durationMin": 60,
+        "description": "The rotating glass floor at 520 feet.",
+        "price": 2
+      },
+      {
+        "id": "se-chihuly",
+        "name": "Chihuly Garden and Glass",
+        "category": "museums",
+        "area": "Seattle Center",
+        "lat": 47.6206,
+        "lng": -122.3505,
+        "durationMin": 75,
+        "description": "Blown-glass installations in a garden.",
+        "price": 2
+      },
+      {
+        "id": "se-mopop",
+        "name": "Museum of Pop Culture",
+        "category": "museums",
+        "area": "Seattle Center",
+        "lat": 47.6215,
+        "lng": -122.3481,
+        "durationMin": 90,
+        "description": "Hendrix, Nirvana and sci-fi in a Gehry building.",
+        "price": 2
+      },
+      {
+        "id": "se-sam",
+        "name": "Olympic Sculpture Park",
+        "category": "nature",
+        "area": "Belltown",
+        "lat": 47.6166,
+        "lng": -122.3553,
+        "durationMin": 45,
+        "description": "Large-scale art over Elliott Bay."
+      },
+      {
+        "id": "se-pioneer",
+        "name": "Pioneer Square underground",
+        "category": "culture",
+        "area": "Pioneer Square",
+        "lat": 47.6021,
+        "lng": -122.3343,
+        "durationMin": 75,
+        "description": "Tour the buried streets of 1889 Seattle.",
+        "price": 2
+      },
+      {
+        "id": "se-library",
+        "name": "Seattle Central Library",
+        "category": "architecture",
+        "area": "Downtown",
+        "lat": 47.6067,
+        "lng": -122.3325,
+        "durationMin": 40,
+        "description": "Rem Koolhaas' glass-and-steel book spiral."
+      },
+      {
+        "id": "se-kerry",
+        "name": "Kerry Park",
+        "category": "nature",
+        "area": "Queen Anne",
+        "lat": 47.6295,
+        "lng": -122.3599,
+        "durationMin": 30,
+        "description": "The postcard view of the skyline and Rainier."
+      },
+      {
+        "id": "se-discovery",
+        "name": "Discovery Park",
+        "category": "nature",
+        "area": "Magnolia",
+        "lat": 47.6573,
+        "lng": -122.4057,
+        "durationMin": 90,
+        "description": "Bluffs, beaches and a lighthouse walk."
+      },
+      {
+        "id": "se-fremont",
+        "name": "Fremont & the Troll",
+        "category": "culture",
+        "area": "Fremont",
+        "lat": 47.651,
+        "lng": -122.3473,
+        "durationMin": 45,
+        "description": "Quirky public art under the Aurora Bridge."
+      },
+      {
+        "id": "se-capitolhill",
+        "name": "Capitol Hill bars",
+        "category": "nightlife",
+        "area": "Capitol Hill",
+        "lat": 47.6145,
+        "lng": -122.3194,
+        "durationMin": 90,
+        "description": "Cocktail bars and live music on Pike/Pine.",
+        "price": 2
+      },
+      {
+        "id": "se-pike",
+        "name": "Pike Place Market",
+        "category": "food",
+        "area": "Pike Place",
+        "lat": 47.6097,
+        "lng": -122.3422,
+        "durationMin": 60,
+        "description": "Flying fish, chowder and the original Starbucks.",
+        "food": [
+          "seafood",
+          "street-food"
+        ],
+        "price": 1
+      },
+      {
+        "id": "se-oddfellows",
+        "name": "Storyville Coffee",
+        "category": "food",
+        "area": "Pike Place",
+        "lat": 47.6089,
+        "lng": -122.3405,
+        "durationMin": 25,
+        "description": "Coffee with a view over the market.",
+        "food": [
+          "cafes"
+        ],
+        "price": 1
+      },
+      {
+        "id": "se-walrus",
+        "name": "The Walrus and the Carpenter",
+        "category": "food",
+        "area": "Ballard",
+        "lat": 47.6644,
+        "lng": -122.3797,
+        "durationMin": 75,
+        "description": "Pacific Northwest oysters in a bright oyster bar.",
+        "food": [
+          "seafood",
+          "fine-dining"
+        ],
+        "price": 3
+      },
+      {
+        "id": "se-dicks",
+        "name": "Dick's Drive-In",
+        "category": "food",
+        "area": "Capitol Hill",
+        "lat": 47.6193,
+        "lng": -122.3213,
+        "durationMin": 25,
+        "description": "Seattle's favorite cheap burgers since 1954.",
+        "food": [
+          "street-food",
+          "local-classics"
+        ],
+        "price": 1
+      },
+      {
+        "id": "se-plum",
+        "name": "Plum Bistro",
+        "category": "food",
+        "area": "Capitol Hill",
+        "lat": 47.6141,
+        "lng": -122.3167,
+        "durationMin": 60,
+        "description": "Creative vegan comfort food.",
+        "food": [
+          "vegetarian"
+        ],
+        "price": 2
+      }
+    ]
+  }
+]

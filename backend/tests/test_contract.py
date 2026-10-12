@@ -1,0 +1,51 @@
+"""Pydantic schemas must serialize to the shapes declared in the app's `src/domain/types.ts`."""
+
+import re
+import types
+import typing
+from pathlib import Path
+
+import pytest
+
+from app.contracts import travel
+from app.features.planning import schemas as planning_schemas
+
+TYPES_TS = Path(__file__).resolve().parents[2] / "frontend" / "src" / "domain" / "types.ts"
+# Client-only fields that intentionally have no server counterpart.
+CLIENT_ONLY = {"Destination": {"places"}, "TripDraft": {"simulateFailure"}}
+MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripDraft"]
+
+
+def ts_interfaces() -> dict[str, dict[str, bool]]:
+    """interface name -> {field: optional}"""
+    src = TYPES_TS.read_text()
+    out = {}
+    for name, body in re.findall(r"export interface (\w+) \{(.*?)\n\}", src, re.S):
+        fields = {}
+        for m in re.finditer(r"^\s*(\w+)(\??):", body, re.M):
+            fields[m.group(1)] = m.group(2) == "?"
+        out[name] = fields
+    return out
+
+
+def allows_none(annotation) -> bool:
+    return isinstance(annotation, types.UnionType | typing._UnionGenericAlias) and type(None) in typing.get_args(annotation)  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("name", MODELS)
+def test_model_matches_typescript_interface(name):
+    ts = ts_interfaces()[name]
+    model = getattr(travel, name, None) or getattr(planning_schemas, name)
+    by_alias = {f.alias or k: f for k, f in model.model_fields.items()}
+    for field, optional in ts.items():
+        if field in CLIENT_ONLY.get(name, set()):
+            continue
+        assert field in by_alias, f"{name}.{field} is missing from the Pydantic model"
+        f = by_alias[field]
+        if optional:
+            assert not f.is_required(), f"{name}.{field} is optional in TS but required in Python"
+        else:
+            assert not allows_none(f.annotation), f"{name}.{field} is required in TS but nullable in Python"
+    for alias, f in by_alias.items():
+        if alias not in ts:
+            assert not f.is_required(), f"{name}.{alias} is server-only, so it must be optional"

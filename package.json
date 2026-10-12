@@ -1,0 +1,12 @@
+{
+  "name": "wayfare-tooling",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "fixtures": "node backend/scripts/export_ts_fixtures.mjs"
+  },
+  "devDependencies": {
+    "vite": "^8.0.5"
+  }
+}

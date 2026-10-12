@@ -1,6 +1,6 @@
 # Backend architecture
 
-The backend is one FastAPI application organized as a modular monolith. For a guided tour of request flows and key abstractions, start with [study-guide.md](study-guide.md). Each feature owns its routes, service,
+The backend is one FastAPI application organized as a modular monolith. For a guided tour of request flows and key abstractions, start with [backend-study-guide.md](backend-study-guide.md). Each feature owns its routes, service,
 schemas, tables and queries; shared code sits in a few layers below the features.
 
 ## Layers

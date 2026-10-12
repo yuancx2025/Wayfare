@@ -1,10 +1,10 @@
 # Wayfare frontend study guide
 
-A staged, code-first walkthrough of the **Expo + React Native** app. This is the frontend companion to [`backend/docs/study-guide.md`](../../backend/docs/study-guide.md). Rather than reading every file in alphabetical order, follow **one trip from the home screen to creation, generation, itinerary, map, and adjustment**. Each stage explains the ownership of state, code boundaries, and how to verify your understanding.
+A staged, code-first walkthrough of the **Expo + React Native** app. This is the frontend companion to [`backend-study-guide.md`](backend-study-guide.md). Rather than reading every file in alphabetical order, follow **one trip from the home screen to creation, generation, itinerary, map, and adjustment**. Each stage explains the ownership of state, code boundaries, and how to verify your understanding.
 
-> **Placement:** This guide is written to live at `frontend/docs/study-guide.md` in the repository. Relative links are correct from that location. The instructions describe the `main` branch reviewed on October 11, 2026; revisit the code when the app evolves.
+> **Placement:** This guide lives at `docs/frontend-study-guide.md` in the repository root. Source links are relative to this location. The instructions describe the `main` branch reviewed on October 11, 2026; revisit the code when the app evolves.
 
-**Companion reading:** [Project README](../../README.md), [backend README](../../backend/README.md), [backend architecture](../../backend/docs/architecture.md), [frontend package.json](../package.json), and [frontend AGENTS.md](../AGENTS.md) (a few general suggestions in `AGENTS.md` differ from the actual repo layout, so follow the code).
+**Companion reading:** [Project README](../README.md), [backend README](../backend/README.md), [backend architecture](architecture.md), [frontend package.json](../frontend/package.json), and [frontend AGENTS.md](../frontend/AGENTS.md) (a few general suggestions in `AGENTS.md` differ from the actual repo layout, so follow the code).
 
 ## How to use this guide
 
@@ -26,7 +26,7 @@ npm start
 
 The offline planner needs **no backend or API keys**. Leave `EXPO_PUBLIC_API_URL` unset (or blank) and run on Expo's supported target. `npm run web` starts the browser version. iOS simulator requires Xcode on macOS; Android emulator requires Android Studio and an emulator. Expo Go and custom development builds are **not interchangeable** when native modules or config plugins require a rebuild.
 
-For remote mode, run the FastAPI backend as described in the [project README](../../README.md), then copy [`../.env.example`](../.env.example) to `frontend/.env.local` and set `EXPO_PUBLIC_API_URL=http://localhost:8000`. Restart Expo. On physical devices, phone and computer must be network-reachable; [`src/config.ts`](../src/config.ts) rewrites development localhost addresses where it can. **Do not put Neon, Gemini, or server-side Maps secrets in `EXPO_PUBLIC_*` variables.**
+For remote mode, run the FastAPI backend as described in the [project README](../README.md), then copy [`frontend/.env.example`](../frontend/.env.example) to `frontend/.env.local` and set `EXPO_PUBLIC_API_URL=http://localhost:8000`. Restart Expo. On physical devices, phone and computer must be network-reachable; [`src/config.ts`](../frontend/src/config.ts) rewrites development localhost addresses where it can. **Do not put Neon, Gemini, or server-side Maps secrets in `EXPO_PUBLIC_*` variables.**
 
 ### Map of the codebase
 
@@ -62,12 +62,12 @@ One principle to keep in mind: **screens render and coordinate interactions; sta
 
 | Order | File | Look for |
 | --- | --- | --- |
-| 1 | [`package.json`](../package.json), [`app.config.ts`](../app.config.ts) | Expo SDK, React Native, plugins, native map configuration |
-| 2 | [`app/_layout.tsx`](../app/_layout.tsx) | Fonts, splash screen, `QueryClientProvider`, `StoreProvider`, `TripSessionProvider`, root `Stack` |
-| 3 | [`app/(tabs)/_layout.tsx`](../app/(tabs)/_layout.tsx) | The Trips/Explore/Profile bottom-tab navigator |
-| 4 | [`app/(tabs)/index.tsx`](../app/(tabs)/index.tsx) | Home screen, `FlatList`, loading/empty states, create-trip tap |
-| 5 | [`app/create/_layout.tsx`](../app/create/_layout.tsx) | Nested create-flow stack and generating-screen gesture behavior |
-| 6 | [`src/components/ui.tsx`](../src/components/ui.tsx), [`src/theme.ts`](../src/theme.ts) | Shared `Button`, `TopBar`, `BottomSheet`, design tokens |
+| 1 | [`package.json`](../frontend/package.json), [`app.config.ts`](../frontend/app.config.ts) | Expo SDK, React Native, plugins, native map configuration |
+| 2 | [`app/_layout.tsx`](../frontend/app/_layout.tsx) | Fonts, splash screen, `QueryClientProvider`, `StoreProvider`, `TripSessionProvider`, root `Stack` |
+| 3 | [`app/(tabs)/_layout.tsx`](../frontend/app/%28tabs%29/_layout.tsx) | The Trips/Explore/Profile bottom-tab navigator |
+| 4 | [`app/(tabs)/index.tsx`](../frontend/app/%28tabs%29/index.tsx) | Home screen, `FlatList`, loading/empty states, create-trip tap |
+| 5 | [`app/create/_layout.tsx`](../frontend/app/create/_layout.tsx) | Nested create-flow stack and generating-screen gesture behavior |
+| 6 | [`src/components/ui.tsx`](../frontend/src/components/ui.tsx), [`src/theme.ts`](../frontend/src/theme.ts) | Shared `Button`, `TopBar`, `BottomSheet`, design tokens |
 
 ### What happens at startup
 
@@ -88,7 +88,7 @@ flowchart LR
   E --> F[CreateTrip screen]
 ```
 
-Inside [`app/(tabs)/index.tsx`](../app/(tabs)/index.tsx), the handler calls **`startDraft()` first**, then `router.push('/create')`. The new screen can read the newly reset draft because both screens share `StoreProvider` in the root layout.
+Inside [`app/(tabs)/index.tsx`](../frontend/app/%28tabs%29/index.tsx), the handler calls **`startDraft()` first**, then `router.push('/create')`. The new screen can read the newly reset draft because both screens share `StoreProvider` in the root layout.
 
 Important React Native vocabulary:
 
@@ -118,13 +118,13 @@ Change the subtitle under **Create Trip** in the Trips screen. Next, trace how `
 
 | Order | File | Why |
 | --- | --- | --- |
-| 1 | [`src/domain/types.ts`](../src/domain/types.ts) | `Preferences`, `TripDraft`, `Trip`, `TripSummary`, `Day`, `Activity` |
-| 2 | [`src/state/store.tsx`](../src/state/store.tsx) | `useReducer`, `StoreContext`, actions, `useStore`, `useTrip` |
-| 3 | [`app/create/index.tsx`](../app/create/index.tsx) | Form fields, `Controller`, date picker, autocomplete |
-| 4 | [`src/domain/schemas.ts`](../src/domain/schemas.ts) | Zod validation and 10-day trip limit |
-| 5 | [`app/create/preferences.tsx`](../app/create/preferences.tsx), [`src/components/PreferencesForm.tsx`](../src/components/PreferencesForm.tsx) | Shared preference form for a specific trip |
-| 6 | [`app/(tabs)/profile.tsx`](../app/(tabs)/profile.tsx) | Persistent profile defaults, dirty/saving state |
-| 7 | [`app/(tabs)/explore.tsx`](../app/(tabs)/explore.tsx), [`src/lib/useDebounced.ts`](../src/lib/useDebounced.ts) | Search query caching and starting a draft from Explore |
+| 1 | [`src/domain/types.ts`](../frontend/src/domain/types.ts) | `Preferences`, `TripDraft`, `Trip`, `TripSummary`, `Day`, `Activity` |
+| 2 | [`src/state/store.tsx`](../frontend/src/state/store.tsx) | `useReducer`, `StoreContext`, actions, `useStore`, `useTrip` |
+| 3 | [`app/create/index.tsx`](../frontend/app/create/index.tsx) | Form fields, `Controller`, date picker, autocomplete |
+| 4 | [`src/domain/schemas.ts`](../frontend/src/domain/schemas.ts) | Zod validation and 10-day trip limit |
+| 5 | [`app/create/preferences.tsx`](../frontend/app/create/preferences.tsx), [`src/components/PreferencesForm.tsx`](../frontend/src/components/PreferencesForm.tsx) | Shared preference form for a specific trip |
+| 6 | [`app/(tabs)/profile.tsx`](../frontend/app/%28tabs%29/profile.tsx) | Persistent profile defaults, dirty/saving state |
+| 7 | [`app/(tabs)/explore.tsx`](../frontend/app/%28tabs%29/explore.tsx), [`src/lib/useDebounced.ts`](../frontend/src/lib/useDebounced.ts) | Search query caching and starting a draft from Explore |
 
 ### Four distinct kinds of state
 
@@ -198,14 +198,14 @@ Add a short helper under the travelers stepper (“Maximum 12 travelers”). The
 
 | Order | File | Look for |
 | --- | --- | --- |
-| 1 | [`src/config.ts`](../src/config.ts) | `API_URL`, native localhost rewriting |
-| 2 | [`src/lib/api/types.ts`](../src/lib/api/types.ts) | `Api` contract, `GenerateOptions`, `ApiError` |
-| 3 | [`src/lib/api/index.ts`](../src/lib/api/index.ts) | `API_URL ? createRemoteApi(...) : createLocalApi()` |
-| 4 | [`src/lib/api/local.ts`](../src/lib/api/local.ts) | Storage, sample trip, catalog, heuristic planner, simulated progress |
-| 5 | [`src/lib/api/remote.ts`](../src/lib/api/remote.ts) | HTTP requests, `X-User-Id`, SSE generation |
-| 6 | [`src/lib/api/sse.ts`](../src/lib/api/sse.ts) | Stream chunk buffering and event parsing |
-| 7 | [`app/create/generating.tsx`](../app/create/generating.tsx) | Progress, cancel, retry, idempotency key |
-| 8 | [`src/domain/logic/generate.ts`](../src/domain/logic/generate.ts), [`src/domain/data/places.ts`](../src/domain/data/places.ts) | Offline score/schedule/catalog logic |
+| 1 | [`src/config.ts`](../frontend/src/config.ts) | `API_URL`, native localhost rewriting |
+| 2 | [`src/lib/api/types.ts`](../frontend/src/lib/api/types.ts) | `Api` contract, `GenerateOptions`, `ApiError` |
+| 3 | [`src/lib/api/index.ts`](../frontend/src/lib/api/index.ts) | `API_URL ? createRemoteApi(...) : createLocalApi()` |
+| 4 | [`src/lib/api/local.ts`](../frontend/src/lib/api/local.ts) | Storage, sample trip, catalog, heuristic planner, simulated progress |
+| 5 | [`src/lib/api/remote.ts`](../frontend/src/lib/api/remote.ts) | HTTP requests, `X-User-Id`, SSE generation |
+| 6 | [`src/lib/api/sse.ts`](../frontend/src/lib/api/sse.ts) | Stream chunk buffering and event parsing |
+| 7 | [`app/create/generating.tsx`](../frontend/app/create/generating.tsx) | Progress, cancel, retry, idempotency key |
+| 8 | [`src/domain/logic/generate.ts`](../frontend/src/domain/logic/generate.ts), [`src/domain/data/places.ts`](../frontend/src/domain/data/places.ts) | Offline score/schedule/catalog logic |
 
 ### The central architectural seam
 
@@ -222,7 +222,7 @@ flowchart TD
   HTTP --> Providers[Optional Google / LLM providers]
 ```
 
-The screens import a single `api` instance from [`src/lib/api/index.ts`](../src/lib/api/index.ts). They do not need to know whether trips came from AsyncStorage or Postgres. Both `createLocalApi()` and `createRemoteApi()` implement `Api` (same method signatures, models, and caller expectations).
+The screens import a single `api` instance from [`src/lib/api/index.ts`](../frontend/src/lib/api/index.ts). They do not need to know whether trips came from AsyncStorage or Postgres. Both `createLocalApi()` and `createRemoteApi()` implement `Api` (same method signatures, models, and caller expectations).
 
 | Operation | Offline implementation | Remote implementation |
 | --- | --- | --- |
@@ -240,7 +240,7 @@ The screens import a single `api` instance from [`src/lib/api/index.ts`](../src/
 1. From `/create/preferences`, tap **Generate Trip**. The app pushes `/create/generating` and keeps the draft in the store.
 2. In `Generating`, `idempotencyKey = useRef(randomUUID())` is created **once per mounted screen instance**, and `draftRef` captures the current draft. An effect runs `api.generateTrip(...)`.
 3. `remote.ts` sends `POST /trips/generate` with JSON draft, `X-User-Id`, `Idempotency-Key`, `Accept: text/event-stream`, and an `AbortSignal`. It uses `expo/fetch` for a response body stream on native.
-4. [`readEvents`](../src/lib/api/sse.ts) reads byte chunks. It normalizes CRLF line endings, buffers incomplete blocks, parses `event:`/`data:` fields, and yields `{ event, data }` objects.
+4. [`readEvents`](../frontend/src/lib/api/sse.ts) reads byte chunks. It normalizes CRLF line endings, buffers incomplete blocks, parses `event:`/`data:` fields, and yields `{ event, data }` objects.
 5. For `step` events, `onStep(index)` advances the loading UI; for `done`, the API resolves with a `Trip`; for `error`, it throws `GenerationError`.
 6. On success, the screen calls `putTrip(trip, { isNew: true })`, returns navigation to Trips via `router.dismissTo('/')`, then opens `/trip/${trip.id}`.
 7. On failure, it renders the retry state, preserving destination/dates/preferences. Retrying increases `attempt` and **reuses the same idempotency key**. Unmounting the screen aborts the request.
@@ -276,14 +276,14 @@ Run the same creation flow once in offline mode and once against FastAPI. Compar
 
 | Order | File | Why |
 | --- | --- | --- |
-| 1 | [`app/trip/[id]/index.tsx`](../app/trip/[id]/index.tsx) | Dynamic route, `useTrip`, day cards, summary map |
-| 2 | [`app/trip/[id]/day/[day].tsx`](../app/trip/[id]/day/[day].tsx) | Day data, activity cards, map, adjustment sheet |
-| 3 | [`src/state/tripSession.tsx`](../src/state/tripSession.tsx) | Shared `tripId`, `day`, `activityId` selection |
-| 4 | [`app/trip/[id]/map.tsx`](../app/trip/[id]/map.tsx) | Marker/chip selection synchronization |
-| 5 | [`src/lib/useDayRoute.ts`](../src/lib/useDayRoute.ts), [`src/lib/polyline.ts`](../src/lib/polyline.ts) | Backend geometry query, encoded polyline decoder |
-| 6 | [`src/components/TripMap.tsx`](../src/components/TripMap.tsx), [`src/components/TripMap.web.tsx`](../src/components/TripMap.web.tsx), [`src/components/TripMapFallback.tsx`](../src/components/TripMapFallback.tsx) | Native maps, web fallback, error boundary |
-| 7 | [`src/components/trip.tsx`](../src/components/trip.tsx), [`src/components/ActivityDetailSheet.tsx`](../src/components/ActivityDetailSheet.tsx) | Cards, travel legs, extra details |
-| 8 | [`src/components/AdjustDaySheet.tsx`](../src/components/AdjustDaySheet.tsx), [`src/domain/logic/adjust.ts`](../src/domain/logic/adjust.ts) | Preview/replace/apply and offline counterpart |
+| 1 | [`app/trip/[id]/index.tsx`](../frontend/app/trip/%5Bid%5D/index.tsx) | Dynamic route, `useTrip`, day cards, summary map |
+| 2 | [`app/trip/[id]/day/[day].tsx`](../frontend/app/trip/%5Bid%5D/day/%5Bday%5D.tsx) | Day data, activity cards, map, adjustment sheet |
+| 3 | [`src/state/tripSession.tsx`](../frontend/src/state/tripSession.tsx) | Shared `tripId`, `day`, `activityId` selection |
+| 4 | [`app/trip/[id]/map.tsx`](../frontend/app/trip/%5Bid%5D/map.tsx) | Marker/chip selection synchronization |
+| 5 | [`src/lib/useDayRoute.ts`](../frontend/src/lib/useDayRoute.ts), [`src/lib/polyline.ts`](../frontend/src/lib/polyline.ts) | Backend geometry query, encoded polyline decoder |
+| 6 | [`src/components/TripMap.tsx`](../frontend/src/components/TripMap.tsx), [`src/components/TripMap.web.tsx`](../frontend/src/components/TripMap.web.tsx), [`src/components/TripMapFallback.tsx`](../frontend/src/components/TripMapFallback.tsx) | Native maps, web fallback, error boundary |
+| 7 | [`src/components/trip.tsx`](../frontend/src/components/trip.tsx), [`src/components/ActivityDetailSheet.tsx`](../frontend/src/components/ActivityDetailSheet.tsx) | Cards, travel legs, extra details |
+| 8 | [`src/components/AdjustDaySheet.tsx`](../frontend/src/components/AdjustDaySheet.tsx), [`src/domain/logic/adjust.ts`](../frontend/src/domain/logic/adjust.ts) | Preview/replace/apply and offline counterpart |
 
 ### Trace: open a day, then select a stop on the map
 
@@ -306,7 +306,7 @@ flowchart TD
 
 **Travel geometry.** `useDayRoute` uses a query key of `["dayRoute", trip.id, trip.version ?? 0, day]`. Including `version` means applying an adjustment can cause a **different** route query. When backend geometry contains encoded polylines, `TripMap` decodes them and draws `Polyline` components; without routes it draws a dashed **illustrative** connection between stops, not real turn-by-turn directions. Offline `dayRoute()` returns `null`.
 
-**Platform differences.** The native map uses `react-native-maps` in `TripMap.tsx`; web resolves to `TripMap.web.tsx`, which renders an accessible stop-list fallback because the native maps package is not implemented for web. iOS uses Apple Maps by default. The Android map key is consumed by the React Native Maps Expo config plugin in [`app.config.ts`](../app.config.ts) for a native build; changing it requires a rebuild. This is separate from the backend's Google Places/Routes server key.
+**Platform differences.** The native map uses `react-native-maps` in `TripMap.tsx`; web resolves to `TripMap.web.tsx`, which renders an accessible stop-list fallback because the native maps package is not implemented for web. iOS uses Apple Maps by default. The Android map key is consumed by the React Native Maps Expo config plugin in [`app.config.ts`](../frontend/app.config.ts) for a native build; changing it requires a rebuild. This is separate from the backend's Google Places/Routes server key.
 
 ### Trace: “Adjust Day” is a two-phase operation
 
@@ -327,7 +327,7 @@ sequenceDiagram
   Store-->>User: Updated itinerary + map
 ```
 
-In [`AdjustDaySheet.tsx`](../src/components/AdjustDaySheet.tsx), `Step` is a discriminated union for `menu`, `pick`, `alt`, `custom`, and `preview`. Options such as `relaxed`, `less-walking`, and `more-food` call `api.propose`. `replace` first asks for alternatives and lets the user choose a new place. `custom` is available only when `capabilities.agent` is true; the offline API rejects custom requests.
+In [`AdjustDaySheet.tsx`](../frontend/src/components/AdjustDaySheet.tsx), `Step` is a discriminated union for `menu`, `pick`, `alt`, `custom`, and `preview`. Options such as `relaxed`, `less-walking`, and `more-food` call `api.propose`. `replace` first asks for alternatives and lets the user choose a new place. `custom` is available only when `capabilities.agent` is true; the offline API rejects custom requests.
 
 A preview is **not** a committed trip edit. It carries `changes`, a candidate `Day`, and usually `proposalId`; only `applyProposal` returns a new persisted `Trip`. `onApplied` from the Daily screen calls `putTrip(updated)` and may focus a newly inserted activity.
 
@@ -337,7 +337,7 @@ A preview is **not** a committed trip edit. It carries `changes`, a candidate `D
 - **409 Conflict** means the trip has changed since preview; the UI reports this and refetches the trip via `loadTrip`.
 - **410 Gone** means the preview expired; the UI clears previews and invites the user to request a fresh one.
 - `busy` prevents applying while a request is in progress; the apply button is disabled if no valid proposal is ready.
-- Server-side atomicity issues are covered separately in [backend Stage 5](../../backend/docs/study-guide.md#stage-5--adjustments-consistency-and-testing). The frontend must handle conflicts even if the backend later strengthens its transaction logic.
+- Server-side atomicity issues are covered separately in [backend Stage 5](backend-study-guide.md#stage-5--adjustments-consistency-and-testing). The frontend must handle conflicts even if the backend later strengthens its transaction logic.
 
 ### Hands-on exercise
 
@@ -360,12 +360,12 @@ On the Daily screen, open **Adjust Day → More food**, compare the proposed sch
 
 | File | What it verifies |
 | --- | --- |
-| [`src/domain/__tests__/planner.test.ts`](../src/domain/__tests__/planner.test.ts) | Date/day counts, schedule ordering, offline adjustment logic |
-| [`src/lib/__tests__/api.test.ts`](../src/lib/__tests__/api.test.ts) | Local persistence, simulated failure, proposal apply, SSE parser and URL rewriting |
-| [`src/lib/__tests__/remote-api.test.ts`](../src/lib/__tests__/remote-api.test.ts) | HTTP mocking, identity header, SSE progress, retry identity, error/status handling |
-| [`src/lib/__tests__/polyline.test.ts`](../src/lib/__tests__/polyline.test.ts) | Route geometry decoding |
-| [`src/domain/schemas.ts`](../src/domain/schemas.ts) | Form and stored-data validation rules |
-| [`src/lib/api/types.ts`](../src/lib/api/types.ts) | Contracts a new feature must preserve |
+| [`src/domain/__tests__/planner.test.ts`](../frontend/src/domain/__tests__/planner.test.ts) | Date/day counts, schedule ordering, offline adjustment logic |
+| [`src/lib/__tests__/api.test.ts`](../frontend/src/lib/__tests__/api.test.ts) | Local persistence, simulated failure, proposal apply, SSE parser and URL rewriting |
+| [`src/lib/__tests__/remote-api.test.ts`](../frontend/src/lib/__tests__/remote-api.test.ts) | HTTP mocking, identity header, SSE progress, retry identity, error/status handling |
+| [`src/lib/__tests__/polyline.test.ts`](../frontend/src/lib/__tests__/polyline.test.ts) | Route geometry decoding |
+| [`src/domain/schemas.ts`](../frontend/src/domain/schemas.ts) | Form and stored-data validation rules |
+| [`src/lib/api/types.ts`](../frontend/src/lib/api/types.ts) | Contracts a new feature must preserve |
 
 ### Run the existing checks
 
@@ -396,7 +396,7 @@ Implement a **UI-only** sort selector on the Trips screen, without changing the 
 
 ### Advanced feature exercise: extend adjustment behavior
 
-To add another adjustment kind, first edit the **shared contract** in `src/domain/types.ts`, then implement offline logic in `src/domain/logic/adjust.ts`, route it through `src/lib/api/local.ts`, add the option and preview behavior to `AdjustDaySheet.tsx`, and update the backend's Pydantic schema, adjustment service, and tests to support that kind remotely. Study [backend Stage 5](../../backend/docs/study-guide.md#stage-5--adjustments-consistency-and-testing) first. Do not expose an option to remote users until their backend supports it.
+To add another adjustment kind, first edit the **shared contract** in `src/domain/types.ts`, then implement offline logic in `src/domain/logic/adjust.ts`, route it through `src/lib/api/local.ts`, add the option and preview behavior to `AdjustDaySheet.tsx`, and update the backend's Pydantic schema, adjustment service, and tests to support that kind remotely. Study [backend Stage 5](backend-study-guide.md#stage-5--adjustments-consistency-and-testing) first. Do not expose an option to remote users until their backend supports it.
 
 ### Common pitfalls to watch for
 
@@ -468,4 +468,4 @@ Trips / Explore
 - [ ] I can explain preview vs apply, including 409/410 error recovery.
 - [ ] I can run typecheck/tests and make a small change without breaking offline or remote behavior.
 
-**After this guide:** Pair with a teammate on a small feature branch. Start with the file listed under **Who owns what?**, write one test before changing behavior, and trace both local and remote implementations when the feature interacts with `Api`. For corresponding server internals, move to the [backend study guide](../../backend/docs/study-guide.md).
+**After this guide:** Pair with a teammate on a small feature branch. Start with the file listed under **Who owns what?**, write one test before changing behavior, and trace both local and remote implementations when the feature interacts with `Api`. For corresponding server internals, move to the [backend study guide](backend-study-guide.md).

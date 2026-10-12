@@ -15,9 +15,9 @@ The app separates four kinds of state:
 | Cached supporting data | TanStack Query | Destination search, autocomplete, route geometry, place details |
 | Local screen/component state | React state hooks | Open sheets, editable preferences, generation progress |
 
-The providers are mounted in [app/_layout.tsx](frontend/app/_layout.tsx). `SafeAreaProvider` supplies device edge measurements, `QueryClientProvider` supplies a shared query cache, and the two context providers supply app and selection state.
+The providers are mounted in [app/_layout.tsx](../frontend/app/_layout.tsx). `SafeAreaProvider` supplies device edge measurements, `QueryClientProvider` supplies a shared query cache, and the two context providers supply app and selection state.
 
-The [API adapter](frontend/src/lib/api/index.ts) chooses the backend when `EXPO_PUBLIC_API_URL` is configured; otherwise it uses the offline implementation. Hooks generally call that shared adapter rather than choosing a mode themselves.
+The [API adapter](../frontend/src/lib/api/index.ts) chooses the backend when `EXPO_PUBLIC_API_URL` is configured; otherwise it uses the offline implementation. Hooks generally call that shared adapter rather than choosing a mode themselves.
 
 ## Complete inventory
 
@@ -66,7 +66,7 @@ Custom hooks do not automatically share state or make requests faster. The conte
 
 ### `useStore()` — shared application state
 
-**Source:** [src/state/store.tsx](frontend/src/state/store.tsx)
+**Source:** [src/state/store.tsx](../frontend/src/state/store.tsx)
 
 **Why we have it:** Screens can access app state without repeating `useContext` and the missing-provider check. The provider owns the shared state; this hook is a convenient access wrapper.
 
@@ -100,7 +100,7 @@ This store uses **React Context and `useReducer`**, not Zustand. Persistence bel
 
 ### `useTrip(id)` — complete trip loading
 
-**Source:** [src/state/store.tsx](frontend/src/state/store.tsx)
+**Source:** [src/state/store.tsx](../frontend/src/state/store.tsx)
 
 **Why we have it:** Overview, Daily, and Map need the same cache lookup, loading state, and error handling. One hook keeps those behaviors consistent instead of duplicating them across screens.
 
@@ -123,7 +123,7 @@ Effect cleanup sets an `alive` flag to false so a late rejection does not update
 
 ### `useTripSession()` — shared trip selection
 
-**Source:** [src/state/tripSession.tsx](frontend/src/state/tripSession.tsx)
+**Source:** [src/state/tripSession.tsx](../frontend/src/state/tripSession.tsx)
 
 **Why we have it:** It gives screens checked access to one selection context. The provider and its actions keep Daily and Map synchronized and clear the selected activity when the day changes; separate screen-local state would not stay synchronized automatically.
 
@@ -147,7 +147,7 @@ This is temporary navigation state, separate from the saved itinerary. The root 
 
 ### `useDebounced(value, ms = 250)` — delayed search input
 
-**Source:** [src/lib/useDebounced.ts](frontend/src/lib/useDebounced.ts)
+**Source:** [src/lib/useDebounced.ts](../frontend/src/lib/useDebounced.ts)
 
 **Why we have it:** Explore and autocomplete both need to wait for a typing pause. This hook reuses the timer and cleanup logic while letting each screen keep its own input state.
 
@@ -161,7 +161,7 @@ The input updates immediately while the query value updates after typing pauses 
 
 ### `useDayRoute(trip, day)` — route geometry
 
-**Source:** [src/lib/useDayRoute.ts](frontend/src/lib/useDayRoute.ts)
+**Source:** [src/lib/useDayRoute.ts](../frontend/src/lib/useDayRoute.ts)
 
 **Why we have it:** `useQuery` supplies caching, but we must choose the correct key and fetch conditions. Centralizing them prevents Daily and Map from using different rules, such as one omitting the trip version and reusing old route geometry after an adjustment.
 
@@ -184,7 +184,7 @@ Fetching is disabled in offline mode and while the trip is missing. The hook ret
 
 ### `usePlaceDetails(activity, date)` — activity enrichment
 
-**Source:** [src/components/ActivityDetailSheet.tsx](frontend/src/components/ActivityDetailSheet.tsx)
+**Source:** [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx)
 
 **Why we have it:** It gives the place query a clear name and keeps visit-time cache rules separate from sheet rendering. With only one consumer, its main benefit is readability; an inline `useQuery` would also be reasonable.
 
@@ -311,7 +311,7 @@ Explore reads query loading/error state and offers `refetch` on failure. The two
 
 ### React Hook Form: `useForm`
 
-Used in [app/create/index.tsx](frontend/app/create/index.tsx). It initializes fields from the store draft, validates with `zodResolver(createTripSchema)`, and uses `mode: "onBlur"`.
+Used in [app/create/index.tsx](../frontend/app/create/index.tsx). It initializes fields from the store draft, validates with `zodResolver(createTripSchema)`, and uses `mode: "onBlur"`.
 
 `Controller` connects inputs to form state. `watch` reads fields and subscribes to changes; the subscription effect writes them into the draft. `setValue` fills a chosen destination, `trigger` validates it, `reset` loads a new draft, and `handleSubmit` validates before moving to Preferences. These are returned methods, not extra hooks.
 
@@ -325,7 +325,7 @@ Used by Trips, Explore, Profile, Generating, Overview, Map, and shared `TopBar`,
 
 ### Reanimated: `useSharedValue` and `useAnimatedStyle`
 
-Used only in `Toast`, in [src/components/ui.tsx](frontend/src/components/ui.tsx). Shared values hold opacity and vertical displacement. When the message changes, an effect uses `withTiming` to animate them over 200 ms. `useAnimatedStyle` reads those values and produces the animated opacity/transform style.
+Used only in `Toast`, in [src/components/ui.tsx](../frontend/src/components/ui.tsx). Shared values hold opacity and vertical displacement. When the message changes, an effect uses `withTiming` to animate them over 200 ms. `useAnimatedStyle` reads those values and produces the animated opacity/transform style.
 
 ## File-by-file hook map
 
@@ -333,25 +333,25 @@ Paths in this table are relative to `frontend/`.
 
 | File | Hooks called |
 | --- | --- |
-| [app/_layout.tsx](frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`) |
-| [app/(tabs)/index.tsx](frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets` |
-| [app/(tabs)/explore.tsx](frontend/app/%28tabs%29/explore.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useDebounced`, `useQuery` |
-| [app/(tabs)/profile.tsx](frontend/app/%28tabs%29/profile.tsx) | `useStore`, `useSafeAreaInsets`, `useState`, `useEffect` |
-| [app/create/index.tsx](frontend/app/create/index.tsx) | `useStore`, `useRouter`, `useForm`, `useEffect`, `useRef`, `useDebounced`, `useQuery`, `useState` |
-| [app/create/preferences.tsx](frontend/app/create/preferences.tsx) | `useStore`, `useRouter` |
-| [app/create/generating.tsx](frontend/app/create/generating.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useEffect` |
-| [app/trip/[id]/index.tsx](frontend/app/trip/%5Bid%5D/index.tsx) | `useLocalSearchParams`, `useStore`, `useTripSession`, `useRouter`, `useSafeAreaInsets`, `useState`, `useTrip` |
-| [app/trip/[id]/day/[day].tsx](frontend/app/trip/%5Bid%5D/day/%5Bday%5D.tsx) | `useLocalSearchParams`, `useStore`, `useTripSession`, `useRouter`, `useTrip`, `useState`, `useRef`, `useEffect`, `useDayRoute` |
-| [app/trip/[id]/map.tsx](frontend/app/trip/%5Bid%5D/map.tsx) | `useLocalSearchParams`, `useTripSession`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useTrip`, `useEffect`, `useDayRoute` |
-| [src/state/store.tsx](frontend/src/state/store.tsx) | `useReducer`, `useState`, `useRef`, `useCallback`, `useEffect`, `useMemo`, `useContext`, `useStore` (inside `useTrip`) |
-| [src/state/tripSession.tsx](frontend/src/state/tripSession.tsx) | `useState`, `useCallback`, `useMemo`, `useContext` |
-| [src/lib/useDebounced.ts](frontend/src/lib/useDebounced.ts) | `useState`, `useEffect` |
-| [src/lib/useDayRoute.ts](frontend/src/lib/useDayRoute.ts) | `useQuery` |
-| [src/components/ActivityDetailSheet.tsx](frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails` |
-| [src/components/AdjustDaySheet.tsx](frontend/src/components/AdjustDaySheet.tsx) | `useStore`, `useState`, `useRef`, `useEffect` |
-| [src/components/TripMap.tsx](frontend/src/components/TripMap.tsx) | `useRef`, `useState`, `useMemo`, `useEffect` |
-| [src/components/trip.tsx](frontend/src/components/trip.tsx) | `useRef`, `useEffect` (in `DaySelector`) |
-| [src/components/ui.tsx](frontend/src/components/ui.tsx) | `useSafeAreaInsets`, `useSharedValue`, `useEffect`, `useAnimatedStyle` |
+| [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`) |
+| [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets` |
+| [app/(tabs)/explore.tsx](../frontend/app/%28tabs%29/explore.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useDebounced`, `useQuery` |
+| [app/(tabs)/profile.tsx](../frontend/app/%28tabs%29/profile.tsx) | `useStore`, `useSafeAreaInsets`, `useState`, `useEffect` |
+| [app/create/index.tsx](../frontend/app/create/index.tsx) | `useStore`, `useRouter`, `useForm`, `useEffect`, `useRef`, `useDebounced`, `useQuery`, `useState` |
+| [app/create/preferences.tsx](../frontend/app/create/preferences.tsx) | `useStore`, `useRouter` |
+| [app/create/generating.tsx](../frontend/app/create/generating.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useEffect` |
+| [app/trip/[id]/index.tsx](../frontend/app/trip/%5Bid%5D/index.tsx) | `useLocalSearchParams`, `useStore`, `useTripSession`, `useRouter`, `useSafeAreaInsets`, `useState`, `useTrip` |
+| [app/trip/[id]/day/[day].tsx](../frontend/app/trip/%5Bid%5D/day/%5Bday%5D.tsx) | `useLocalSearchParams`, `useStore`, `useTripSession`, `useRouter`, `useTrip`, `useState`, `useRef`, `useEffect`, `useDayRoute` |
+| [app/trip/[id]/map.tsx](../frontend/app/trip/%5Bid%5D/map.tsx) | `useLocalSearchParams`, `useTripSession`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useTrip`, `useEffect`, `useDayRoute` |
+| [src/state/store.tsx](../frontend/src/state/store.tsx) | `useReducer`, `useState`, `useRef`, `useCallback`, `useEffect`, `useMemo`, `useContext`, `useStore` (inside `useTrip`) |
+| [src/state/tripSession.tsx](../frontend/src/state/tripSession.tsx) | `useState`, `useCallback`, `useMemo`, `useContext` |
+| [src/lib/useDebounced.ts](../frontend/src/lib/useDebounced.ts) | `useState`, `useEffect` |
+| [src/lib/useDayRoute.ts](../frontend/src/lib/useDayRoute.ts) | `useQuery` |
+| [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails` |
+| [src/components/AdjustDaySheet.tsx](../frontend/src/components/AdjustDaySheet.tsx) | `useStore`, `useState`, `useRef`, `useEffect` |
+| [src/components/TripMap.tsx](../frontend/src/components/TripMap.tsx) | `useRef`, `useState`, `useMemo`, `useEffect` |
+| [src/components/trip.tsx](../frontend/src/components/trip.tsx) | `useRef`, `useEffect` (in `DaySelector`) |
+| [src/components/ui.tsx](../frontend/src/components/ui.tsx) | `useSafeAreaInsets`, `useSharedValue`, `useEffect`, `useAnimatedStyle` |
 
 `TripMap.tsx` is the native implementation. The web map implementation and fallback do not call hooks.
 
@@ -375,4 +375,4 @@ Paths in this table are relative to `frontend/`.
 - Context memoization does not provide field-level subscriptions. Store value changes can rerender all store consumers.
 - Refs and idempotency keys survive renders within their mounted component; they are not durable storage across app restarts or remounts.
 
-For setup and startup commands, see [README.md](README.md).
+For setup and startup commands, see [README.md](../README.md).

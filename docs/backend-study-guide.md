@@ -21,13 +21,13 @@ A guided path through the Wayfare backend on the modular layout (`app/features/`
 
 | Order | File | Why |
 | --- | --- | --- |
-| 1 | [`app/main.py`](../app/main.py) | App factory, lifespan, router registration, global error handler |
-| 2 | [`app/features/profiles/router.py`](../app/features/profiles/router.py) | Thinnest possible HTTP layer |
-| 3 | [`app/features/profiles/dependencies.py`](../app/features/profiles/dependencies.py) | FastAPI `Depends`, identity, service wiring |
-| 4 | [`app/features/profiles/service.py`](../app/features/profiles/service.py) | Business orchestration (no SQL) |
-| 5 | [`app/features/profiles/repository.py`](../app/features/profiles/repository.py) | SQLAlchemy access for `users` |
+| 1 | [`app/main.py`](../backend/app/main.py) | App factory, lifespan, router registration, global error handler |
+| 2 | [`app/features/profiles/router.py`](../backend/app/features/profiles/router.py) | Thinnest possible HTTP layer |
+| 3 | [`app/features/profiles/dependencies.py`](../backend/app/features/profiles/dependencies.py) | FastAPI `Depends`, identity, service wiring |
+| 4 | [`app/features/profiles/service.py`](../backend/app/features/profiles/service.py) | Business orchestration (no SQL) |
+| 5 | [`app/features/profiles/repository.py`](../backend/app/features/profiles/repository.py) | SQLAlchemy access for `users` |
 
-Skim once: [`app/core/routing.py`](../app/core/routing.py) (`ApiRouter` forces `response_model_exclude_none=True` so JSON matches the Expo app).
+Skim once: [`app/core/routing.py`](../backend/app/core/routing.py) (`ApiRouter` forces `response_model_exclude_none=True` so JSON matches the Expo app).
 
 ### What happens at startup
 
@@ -103,9 +103,9 @@ You should be able to say: startup seeds catalog and builds `Services`; each req
 
 | Area | Files |
 | --- | --- |
-| DB core | [`app/db/base.py`](../app/db/base.py), [`app/db/session.py`](../app/db/session.py), [`app/db/registry.py`](../app/db/registry.py) |
-| Trips | [`app/features/trips/models.py`](../app/features/trips/models.py), [`app/features/trips/repository.py`](../app/features/trips/repository.py), [`app/features/trips/service.py`](../app/features/trips/service.py), [`app/features/trips/dependencies.py`](../app/features/trips/dependencies.py), [`app/features/trips/router.py`](../app/features/trips/router.py) |
-| Contracts | [`app/contracts/travel.py`](../app/contracts/travel.py) (`Trip`, `Day`, …) |
+| DB core | [`app/db/base.py`](../backend/app/db/base.py), [`app/db/session.py`](../backend/app/db/session.py), [`app/db/registry.py`](../backend/app/db/registry.py) |
+| Trips | [`app/features/trips/models.py`](../backend/app/features/trips/models.py), [`app/features/trips/repository.py`](../backend/app/features/trips/repository.py), [`app/features/trips/service.py`](../backend/app/features/trips/service.py), [`app/features/trips/dependencies.py`](../backend/app/features/trips/dependencies.py), [`app/features/trips/router.py`](../backend/app/features/trips/router.py) |
+| Contracts | [`app/contracts/travel.py`](../backend/app/contracts/travel.py) (`Trip`, `Day`, …) |
 
 ### Two representations of “a trip”
 
@@ -133,7 +133,7 @@ No code in the trips feature deletes `proposals` rows explicitly.
 
 ### Why deleting a trip deletes its proposals
 
-- Table `proposals` has `trip_id` → `trips.id` with **`ondelete="CASCADE"`** (see [`features/adjustments/models.py`](../app/features/adjustments/models.py)).
+- Table `proposals` has `trip_id` → `trips.id` with **`ondelete="CASCADE"`** (see [`features/adjustments/models.py`](../backend/app/features/adjustments/models.py)).
 - On **Postgres**, the database enforces this automatically.
 
 This keeps **trips** from importing **adjustments** just to clean up proposal rows.
@@ -176,12 +176,12 @@ Foreign key `proposals.trip_id` → `trips.id` with `ON DELETE CASCADE`. Postgre
 
 | Order | File |
 | --- | --- |
-| 1 | [`app/features/planning/router.py`](../app/features/planning/router.py) — SSE transport, cancellation |
-| 2 | [`app/features/planning/service.py`](../app/features/planning/service.py) — `prepare` vs `generate` |
-| 3 | [`app/features/planning/pipeline.py`](../app/features/planning/pipeline.py) — graph, `PlanState`, `run_planner` |
-| 4 | [`app/features/planning/curation.py`](../app/features/planning/curation.py) — prompts, structured output, `validate_choice` |
+| 1 | [`app/features/planning/router.py`](../backend/app/features/planning/router.py) — SSE transport, cancellation |
+| 2 | [`app/features/planning/service.py`](../backend/app/features/planning/service.py) — `prepare` vs `generate` |
+| 3 | [`app/features/planning/pipeline.py`](../backend/app/features/planning/pipeline.py) — graph, `PlanState`, `run_planner` |
+| 4 | [`app/features/planning/curation.py`](../backend/app/features/planning/curation.py) — prompts, structured output, `validate_choice` |
 
-Supporting context (as needed): [`app/features/planning/schemas.py`](../app/features/planning/schemas.py) (`TripDraft`), [`app/domain/scheduler.py`](../app/domain/scheduler.py) (deterministic schedule after curation).
+Supporting context (as needed): [`app/features/planning/schemas.py`](../backend/app/features/planning/schemas.py) (`TripDraft`), [`app/domain/scheduler.py`](../backend/app/domain/scheduler.py) (deterministic schedule after curation).
 
 ### `prepare()` vs `generate()`
 
@@ -239,7 +239,7 @@ Assume `CURATE_MAX_RETRIES=2`, LLM configured, and every `curate` returns a stru
 
 If the LLM throws on invoke, `_heuristic` runs immediately inside `curate` (no retry loop for that failure mode).
 
-Tests: [`tests/test_graph.py`](../../tests/test_graph.py) exercises validation, retries, and fallback with a fake LLM.
+Tests: [`tests/test_graph.py`](../backend/tests/test_graph.py) exercises validation, retries, and fallback with a fake LLM.
 
 ---
 
@@ -251,16 +251,16 @@ Tests: [`tests/test_graph.py`](../../tests/test_graph.py) exercises validation, 
 
 | File | Role |
 | --- | --- |
-| [`app/integrations/services.py`](../app/integrations/services.py) | `Services` dataclass, `ServicesDep` |
-| [`app/bootstrap/providers.py`](../app/bootstrap/providers.py) | Chooses Google vs offline implementations |
-| [`app/integrations/places/protocol.py`](../app/integrations/places/protocol.py) | `PlaceProvider` interface |
-| [`app/integrations/places/catalog.py`](../app/integrations/places/catalog.py) | Offline catalog provider |
-| [`app/integrations/places/google.py`](../app/integrations/places/google.py) | Google Places (New) provider |
-| [`app/integrations/routing/protocol.py`](../app/integrations/routing/protocol.py) | `TravelRouter` interface |
-| [`app/integrations/routing/estimates.py`](../app/integrations/routing/estimates.py) | No-op travel times |
-| [`app/integrations/routing/google.py`](../app/integrations/routing/google.py) | Routes API matrices / polylines |
-| [`app/integrations/routing/legs.py`](../app/integrations/routing/legs.py) | `resolve_legs` used by planner and adjustments |
-| [`app/integrations/cache.py`](../app/integrations/cache.py) | TTL cache for Google payloads |
+| [`app/integrations/services.py`](../backend/app/integrations/services.py) | `Services` dataclass, `ServicesDep` |
+| [`app/bootstrap/providers.py`](../backend/app/bootstrap/providers.py) | Chooses Google vs offline implementations |
+| [`app/integrations/places/protocol.py`](../backend/app/integrations/places/protocol.py) | `PlaceProvider` interface |
+| [`app/integrations/places/catalog.py`](../backend/app/integrations/places/catalog.py) | Offline catalog provider |
+| [`app/integrations/places/google.py`](../backend/app/integrations/places/google.py) | Google Places (New) provider |
+| [`app/integrations/routing/protocol.py`](../backend/app/integrations/routing/protocol.py) | `TravelRouter` interface |
+| [`app/integrations/routing/estimates.py`](../backend/app/integrations/routing/estimates.py) | No-op travel times |
+| [`app/integrations/routing/google.py`](../backend/app/integrations/routing/google.py) | Routes API matrices / polylines |
+| [`app/integrations/routing/legs.py`](../backend/app/integrations/routing/legs.py) | `resolve_legs` used by planner and adjustments |
+| [`app/integrations/cache.py`](../backend/app/integrations/cache.py) | TTL cache for Google payloads |
 
 ### How one codebase runs with or without Google
 
@@ -275,9 +275,9 @@ Planning code (`pipeline.py`, `fetch_candidates`, `resolve_legs`) only depends o
 
 ### Testing without credentials
 
-[`tests/conftest.py`](../../tests/conftest.py) `make_client` builds `create_app(Services(...))` with `CatalogPlaceProvider` and `EstimateTravelRouter`, optionally a `FakeStructuredLLM`. No network; same code paths as offline mode.
+[`tests/conftest.py`](../backend/tests/conftest.py) `make_client` builds `create_app(Services(...))` with `CatalogPlaceProvider` and `EstimateTravelRouter`, optionally a `FakeStructuredLLM`. No network; same code paths as offline mode.
 
-[`tests/test_google.py`](../../tests/test_google.py) mocks HTTP with `httpx` transports for Google client behavior.
+[`tests/test_google.py`](../backend/tests/test_google.py) mocks HTTP with `httpx` transports for Google client behavior.
 
 ### Checkpoint: third place provider
 
@@ -301,13 +301,13 @@ Same idea for routing: implement `TravelRouter` and swap in `build_services`.
 
 | Order | File |
 | --- | --- |
-| 1 | [`app/features/adjustments/router.py`](../app/features/adjustments/router.py) |
-| 2 | [`app/features/adjustments/service.py`](../app/features/adjustments/service.py) |
-| 3 | [`app/features/adjustments/repository.py`](../app/features/adjustments/repository.py) |
-| 4 | [`app/features/adjustments/proposals.py`](../app/features/adjustments/proposals.py) — deterministic adjust kinds |
-| 5 | [`app/features/adjustments/agent.py`](../app/features/adjustments/agent.py) — `custom` kind, tool-calling agent |
-| 6 | [`tests/test_api.py`](../../tests/test_api.py) — preview/apply, replace flow |
-| 7 | [`tests/test_graph.py`](../../tests/test_graph.py) — planner validation (parallel skills: fakes, structured output) |
+| 1 | [`app/features/adjustments/router.py`](../backend/app/features/adjustments/router.py) |
+| 2 | [`app/features/adjustments/service.py`](../backend/app/features/adjustments/service.py) |
+| 3 | [`app/features/adjustments/repository.py`](../backend/app/features/adjustments/repository.py) |
+| 4 | [`app/features/adjustments/proposals.py`](../backend/app/features/adjustments/proposals.py) — deterministic adjust kinds |
+| 5 | [`app/features/adjustments/agent.py`](../backend/app/features/adjustments/agent.py) — `custom` kind, tool-calling agent |
+| 6 | [`tests/test_api.py`](../backend/tests/test_api.py) — preview/apply, replace flow |
+| 7 | [`tests/test_graph.py`](../backend/tests/test_graph.py) — planner validation (parallel skills: fakes, structured output) |
 
 ### Preview vs apply
 

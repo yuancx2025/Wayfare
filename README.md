@@ -205,14 +205,3 @@ uv sync
 # TEST_DATABASE_URL must name a PostgreSQL database ending in _test.
 uv run pytest
 ```
-
-## Regenerate planner fixtures
-
-The root package only supplies Vite for loading the frontend TypeScript planner into the backend fixture exporter. It does not run a separate frontend. From the repository root:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm run fixtures
-```
-
-The exporter refreshes the backend catalog and planner parity fixtures from `frontend/src/domain/`.

@@ -1,7 +1,8 @@
 import type { ExpoConfig } from "expo/config";
 
-// Android renders react-native-maps with Google Maps, which needs a key in a development build. iOS uses Apple Maps.
-const androidGoogleMapsApiKey = process.env.GOOGLE_MAPS_ANDROID_KEY;
+// Expo CLI loads frontend/.env before evaluating this file. This key goes into the
+// native Android manifest when building; Expo Go cannot use this configuration.
+const androidGoogleMapsApiKey = process.env.GOOGLE_MAPS_ANDROID_KEY?.trim();
 
 const config: ExpoConfig = {
   name: "travel_companion_expo",
@@ -15,6 +16,7 @@ const config: ExpoConfig = {
     supportsTablet: true,
   },
   android: {
+    package: "com.yuancx2025.wayfare",
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
       foregroundImage: "./assets/android-icon-foreground.png",

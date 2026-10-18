@@ -21,6 +21,7 @@ class MapBoundary extends Component<{ children: ReactNode; fallback: ReactNode }
 export default function TripMap(props: TripMapProps) {
   const { activities, route, selectedId, onSelect, height = 220, fill = false, interactive = true, label = (i: number) => String(i + 1), showOrder = true } = props;
   const mapRef = useRef<MapView>(null);
+  const [mapReady, setMapReady] = useState(false);
   const [tracking, setTracking] = useState(true);
   const legs = useMemo(
     () => (route?.legs ?? []).flatMap((l) => (l.polyline ? [{ key: `${l.fromId}-${l.toId}`, mode: l.mode, path: decodePolyline(l.polyline) }] : [])),
@@ -31,21 +32,22 @@ export default function TripMap(props: TripMapProps) {
     setTracking(true);
     const timer = setTimeout(() => setTracking(false), 400);
     return () => clearTimeout(timer);
-  }, [selectedId, activities]);
+  }, [selectedId, activities, mapReady]);
 
   useEffect(() => {
-    if (!activities.length) return;
+    if (!mapReady || !activities.length) return;
     mapRef.current?.fitToCoordinates(
       activities.map((a) => ({ latitude: a.lat, longitude: a.lng })),
       { edgePadding: { top: 48, right: 40, bottom: interactive ? 72 : 36, left: 40 }, animated: false },
     );
-  }, [activities, interactive, selectedId]);
+  }, [mapReady, activities, interactive, selectedId]);
 
   return (
     <MapBoundary fallback={<TripMapFallback {...props} />}>
       <View style={[styles.wrap, fill ? styles.fill : { height }]}>
         <MapView
           ref={mapRef}
+          onMapReady={() => setMapReady(true)}
           style={StyleSheet.absoluteFill}
           scrollEnabled={interactive}
           zoomEnabled={interactive}

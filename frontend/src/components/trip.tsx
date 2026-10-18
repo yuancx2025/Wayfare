@@ -60,7 +60,7 @@ export function DaySelector({ days, selected, onSelect }: { days: Day[]; selecte
     if (x != null) ref.current?.scrollTo({ x: Math.max(0, x - space[4]), animated: true });
   }, [selected]);
   return (
-    <ScrollView ref={ref} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow} accessibilityRole="tablist">
+    <ScrollView ref={ref} horizontal style={{ flexGrow: 0 }} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow} accessibilityRole="tablist">
       {days.map((d) => {
         const on = selected === d.index;
         return (

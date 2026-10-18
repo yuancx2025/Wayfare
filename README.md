@@ -38,7 +38,7 @@ Run these commands from the repository root. Use Node.js 22 (the version specifi
 ```bash
 cd frontend
 npm ci
-npm start
+npm run start:go
 ```
 
 For a fresh clone, do not create a frontend environment file yet. If you already copied `frontend/.env.example`, clear `EXPO_PUBLIC_API_URL` in your frontend environment files and restart Expo to select offline mode. The example defaults to a backend URL, so copying it unchanged expects a running backend.
@@ -54,7 +54,7 @@ npm --prefix frontend run web
 # iOS simulator
 npm --prefix frontend run ios
 
-# Android emulator
+# Android emulator: build/install our development app (reads the Maps key from .env)
 npm --prefix frontend run android
 ```
 
@@ -144,15 +144,17 @@ The browser uses a map fallback and needs no Maps JavaScript API key. iOS uses A
 
 1. Enable **Maps SDK for Android** and billing in Google Cloud.
 2. Create a separate key with an **Android apps** restriction using your build's actual application/package ID and signing certificate SHA-1. Restrict it to Maps SDK for Android.
-3. Set `GOOGLE_MAPS_ANDROID_KEY` in `frontend/.env.local`, then rebuild the Android app. Restarting Expo alone does not update an embedded native key.
+3. Set `GOOGLE_MAPS_ANDROID_KEY` in `frontend/.env` (or `.env.local`), then run `npm --prefix frontend run android`. This builds and installs our development app, with Android package `com.yuancx2025.wayfare`. Restarting Expo alone does not update an embedded native key.
 
 ```dotenv
-# frontend/.env.local
+# frontend/.env
 EXPO_PUBLIC_API_URL=http://localhost:8000
 GOOGLE_MAPS_ANDROID_KEY=your_android_map_display_key
 ```
 
 This key is embedded in the Android build, so its Android/API restrictions matter. Never use the backend server key here. Follow [Google's Android SDK setup guide](https://developers.google.com/maps/documentation/android-sdk/get-api-key).
+
+After the first native build, `npm --prefix frontend start` starts the development client. Open the installed app on the emulator instead of scanning with Expo Go. Rebuild with `npm --prefix frontend run android` whenever the Android Maps key or native configuration changes. `npm --prefix frontend run android:go` remains available for Expo Go, which uses its own embedded Maps key.
 
 ## Verify setup and troubleshoot
 

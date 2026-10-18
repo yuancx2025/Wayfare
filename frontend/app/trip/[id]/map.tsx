@@ -79,7 +79,7 @@ export default function MapScreen() {
         ref={stripRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: sel ? 168 + insets.bottom : insets.bottom }}
+        style={{ flexGrow: 0, marginBottom: sel ? 168 + insets.bottom : insets.bottom }}
         contentContainerStyle={styles.strip}
       >
         {acts.map((a, i) => (

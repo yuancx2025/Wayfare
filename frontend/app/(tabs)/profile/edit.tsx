@@ -1,26 +1,25 @@
 import { useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { initials } from "@/domain/logic/profile";
 import { profileSchema, type ProfileValues } from "@/domain/schemas";
 import type { Me, ProfilePatch } from "@/domain/types";
 import { ApiError } from "@/lib/api";
+import { goBackToProfile } from "@/lib/back";
 import { errorMessage, useStore } from "@/state/store";
 import { Button, ErrorLine, FieldInput, FormField, Spinner, TopBar } from "@/components/ui";
 import { colors, font, space } from "@/theme";
 
 export default function EditProfile() {
   const { me, hydrated, loadError, refresh } = useStore();
-  const router = useRouter();
   if (!hydrated) {
     return <View style={styles.loading}><Spinner label="Loading your profile" /></View>;
   }
   if (loadError || !me) {
     return (
       <View style={styles.screen}>
-        <TopBar title="Edit profile" onBack={() => router.back()} />
+        <TopBar title="Edit profile" onBack={goBackToProfile} />
         <View style={styles.loading}>
           <ErrorLine message={loadError ?? "Couldn't load your profile."} />
           <Button icon="refresh" onPress={() => { void refresh(); }}>Try again</Button>
@@ -33,7 +32,6 @@ export default function EditProfile() {
 
 function EditProfileForm({ me }: { me: Me }) {
   const { saveProfile } = useStore();
-  const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
   // Captured once so a later setMe cannot replace text the user is already editing.
   const seeded = useRef<ProfileValues>({ name: me.name, home: me.home });
@@ -43,14 +41,15 @@ function EditProfileForm({ me }: { me: Me }) {
   });
   const preview = initials(watch("name"));
 
-  const submit = handleSubmit(async (values) => {
+  const submitInFlight = useRef(false);
+  const validateAndSave = handleSubmit(async (values) => {
     const patch: ProfilePatch = {};
     if (dirtyFields.name) patch.name = values.name;
     if (dirtyFields.home) patch.home = values.home;
     setFormError(null);
     try {
       await saveProfile(patch);
-      router.back();
+      goBackToProfile();
     } catch (e) {
       if (e instanceof ApiError && e.fieldErrors) {
         let applied = false;
@@ -66,9 +65,19 @@ function EditProfileForm({ me }: { me: Me }) {
     }
   });
 
+  const submit = async () => {
+    if (submitInFlight.current || !isDirty) return;
+    submitInFlight.current = true;
+    try {
+      await validateAndSave();
+    } finally {
+      submitInFlight.current = false;
+    }
+  };
+
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <TopBar title="Edit profile" onBack={() => router.back()} />
+      <TopBar title="Edit profile" onBack={goBackToProfile} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.preview}>
           <View style={styles.avatar}><Text style={styles.avatarText}>{preview}</Text></View>
@@ -82,6 +91,7 @@ function EditProfileForm({ me }: { me: Me }) {
               <FormField icon="user" label="Name" error={errors.name?.message}>
                 <FieldInput
                   value={value}
+                  editable={!isSubmitting}
                   onChangeText={(text) => { setFormError(null); onChange(text); }}
                   onBlur={onBlur}
                   placeholder="Your name"
@@ -103,6 +113,7 @@ function EditProfileForm({ me }: { me: Me }) {
               <FormField icon="pin" label="Home location" error={errors.home?.message}>
                 <FieldInput
                   value={value}
+                  editable={!isSubmitting}
                   onChangeText={(text) => { setFormError(null); onChange(text); }}
                   onBlur={onBlur}
                   placeholder="City or region"

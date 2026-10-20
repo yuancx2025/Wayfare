@@ -1,13 +1,12 @@
 import { View, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { goBackToProfile } from "@/lib/back";
 import { EmptyState, TopBar } from "@/components/ui";
 import { colors, space } from "@/theme";
 
 export default function TripHistory() {
-  const router = useRouter();
   return (
     <View style={styles.screen}>
-      <TopBar title="Trip history" onBack={() => router.back()} />
+      <TopBar title="Trip history" onBack={goBackToProfile} />
       <View style={styles.body}>
         <EmptyState
           icon="calendar"

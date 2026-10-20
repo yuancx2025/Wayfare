@@ -1,32 +1,65 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { goBackToProfile } from "@/lib/back";
 import { useStore, errorMessage } from "@/state/store";
 import { prefsEqual } from "@/domain/logic/labels";
 import type { Preferences } from "@/domain/types";
 import PreferencesForm from "@/components/PreferencesForm";
-import { Button, ErrorLine, TopBar } from "@/components/ui";
+import { Button, ErrorLine, Spinner, TopBar } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { colors, font, space } from "@/theme";
 
 export default function ProfilePreferences() {
-  const { defaultPrefs, saveDefaultPrefs, showToast } = useStore();
-  const router = useRouter();
-  const baseline = useRef(defaultPrefs);
-  const [draft, setDraft] = useState<Preferences>(defaultPrefs);
+  const { hydrated, loadError, defaultPrefs, refresh } = useStore();
+
+  if (!hydrated || loadError) {
+    return (
+      <View style={styles.screen}>
+        <TopBar title="Travel preferences" onBack={goBackToProfile} />
+        <View style={styles.status}>
+          {!hydrated ? <Spinner label="Loading your preferences" /> : (
+            <>
+              <ErrorLine message={loadError} />
+              <Button icon="refresh" onPress={() => { void refresh(); }}>Try again</Button>
+            </>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  return <PreferencesEditor defaultPrefs={defaultPrefs} />;
+}
+
+type PreferencesEditorState = { draft: Preferences; baseline: Preferences };
+
+function PreferencesEditor({ defaultPrefs }: { defaultPrefs: Preferences }) {
+  const { saveDefaultPrefs, showToast } = useStore();
+  const [editor, setEditor] = useState<PreferencesEditorState>(() => ({
+    draft: defaultPrefs, baseline: defaultPrefs,
+  }));
+  const { draft } = editor;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dirty = !prefsEqual(draft, defaultPrefs);
   const noInterests = draft.interests.length === 0;
 
   useEffect(() => {
-    setDraft((current) => {
-      const editing = !prefsEqual(current, baseline.current) && !prefsEqual(current, defaultPrefs);
-      if (editing) return current;
-      baseline.current = defaultPrefs;
-      return defaultPrefs;
-    });
+    setEditor((current) => ({
+      draft: prefsEqual(current.draft, current.baseline) ? defaultPrefs : current.draft,
+      baseline: defaultPrefs,
+    }));
   }, [defaultPrefs]);
+
+  const changeDraft = (next: Preferences) => {
+    setError(null);
+    setEditor((current) => ({ ...current, draft: next }));
+  };
+
+  const discard = () => {
+    setError(null);
+    setEditor({ draft: defaultPrefs, baseline: defaultPrefs });
+  };
 
   const save = async () => {
     setSaving(true);
@@ -43,13 +76,13 @@ export default function ProfilePreferences() {
 
   return (
     <View style={styles.screen}>
-      <TopBar title="Travel preferences" onBack={() => router.back()} />
+      <TopBar title="Travel preferences" onBack={goBackToProfile} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.note}>
           <Icon name="alert" size={14} color={colors.muted} />
           <Text style={styles.noteText}>Used to prefill new trips. Saving won't change trips you've already planned.</Text>
         </View>
-        <PreferencesForm value={draft} onChange={(prefs) => { setError(null); setDraft(prefs); }} />
+        <PreferencesForm value={draft} onChange={changeDraft} />
         {noInterests ? <Text style={styles.warn}>Pick at least one interest.</Text> : null}
         <ErrorLine message={error} />
       </ScrollView>
@@ -57,7 +90,7 @@ export default function ProfilePreferences() {
         <View style={styles.row}>
           {dirty ? (
             <View style={{ flex: 1 }}>
-              <Button variant="secondary" onPress={() => { setError(null); setDraft(defaultPrefs); }}>Discard</Button>
+              <Button variant="secondary" disabled={saving} onPress={discard}>Discard</Button>
             </View>
           ) : null}
           <View style={{ flex: 1 }}>
@@ -77,6 +110,7 @@ export default function ProfilePreferences() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
+  status: { flex: 1, justifyContent: "center", padding: space[5], gap: space[4] },
   content: { padding: space[5], paddingBottom: space[6] },
   note: { flexDirection: "row", gap: 6, marginBottom: space[2] },
   noteText: { flex: 1, color: colors.muted, fontFamily: font.body, fontSize: 13, lineHeight: 18 },

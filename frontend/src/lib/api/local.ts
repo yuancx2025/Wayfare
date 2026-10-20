@@ -1,15 +1,17 @@
 import type { Api } from "./types";
 import { ApiError } from "./types";
-import type { DestinationCard, Destination, Me, Proposal, Trip, TripDraft, TripSummary } from "@/domain/types";
-import { loadJSON, saveJSON } from "@/lib/storage";
+import type { DestinationCard, Destination, Me, ProfilePatch, Proposal, Trip, TripDraft, TripSummary } from "@/domain/types";
+import { loadJSON, saveJSON, saveJSONStrict } from "@/lib/storage";
 import { DESTINATIONS, findDestination, getDestination } from "@/domain/data/places";
 import { buildTrip, GenerationError } from "@/domain/logic/generate";
 import { proposeAdjustment, proposeReplacement, replacementCandidates } from "@/domain/logic/adjust";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
+import { initials } from "@/domain/logic/profile";
 import { addDays, todayISO } from "@/domain/lib/format";
-import { preferencesSchema, tripListSchema } from "@/domain/schemas";
+import { preferencesSchema, profileSchema, tripListSchema } from "@/domain/schemas";
 
-const KEYS = { trips: "wayfare.trips.v2", prefs: "wayfare.defaultPrefs.v1" };
+const KEYS = { trips: "wayfare.trips.v2", prefs: "wayfare.defaultPrefs.v1", profile: "wayfare.profile.v1" };
+const DEFAULT_PROFILE = { name: "Alex Rivera", home: "Brooklyn, NY" };
 const STEP_MS = 850;
 const STEPS = 5;
 
@@ -49,9 +51,12 @@ const wait = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve, r
   signal?.addEventListener("abort", () => { clearTimeout(id); reject(abortError()); }, { once: true });
 });
 
+type StoredProfile = { name: string; home: string };
+
 /** Offline stand-in for the FastAPI backend: same contract, backed by AsyncStorage and the bundled catalog. */
 export function createLocalApi(): Api {
   let trips: Trip[] | null = null;
+  let profile: StoredProfile | null = null;
   const proposals = new Map<string, { tripId: string; proposal: Proposal }>();
 
   async function all(): Promise<Trip[]> {
@@ -66,6 +71,26 @@ export function createLocalApi(): Api {
     trips = next;
     await saveJSON(KEYS.trips, next);
   }
+  async function currentProfile(): Promise<StoredProfile> {
+    if (profile) return profile;
+    const parsed = profileSchema.safeParse(await loadJSON<unknown>(KEYS.profile));
+    profile = parsed.success ? parsed.data : { ...DEFAULT_PROFILE };
+    return profile;
+  }
+  function toMe(stored: StoredProfile, list: Trip[]): Me {
+    return {
+      id: "demo-user",
+      name: stored.name,
+      home: stored.home,
+      travelingSince: 2019,
+      initials: initials(stored.name),
+      stats: {
+        trips: list.length,
+        daysPlanned: list.reduce((sum, trip) => sum + trip.days.length, 0),
+        countries: new Set(list.map((trip) => trip.country)).size,
+      },
+    };
+  }
   async function find(id: string): Promise<Trip> {
     const trip = (await all()).find((t) => t.id === id);
     if (!trip) throw new ApiError(404, "Trip not found");
@@ -79,18 +104,20 @@ export function createLocalApi(): Api {
     capabilities: async () => ({ google: false, llm: false, agent: false }),
 
     async getMe(): Promise<Me> {
-      const list = await all();
-      return {
-        id: "demo-user", name: "Alex Rivera", home: "Brooklyn, NY", travelingSince: 2019, initials: "AR",
-        stats: { trips: list.length, daysPlanned: list.reduce((s, t) => s + t.days.length, 0), countries: new Set(list.map((t) => t.country)).size },
-      };
+      return toMe(await currentProfile(), await all());
+    },
+    async updateProfile(patch: ProfilePatch): Promise<Me> {
+      const next = profileSchema.parse({ ...(await currentProfile()), ...patch });
+      await saveJSONStrict(KEYS.profile, next);
+      profile = next;
+      return toMe(profile, await all());
     },
     async getPreferences() {
       const parsed = preferencesSchema.safeParse(await loadJSON<unknown>(KEYS.prefs));
       return parsed.success ? parsed.data : DEFAULT_PREFS;
     },
     async savePreferences(prefs) {
-      await saveJSON(KEYS.prefs, prefs);
+      await saveJSONStrict(KEYS.prefs, prefs);
       return prefs;
     },
 

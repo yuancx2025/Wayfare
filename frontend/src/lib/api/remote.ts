@@ -23,14 +23,33 @@ function userId(): Promise<string> {
   return userIdPromise;
 }
 
-async function errorMessage(res: { status: number; json(): Promise<any> }): Promise<string> {
+function cleanMessage(msg: unknown): string {
+  return String(msg ?? "").replace(/^Value error, /, "");
+}
+
+function fieldFromLoc(loc: unknown): string | undefined {
+  if (!Array.isArray(loc)) return undefined;
+  const parts = loc.filter((part): part is string => typeof part === "string" && part !== "body");
+  return parts.at(-1);
+}
+
+async function readError(res: { status: number; json(): Promise<any> }): Promise<{ message: string; fieldErrors?: Record<string, string> }> {
   try {
     const body = await res.json();
     const detail = body?.detail;
-    if (typeof detail === "string") return detail;
-    if (Array.isArray(detail) && detail[0]?.msg) return String(detail[0].msg).replace(/^Value error, /, "");
+    if (typeof detail === "string") return { message: detail };
+    if (Array.isArray(detail)) {
+      const fieldErrors: Record<string, string> = {};
+      for (const item of detail) {
+        const field = fieldFromLoc(item?.loc);
+        const message = cleanMessage(item?.msg);
+        if (field && message && fieldErrors[field] === undefined) fieldErrors[field] = message;
+      }
+      const message = detail[0]?.msg ? cleanMessage(detail[0].msg) : `Request failed (${res.status})`;
+      return Object.keys(fieldErrors).length ? { message, fieldErrors } : { message };
+    }
   } catch { /* not JSON */ }
-  return `Request failed (${res.status})`;
+  return { message: `Request failed (${res.status})` };
 }
 
 export function createRemoteApi(base: string): Api {
@@ -42,7 +61,10 @@ export function createRemoteApi(base: string): Api {
       ...init,
       headers: await headers(init.body ? { "Content-Type": "application/json" } : undefined),
     });
-    if (!res.ok) throw new ApiError(res.status, await errorMessage(res));
+    if (!res.ok) {
+      const parsed = await readError(res);
+      throw new ApiError(res.status, parsed.message, parsed.fieldErrors);
+    }
     return (res.status === 204 ? undefined : await res.json()) as T;
   }
   const json = (method: string, body: unknown): FetchRequestInit => ({ method, body: JSON.stringify(body) });
@@ -51,6 +73,7 @@ export function createRemoteApi(base: string): Api {
     mode: "remote",
     capabilities: () => request("/health"),
     getMe: () => request("/me"),
+    updateProfile: (patch) => request("/me", json("PATCH", patch)),
     getPreferences: () => request("/me/preferences"),
     savePreferences: (prefs) => request("/me/preferences", json("PUT", prefs)),
 
@@ -70,7 +93,7 @@ export function createRemoteApi(base: string): Api {
           ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
         }),
       });
-      if (!res.ok || !res.body) throw new GenerationError(await errorMessage(res));
+      if (!res.ok || !res.body) throw new GenerationError((await readError(res)).message);
       for await (const { event, data } of readEvents(res.body)) {
         if (event === "step") onStep(data.index);
         else if (event === "done") return data.trip as Trip;

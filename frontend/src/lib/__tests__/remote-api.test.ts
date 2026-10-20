@@ -77,6 +77,29 @@ test.each([409, 410])("proposal status %s remains available to the preview UI", 
     .rejects.toMatchObject({ status, message: "Refresh this preview" });
 });
 
+test("profile validation errors expose a field for each 422 entry", async () => {
+  await AsyncStorage.clear();
+  mockFetch.mockResolvedValue(response({
+    detail: [
+      { loc: ["body", "name"], msg: "String should have at least 1 character" },
+      { loc: ["body", "home"], msg: "Value error, must not be null" },
+    ],
+  }, 422));
+  const patch = { name: "", home: "" };
+  await expect(createRemoteApi("http://localhost:8000").updateProfile(patch)).rejects.toMatchObject({
+    status: 422,
+    message: "String should have at least 1 character",
+    fieldErrors: {
+      name: "String should have at least 1 character",
+      home: "must not be null",
+    },
+  });
+  expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/me", expect.objectContaining({
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  }));
+});
+
 test("optional place details handle missing places but surface provider failures", async () => {
   mockFetch.mockResolvedValueOnce(response({ detail: "Not found" }, 404));
   mockFetch.mockResolvedValueOnce(response({ detail: "Places unavailable" }, 502));

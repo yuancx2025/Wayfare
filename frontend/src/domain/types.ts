@@ -161,6 +161,12 @@ export interface Me {
   stats: { trips: number; daysPlanned: number; countries: number };
 }
 
+/** Fields accepted by `PATCH /me`. Omitted fields are left unchanged. */
+export interface ProfilePatch {
+  name?: string;
+  home?: string;
+}
+
 export interface Capabilities { google: boolean; llm: boolean; agent: boolean }
 
 export interface DayRoute {

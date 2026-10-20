@@ -3,6 +3,11 @@ import { daysBetween, todayISO } from "./lib/format";
 
 const MAX_DAYS = 10;
 
+export const profileSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  home: z.string().trim().max(120),
+});
+
 export const preferencesSchema = z.object({
   pace: z.enum(["relaxed", "balanced", "packed"]),
   interests: z.array(z.enum(["food", "culture", "nature", "museums", "shopping", "nightlife", "architecture"])),

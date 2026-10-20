@@ -4,9 +4,11 @@ import { daysBetween, todayISO } from "./lib/format";
 const MAX_DAYS = 10;
 
 export const profileSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  home: z.string().trim().max(120),
+  name: z.string().trim().min(1, "Enter your name").max(120, "Keep your name to 120 characters"),
+  home: z.string().trim().max(120, "Keep your home to 120 characters"),
 });
+
+export type ProfileValues = z.infer<typeof profileSchema>;
 
 export const preferencesSchema = z.object({
   pace: z.enum(["relaxed", "balanced", "packed"]),

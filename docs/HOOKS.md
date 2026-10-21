@@ -185,9 +185,9 @@ Fetching is disabled in offline mode and while the trip is missing. The hook ret
 
 ### `useCurrentLocation()` — on-request foreground position
 
-**Source:** [src/lib/useCurrentLocation.ts](../frontend/src/lib/useCurrentLocation.ts)
+**Source:** [src/state/location.tsx](../frontend/src/state/location.tsx)
 
-**Why we have it:** Explore's Nearby section and the day map both need the same permission rules, timeouts and failure states. Keeping them in one hook means neither screen can start tracking on its own or forget a state.
+**Why we have it:** Explore's Nearby section, the day map and stop details need the same permission rules, timeouts and failure states, and one fix should serve all three. `LocationProvider` (mounted in `app/_layout.tsx`) owns that state; the hook reads it, like `useTripSession`.
 
 ```tsx
 const loc = useCurrentLocation();
@@ -349,7 +349,7 @@ Paths in this table are relative to `frontend/`.
 
 | File | Hooks called |
 | --- | --- |
-| [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`) |
+| [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`); mounts `LocationProvider` |
 | [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets` |
 | [app/(tabs)/explore.tsx](../frontend/app/%28tabs%29/explore.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useDebounced`, `useQuery` |
 | [app/(tabs)/profile.tsx](../frontend/app/%28tabs%29/profile.tsx) | `useStore`, `useSafeAreaInsets`, `useState`, `useEffect` |
@@ -363,9 +363,9 @@ Paths in this table are relative to `frontend/`.
 | [src/state/tripSession.tsx](../frontend/src/state/tripSession.tsx) | `useState`, `useCallback`, `useMemo`, `useContext` |
 | [src/lib/useDebounced.ts](../frontend/src/lib/useDebounced.ts) | `useState`, `useEffect` |
 | [src/lib/useDayRoute.ts](../frontend/src/lib/useDayRoute.ts) | `useQuery` |
-| [src/lib/useCurrentLocation.ts](../frontend/src/lib/useCurrentLocation.ts) | `useState`, `useRef`, `useEffect`, `useCallback` |
+| [src/state/location.tsx](../frontend/src/state/location.tsx) | `useState`, `useRef`, `useEffect`, `useCallback`, `useMemo`, `useContext` |
 | [src/components/NearbySection.tsx](../frontend/src/components/NearbySection.tsx) | `useCurrentLocation`, `useState`, `useQuery` |
-| [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails` |
+| [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails`, `useCurrentLocation` |
 | [src/components/AdjustDaySheet.tsx](../frontend/src/components/AdjustDaySheet.tsx) | `useStore`, `useState`, `useRef`, `useEffect` |
 | [src/components/TripMap.tsx](../frontend/src/components/TripMap.tsx) | `useRef`, `useState`, `useMemo`, `useEffect` |
 | [src/components/trip.tsx](../frontend/src/components/trip.tsx) | `useRef`, `useEffect` (in `DaySelector`) |

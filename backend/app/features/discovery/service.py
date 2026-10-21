@@ -89,10 +89,13 @@ class PlaceService:
     async def nearby(self, req: NearbyRequest) -> NearbyResults:
         """Closest places to the user's position. The coordinates are used for this request only."""
         here = LatLng(lat=req.lat, lng=req.lng)
+        wanted = NEARBY_CATEGORIES[req.category]
         try:
-            found = await self.services.places.around((req.lat, req.lng), NEARBY_CATEGORIES[req.category], req.radius_m)
+            found = await self.services.places.around((req.lat, req.lng), wanted, req.radius_m)
         except UpstreamError as e:
             raise BadGateway("Nearby search is unavailable right now") from e
+        # Google tags some cafes and markets "tourist_attraction"; keep only what the user picked.
+        found = [p for p in found if p.category in wanted]
         ranked = sorted(((p, round(distance_km(here, p) * 1000)) for p in found), key=lambda pair: pair[1])
         places = [NearbyPlace(place=p, distance_m=d) for p, d in ranked if d <= req.radius_m][:MAX_NEARBY_RESULTS]
         return NearbyResults(source=self.services.places.source, places=places)

@@ -5,6 +5,7 @@ import json
 
 from app.core.exceptions import UpstreamError
 from app.integrations.places.catalog import CatalogPlaceProvider
+from app.integrations.places.catalog_data import catalog_places
 from tests.conftest import FixedRouter
 
 DRAFT = {
@@ -214,3 +215,19 @@ async def test_nearby_search_reports_provider_failure_instead_of_empty_results(m
     client = await make_client(places=DownPlaces())
     response = await client.post("/places/nearby/search", json={"lat": 41.8796, "lng": -87.6237})
     assert response.status_code == 502 and "unavailable" in response.json()["detail"]
+
+
+class MixedPlaces(CatalogPlaceProvider):
+    """Like Google: a search for attractions also returns cafes and markets tagged as attractions."""
+
+    async def around(self, center, categories, radius_m):
+        return catalog_places("chicago")
+
+
+async def test_nearby_search_keeps_only_the_requested_categories(make_client):
+    client = await make_client(places=MixedPlaces())
+    loop = {"lat": 41.8796, "lng": -87.6237, "radiusM": 5000}
+    sights = (await client.post("/places/nearby/search", json={**loop, "category": "attractions"})).json()["places"]
+    assert sights and {p["place"]["category"] for p in sights} <= {"culture", "museums", "nature", "architecture"}
+    food = (await client.post("/places/nearby/search", json={**loop, "category": "food"})).json()["places"]
+    assert food and {p["place"]["category"] for p in food} == {"food"}

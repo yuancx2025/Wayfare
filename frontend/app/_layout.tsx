@@ -9,6 +9,7 @@ import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold
 import * as SplashScreen from "expo-splash-screen";
 import { StoreProvider } from "@/state/store";
 import { TripSessionProvider } from "@/state/tripSession";
+import { LocationProvider } from "@/state/location";
 import { Toast } from "@/components/ui";
 import { useStore } from "@/state/store";
 import { colors } from "@/theme";
@@ -52,10 +53,12 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <StoreProvider>
             <TripSessionProvider>
-              <ThemeProvider value={navTheme}>
-                <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }} />
-                <ToastHost />
-              </ThemeProvider>
+              <LocationProvider>
+                <ThemeProvider value={navTheme}>
+                  <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }} />
+                  <ToastHost />
+                </ThemeProvider>
+              </LocationProvider>
             </TripSessionProvider>
           </StoreProvider>
         </QueryClientProvider>

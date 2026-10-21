@@ -21,16 +21,19 @@ Verified on the iOS Simulator (iPhone 17, Expo Go) with simulated locations, liv
 
 | What | Where |
 | --- | --- |
-| Location hook | `frontend/src/lib/useCurrentLocation.ts` |
+| Shared location state (`LocationProvider`, `useCurrentLocation`) | `frontend/src/state/location.tsx` |
 | Nearby section on Explore | `frontend/src/components/NearbySection.tsx` |
 | "My location" on the day map | `frontend/app/trip/[id]/map.tsx` |
+| "How far am I from here?" on every stop | `frontend/src/components/ActivityDetailSheet.tsx` |
 | Guest-mode ranking (shared rules) | `frontend/src/domain/logic/nearby.ts` |
 | Endpoint and limits | `backend/app/features/discovery/` (`schemas.py`, `service.py`, `places_router.py`) |
 | Provider support | `around()` in `backend/app/integrations/places/` (`protocol.py`, `catalog.py`, `google.py`) |
 
 Decisions worth knowing:
 
-- "Attractions" means culture, museums, nature and architecture; "All" adds food, shopping and nightlife.
+- Nearby opens on **Attractions** (culture, museums, nature, architecture) for travelers; **Food** and **All** (adds shopping and nightlife) are one tap away. The server keeps only the requested categories, because Google tags some cafes and markets as tourist attractions.
+- Nearby shows the 5 closest places with "Show all", and the section can be hidden once results are on screen.
+- One fix is shared by Explore, the day map and stop details (`LocationProvider` at the root), so the user is asked once per session. The position stays in memory only.
 - Google results are ranked by distance (`rankPreference: DISTANCE`). Planner searches keep popularity ranking.
 - User-position searches skip the shared `place_cache`. Its key would keep the position for hours. Each refresh is one Places call.
 - The day map hides the user's dot when they are more than 50 km from that day's stops, and shows the distance instead. Otherwise the map would zoom out to fit both.

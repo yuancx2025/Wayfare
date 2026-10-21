@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { beforeEach, expect, jest, test } from "@jest/globals";
 import { create } from "react-test-renderer";
 import * as Location from "expo-location";
-import { useCurrentLocation, type CurrentLocation } from "@/lib/useCurrentLocation";
+import { LocationProvider, useCurrentLocation, type CurrentLocation } from "@/state/location";
 
 jest.mock("expo-location", () => ({
   Accuracy: { Balanced: 3 },
@@ -24,7 +24,7 @@ function mountHook() {
     result.current = useCurrentLocation();
     return null;
   }
-  act(() => { create(React.createElement(Probe)); });
+  act(() => { create(React.createElement(LocationProvider, null, React.createElement(Probe))); });
   return result as { current: CurrentLocation };
 }
 
@@ -107,4 +107,17 @@ test("a failed read is reported as an error", async () => {
   const hook = mountHook();
   await act(() => hook.current.locate());
   expect(hook.current.status).toBe("error");
+});
+
+test("screens share one fix instead of each asking again", async () => {
+  loc.getForegroundPermissionsAsync.mockResolvedValue(perm(true));
+  loc.getCurrentPositionAsync.mockResolvedValue(fix);
+  const seen: { a?: CurrentLocation; b?: CurrentLocation } = {};
+  function A() { seen.a = useCurrentLocation(); return null; }
+  function B() { seen.b = useCurrentLocation(); return null; }
+  act(() => { create(React.createElement(LocationProvider, null, React.createElement(A), React.createElement(B))); });
+  await act(() => seen.a!.locate());
+  expect(seen.b!.status).toBe("ready");
+  expect(seen.b!.position).toEqual({ lat: 41.8796, lng: -87.6237 });
+  expect(loc.getCurrentPositionAsync).toHaveBeenCalledTimes(1);
 });

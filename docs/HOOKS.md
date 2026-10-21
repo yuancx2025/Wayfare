@@ -44,6 +44,7 @@ The [API adapter](../frontend/src/lib/api/index.ts) chooses the backend when `EX
 | Custom | `useDebounced` | Delay changes to search input |
 | Custom | `useDayRoute` | Fetch route geometry for a trip/day/version |
 | Custom | `usePlaceDetails` | Fetch details for a scheduled activity |
+| Custom | `useCurrentLocation` | Ask for location only on request and take one foreground fix |
 
 `jest.useFakeTimers()` is a test utility, not a React hook. `createContext`, `Controller`, `keepPreviousData`, `withTiming`, and form methods such as `watch` are also not separate hooks.
 
@@ -181,6 +182,21 @@ retry: false
 The key separates trips, itinerary versions, and days. An adjusted trip's new version produces a different cache entry, so its route can be fetched independently. Cached data stays fresh for that key; this does not mean the cache is kept forever.
 
 Fetching is disabled in offline mode and while the trip is missing. The hook returns data or `null`, hiding loading/error information. Without route geometry, the native map can draw an illustrative line connecting stops in visit order rather than road directions.
+
+### `useCurrentLocation()` — on-request foreground position
+
+**Source:** [src/state/location.tsx](../frontend/src/state/location.tsx)
+
+**Why we have it:** Explore's Nearby section, the day map and stop details need the same permission rules, timeouts and failure states, and one fix should serve all three. `LocationProvider` (mounted in `app/_layout.tsx`) owns that state; the hook reads it, like `useTripSession`.
+
+```tsx
+const loc = useCurrentLocation();
+loc.locate(); // asks the first time, then takes one fix; call again to refresh
+```
+
+It returns `status` (`idle`, `locating`, `ready`, `denied`, `blocked`, `off`, `timeout` or `error`), `position`, `approximate` and `openSettings`. Nothing happens until `locate()` is called, so the app never prompts on launch. `blocked` means the user chose "don't ask again"; the screens then offer Settings plus Try again.
+
+Each native call has a timeout (5 s for checks, 15 s for the fix), so the spinner always ends. Only the system permission prompt waits for the user. A `useRef` run counter drops results from an older `locate()` call, and an unmount ref avoids setting state after the screen closes. It takes a single fix with `getCurrentPositionAsync` and never watches the position.
 
 ### `usePlaceDetails(activity, date)` — activity enrichment
 
@@ -333,7 +349,7 @@ Paths in this table are relative to `frontend/`.
 
 | File | Hooks called |
 | --- | --- |
-| [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`) |
+| [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`); mounts `LocationProvider` |
 | [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets` |
 | [app/(tabs)/explore.tsx](../frontend/app/%28tabs%29/explore.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useDebounced`, `useQuery` |
 | [app/(tabs)/profile.tsx](../frontend/app/%28tabs%29/profile.tsx) | `useStore`, `useSafeAreaInsets`, `useState`, `useEffect` |
@@ -342,12 +358,14 @@ Paths in this table are relative to `frontend/`.
 | [app/create/generating.tsx](../frontend/app/create/generating.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useEffect` |
 | [app/trip/[id]/index.tsx](../frontend/app/trip/%5Bid%5D/index.tsx) | `useLocalSearchParams`, `useStore`, `useTripSession`, `useRouter`, `useSafeAreaInsets`, `useState`, `useTrip` |
 | [app/trip/[id]/day/[day].tsx](../frontend/app/trip/%5Bid%5D/day/%5Bday%5D.tsx) | `useLocalSearchParams`, `useStore`, `useTripSession`, `useRouter`, `useTrip`, `useState`, `useRef`, `useEffect`, `useDayRoute` |
-| [app/trip/[id]/map.tsx](../frontend/app/trip/%5Bid%5D/map.tsx) | `useLocalSearchParams`, `useTripSession`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useTrip`, `useEffect`, `useDayRoute` |
+| [app/trip/[id]/map.tsx](../frontend/app/trip/%5Bid%5D/map.tsx) | `useLocalSearchParams`, `useTripSession`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useTrip`, `useCurrentLocation`, `useEffect`, `useDayRoute` |
 | [src/state/store.tsx](../frontend/src/state/store.tsx) | `useReducer`, `useState`, `useRef`, `useCallback`, `useEffect`, `useMemo`, `useContext`, `useStore` (inside `useTrip`) |
 | [src/state/tripSession.tsx](../frontend/src/state/tripSession.tsx) | `useState`, `useCallback`, `useMemo`, `useContext` |
 | [src/lib/useDebounced.ts](../frontend/src/lib/useDebounced.ts) | `useState`, `useEffect` |
 | [src/lib/useDayRoute.ts](../frontend/src/lib/useDayRoute.ts) | `useQuery` |
-| [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails` |
+| [src/state/location.tsx](../frontend/src/state/location.tsx) | `useState`, `useRef`, `useEffect`, `useCallback`, `useMemo`, `useContext` |
+| [src/components/NearbySection.tsx](../frontend/src/components/NearbySection.tsx) | `useCurrentLocation`, `useState`, `useQuery` |
+| [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails`, `useCurrentLocation` |
 | [src/components/AdjustDaySheet.tsx](../frontend/src/components/AdjustDaySheet.tsx) | `useStore`, `useState`, `useRef`, `useEffect` |
 | [src/components/TripMap.tsx](../frontend/src/components/TripMap.tsx) | `useRef`, `useState`, `useMemo`, `useEffect` |
 | [src/components/trip.tsx](../frontend/src/components/trip.tsx) | `useRef`, `useEffect` (in `DaySelector`) |

@@ -71,11 +71,11 @@ class GooglePlacesClient:
         _raise_for(resp)
         return resp.json().get("places", [])
 
-    async def nearby_search(self, lat: float, lng: float, radius_m: float, included_types: list[str], *, max_results: int = 20, fields: list[str] = PLACE_FIELDS) -> list[dict]:
+    async def nearby_search(self, lat: float, lng: float, radius_m: float, included_types: list[str], *, max_results: int = 20, fields: list[str] = PLACE_FIELDS, rank_preference: str = "POPULARITY") -> list[dict]:
         body = {
             "includedTypes": included_types,
             "maxResultCount": max_results,
-            "rankPreference": "POPULARITY",
+            "rankPreference": rank_preference,
             "locationRestriction": {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": radius_m}},
         }
         resp = await self._http.post(f"{BASE}/places:searchNearby", json=body, headers=self._headers(fields, "places."))

@@ -6,6 +6,7 @@ import { DESTINATIONS, findDestination, getDestination } from "@/domain/data/pla
 import { buildTrip, GenerationError } from "@/domain/logic/generate";
 import { proposeAdjustment, proposeReplacement, replacementCandidates } from "@/domain/logic/adjust";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
+import { MAX_NEARBY_RADIUS_M, rankNearby } from "@/domain/logic/nearby";
 import { addDays, todayISO } from "@/domain/lib/format";
 import { preferencesSchema, tripListSchema } from "@/domain/schemas";
 
@@ -132,6 +133,12 @@ export function createLocalApi(): Api {
       const dest = DESTINATIONS.find((d) => d.id === placeId);
       if (!dest) throw new ApiError(404, "Destination not found");
       return card(dest);
+    },
+    async nearbyPlaces(req) {
+      if (req.radiusM !== undefined && (req.radiusM < 100 || req.radiusM > MAX_NEARBY_RADIUS_M)) {
+        throw new ApiError(422, "Pick a radius between 100 m and 5 km.");
+      }
+      return { source: "catalog" as const, places: rankNearby(DESTINATIONS.flatMap((d) => d.places), req) };
     },
     async listDestinations(q) {
       const query = q.trim().toLowerCase();

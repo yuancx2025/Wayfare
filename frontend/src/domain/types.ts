@@ -39,6 +39,25 @@ export interface Place {
   why?: string; // set on replacement alternatives
 }
 
+export type NearbyCategory = "food" | "attractions" | "all";
+
+export interface NearbyRequest {
+  lat: number;
+  lng: number;
+  radiusM?: number; // default 2000, at most 5000
+  category?: NearbyCategory;
+}
+
+export interface NearbyPlace {
+  place: Place;
+  distanceM: number; // straight-line, not a walking route
+}
+
+export interface NearbyResults {
+  source: "catalog" | "google";
+  places: NearbyPlace[];
+}
+
 export interface Destination {
   id: string;
   name: string;

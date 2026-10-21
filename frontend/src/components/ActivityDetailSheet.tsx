@@ -1,7 +1,9 @@
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import type { Activity } from "@/domain/types";
-import { fmtDuration, fmtTime } from "@/domain/lib/format";
+import { fmtDistance, fmtDuration, fmtTime } from "@/domain/lib/format";
+import { distanceKm } from "@/domain/logic/generate";
+import { LOCATION_PROBLEMS, useCurrentLocation } from "@/state/location";
 import { CATEGORY_LABEL, LEG_LABEL } from "@/domain/logic/labels";
 import { api } from "@/lib/api";
 import { BottomSheet, Button } from "./ui";
@@ -48,6 +50,7 @@ export default function ActivityDetailSheet({ activity, number, date, onClose, o
               </View>
             ) : null}
           </View>
+          <DistanceFromYou to={activity} />
           <View style={styles.facts}>
             <Fact label="Starts" value={fmtTime(activity.startMin)} />
             <Fact label="Time here" value={fmtDuration(activity.durationMin)} />
@@ -85,6 +88,40 @@ export default function ActivityDetailSheet({ activity, number, date, onClose, o
         </View>
       ) : null}
     </BottomSheet>
+  );
+}
+
+/** "How far am I?" for this stop. Uses the shared fix; locates only when tapped. */
+function DistanceFromYou({ to }: { to: { lat: number; lng: number } }) {
+  const loc = useCurrentLocation();
+  const problem = LOCATION_PROBLEMS[loc.status];
+  if (loc.status === "ready" && loc.position) {
+    return (
+      <View style={styles.distance}>
+        <Icon name="pin" size={14} color={colors.forest} />
+        <Text style={styles.distanceText}>
+          <Text style={styles.distanceValue}>{fmtDistance(Math.round(distanceKm(loc.position, to) * 1000))}</Text> from you · straight line
+        </Text>
+        <Pressable style={styles.distanceAction} onPress={() => { void loc.locate(); }} accessibilityRole="button" accessibilityLabel="Refresh my location">
+          <Icon name="refresh" size={14} color={colors.forest} />
+        </Pressable>
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      style={styles.distance}
+      onPress={problem?.settings ? loc.openSettings : () => { void loc.locate(); }}
+      disabled={loc.status === "locating"}
+      accessibilityRole="button"
+    >
+      <Icon name="pin" size={14} color={colors.forest} />
+      <Text style={styles.distanceText}>
+        {loc.status === "locating" ? "Finding your location…"
+          : problem ? `${problem.title} · ${problem.settings ? "Open Settings" : "Try again"}`
+          : <Text style={styles.distanceValue}>How far am I from here?</Text>}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -126,6 +163,10 @@ const styles = StyleSheet.create({
   whyLabel: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 0.6, textTransform: "uppercase" },
   hours: { gap: 2 },
   hoursText: { color: colors.muted, fontFamily: font.body, fontSize: 13, lineHeight: 18 },
+  distance: { minHeight: touch, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#f0f6f2", borderRadius: radius.sm, paddingHorizontal: 10 },
+  distanceText: { flex: 1, color: colors.forest, fontFamily: font.body, fontSize: 13 },
+  distanceValue: { fontFamily: font.bodyBold },
+  distanceAction: { width: touch, height: touch, alignItems: "center", justifyContent: "center" },
   links: { flexDirection: "row", flexWrap: "wrap", gap: 16 },
   link: { minHeight: touch, flexDirection: "row", alignItems: "center", gap: 6 },
   linkText: { color: colors.forest, fontFamily: font.bodyBold, fontSize: 14 },

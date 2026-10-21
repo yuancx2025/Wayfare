@@ -134,3 +134,13 @@ describe("local api", () => {
     expect(await createLocalApi().listTrips()).toEqual([]);
   });
 });
+
+describe("local nearbyPlaces", () => {
+  test("labels catalog results and rejects radii above 5 km", async () => {
+    const api = createLocalApi();
+    const res = await api.nearbyPlaces({ lat: 41.8796, lng: -87.6237, category: "food" });
+    expect(res.source).toBe("catalog");
+    expect(res.places.length).toBeGreaterThan(0);
+    await expect(api.nearbyPlaces({ lat: 41.88, lng: -87.62, radiusM: 9000 })).rejects.toMatchObject({ status: 422 });
+  });
+});

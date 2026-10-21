@@ -2,11 +2,12 @@ from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.contracts.travel import Destination, PlaceDetails, Suggestion
+from app.contracts.travel import Destination, LatLng, PlaceDetails, Suggestion
 from app.core.exceptions import BadGateway, Conflict, NotFound, Unprocessable, UpstreamError
-from app.domain.scheduler import is_open_during
+from app.domain.scheduler import distance_km, is_open_during
 from app.features.discovery import repository
 from app.features.discovery.enrichment import enrich
+from app.features.discovery.schemas import MAX_NEARBY_RESULTS, NEARBY_CATEGORIES, NearbyPlace, NearbyRequest, NearbyResults
 from app.integrations.places.catalog_data import catalog_destinations, load_catalog
 from app.integrations.services import Services
 
@@ -84,6 +85,17 @@ class PlaceService:
             return await self.services.places.autocomplete(q, session_token)
         except UpstreamError as e:
             raise BadGateway("Place search is unavailable right now") from e
+
+    async def nearby(self, req: NearbyRequest) -> NearbyResults:
+        """Closest places to the user's position. The coordinates are used for this request only."""
+        here = LatLng(lat=req.lat, lng=req.lng)
+        try:
+            found = await self.services.places.around((req.lat, req.lng), NEARBY_CATEGORIES[req.category], req.radius_m)
+        except UpstreamError as e:
+            raise BadGateway("Nearby search is unavailable right now") from e
+        ranked = sorted(((p, round(distance_km(here, p) * 1000)) for p in found), key=lambda pair: pair[1])
+        places = [NearbyPlace(place=p, distance_m=d) for p, d in ranked if d <= req.radius_m][:MAX_NEARBY_RESULTS]
+        return NearbyResults(source=self.services.places.source, places=places)
 
     async def details(self, place_id: str, on: date | None, start_min: int | None, duration_min: int | None) -> PlaceDetails:
         try:

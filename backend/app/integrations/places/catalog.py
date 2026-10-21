@@ -31,6 +31,10 @@ class CatalogPlaceProvider:
         # The catalog is city-sized, so the radius is ignored (matches the original client-side ranking).
         return [p for p in catalog_places(dest.id) if (p.category in categories if categories else p.category != "food")]
 
+    async def around(self, center: tuple[float, float], categories: list[Category], radius_m: float) -> list[Place]:
+        # Every bundled place in the categories; the caller keeps only those inside the radius.
+        return [p for _, places in load_catalog().values() for p in places if p.category in categories]
+
     async def get_place(self, place_id: str) -> Place | None:
         return catalog_place(place_id)
 

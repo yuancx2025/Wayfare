@@ -10,6 +10,32 @@
 
 This is a planning document. Depends on Sprint 2's authenticated live discovery and Sprint 3's Save Place behavior. Shared capacity and delivery rules are defined in the overall roadmap.
 
+## Status — started early (October 21, 2026)
+
+Implemented ahead of schedule on branch `ziqi/sprint-4-location-nearby`, before Sprints 2 and 3. Two parts wait on those sprints:
+
+- **Authentication:** `POST /places/nearby/search` uses today's `X-User-Id` identity. It moves to Clerk sessions with every other private route in Sprint 2.
+- **Save Place:** nearby results cannot be saved until Sprint 3 adds Save Place.
+
+Verified on the iOS Simulator (iPhone 17, Expo Go) with simulated locations, live Google Places, and the hosted Neon dev database. **Not yet verified on the Android emulator.**
+
+| What | Where |
+| --- | --- |
+| Location hook | `frontend/src/lib/useCurrentLocation.ts` |
+| Nearby section on Explore | `frontend/src/components/NearbySection.tsx` |
+| "My location" on the day map | `frontend/app/trip/[id]/map.tsx` |
+| Guest-mode ranking (shared rules) | `frontend/src/domain/logic/nearby.ts` |
+| Endpoint and limits | `backend/app/features/discovery/` (`schemas.py`, `service.py`, `places_router.py`) |
+| Provider support | `around()` in `backend/app/integrations/places/` (`protocol.py`, `catalog.py`, `google.py`) |
+
+Decisions worth knowing:
+
+- "Attractions" means culture, museums, nature and architecture; "All" adds food, shopping and nightlife.
+- Google results are ranked by distance (`rankPreference: DISTANCE`). Planner searches keep popularity ranking.
+- User-position searches skip the shared `place_cache`. Its key would keep the position for hours. Each refresh is one Places call.
+- The day map hides the user's dot when they are more than 50 km from that day's stops, and shows the distance instead. Otherwise the map would zoom out to fit both.
+- Every native location call has a timeout (5 s for checks, 15 s for a fix). Only the system permission prompt waits indefinitely.
+
 ## Committed implementation
 
 ### Location experience — Frontend owner
@@ -54,14 +80,14 @@ The existing [place-provider contract](../../backend/app/integrations/places/pro
 
 ## Acceptance and handoff
 
-- [ ] Granted permission produces a position and nearby results at a supported simulated location.
-- [ ] Denial, "do not ask again," disabled services, and timeouts leave manual search usable.
-- [ ] Category, distance ordering, and radius filtering work in both adapters.
-- [ ] Catalog mode never presents distant catalog places as nearby.
-- [ ] A nearby item can be saved and reopened.
-- [ ] Provider failures show a recoverable state without fabricating results.
-- [ ] Location activity stops when the interaction ends; no background tracking is introduced.
+- [x] Granted permission produces a position and nearby results at a supported simulated location. *(iOS: Chicago Loop and Chelsea, live Google.)*
+- [x] Denial, "do not ask again," disabled services, and timeouts leave manual search usable. *(Denial checked on iOS; all states covered by `current-location.test.ts`.)*
+- [x] Category, distance ordering, and radius filtering work in both adapters. *(pytest and Jest.)*
+- [x] Catalog mode never presents distant catalog places as nearby.
+- [ ] A nearby item can be saved and reopened. *(Blocked on Sprint 3 Save Place.)*
+- [x] Provider failures show a recoverable state without fabricating results. *(Backend returns 502; the app shows Try again.)*
+- [x] Location activity stops when the interaction ends; no background tracking is introduced. *(One-shot fixes only; no `watchPositionAsync`.)*
 
-**Deliverable:** Location-aware Explore and Map flows demonstrated with simulated coordinates on both platforms.
+**Deliverable:** Location-aware Explore and Map flows demonstrated with simulated coordinates on both platforms. *(iOS done; Android emulator pending.)*
 
 **Deferred:** Background location, geofencing, next-stop directions, and automatic itinerary adjustments.

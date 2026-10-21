@@ -8,12 +8,13 @@ from pathlib import Path
 import pytest
 
 from app.contracts import travel
+from app.features.discovery import schemas as discovery_schemas
 from app.features.planning import schemas as planning_schemas
 
 TYPES_TS = Path(__file__).resolve().parents[2] / "frontend" / "src" / "domain" / "types.ts"
 # Client-only fields that intentionally have no server counterpart.
 CLIENT_ONLY = {"Destination": {"places"}, "TripDraft": {"simulateFailure"}}
-MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripDraft"]
+MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripDraft", "NearbyRequest", "NearbyPlace", "NearbyResults"]
 
 
 def ts_interfaces() -> dict[str, dict[str, bool]]:
@@ -35,7 +36,7 @@ def allows_none(annotation) -> bool:
 @pytest.mark.parametrize("name", MODELS)
 def test_model_matches_typescript_interface(name):
     ts = ts_interfaces()[name]
-    model = getattr(travel, name, None) or getattr(planning_schemas, name)
+    model = getattr(travel, name, None) or getattr(planning_schemas, name, None) or getattr(discovery_schemas, name)
     by_alias = {f.alias or k: f for k, f in model.model_fields.items()}
     for field, optional in ts.items():
         if field in CLIENT_ONLY.get(name, set()):

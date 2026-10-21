@@ -3,6 +3,8 @@
 import asyncio
 import json
 
+from app.core.exceptions import UpstreamError
+from app.integrations.places.catalog import CatalogPlaceProvider
 from tests.conftest import FixedRouter
 
 DRAFT = {
@@ -178,3 +180,37 @@ async def test_expired_postgres_proposal_is_rejected_without_mutating_trip(make_
     response = await client.post(f"/trips/{seed['id']}/proposals/{preview['proposalId']}/apply")
     assert response.status_code == 410
     assert (await client.get(f"/trips/{seed['id']}")).json() == before
+
+
+async def test_nearby_search_ranks_catalog_places_inside_the_radius(make_client):
+    client = await make_client()
+    loop = {"lat": 41.8796, "lng": -87.6237}
+    body = (await client.post("/places/nearby/search", json=loop)).json()
+    dists = [p["distanceM"] for p in body["places"]]
+    assert body["source"] == "catalog" and body["places"][0]["place"]["name"] == "Art Institute of Chicago"
+    assert dists == sorted(dists) and max(dists) <= 2000 and len(dists) <= 20
+    food = (await client.post("/places/nearby/search", json={**loop, "category": "food"})).json()["places"]
+    assert food and {p["place"]["category"] for p in food} == {"food"}
+    sights = (await client.post("/places/nearby/search", json={**loop, "category": "attractions"})).json()["places"]
+    assert sights and "food" not in {p["place"]["category"] for p in sights}
+    wider = (await client.post("/places/nearby/search", json={**loop, "radiusM": 5000})).json()["places"]
+    assert len(wider) > len(dists) and max(p["distanceM"] for p in wider) <= 5000
+
+
+async def test_nearby_search_never_stretches_the_catalog(make_client):
+    client = await make_client()
+    kansas = (await client.post("/places/nearby/search", json={"lat": 39.0, "lng": -98.0, "radiusM": 5000})).json()
+    assert kansas == {"source": "catalog", "places": []}
+    for bad in ({"lat": 41.88, "lng": -87.62, "radiusM": 9000}, {"lat": 95, "lng": 0}, {"lat": 41.88, "lng": -87.62, "category": "bars"}):
+        assert (await client.post("/places/nearby/search", json=bad)).status_code == 422
+
+
+class DownPlaces(CatalogPlaceProvider):
+    async def around(self, center, categories, radius_m):
+        raise UpstreamError("places down")
+
+
+async def test_nearby_search_reports_provider_failure_instead_of_empty_results(make_client):
+    client = await make_client(places=DownPlaces())
+    response = await client.post("/places/nearby/search", json={"lat": 41.8796, "lng": -87.6237})
+    assert response.status_code == 502 and "unavailable" in response.json()["detail"]

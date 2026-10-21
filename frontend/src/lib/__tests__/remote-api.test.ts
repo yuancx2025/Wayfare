@@ -84,3 +84,15 @@ test("optional place details handle missing places but surface provider failures
   expect(await api.placeDetails("missing")).toBeNull();
   await expect(api.placeDetails("upstream-error")).rejects.toMatchObject({ status: 502 });
 });
+
+test("nearby search posts the position and returns the server ranking", async () => {
+  await AsyncStorage.clear();
+  const body = { source: "google", places: [] };
+  mockFetch.mockResolvedValue(response(body));
+  const res = await createRemoteApi("http://localhost:8000").nearbyPlaces({ lat: 41.88, lng: -87.62, radiusM: 2000, category: "food" });
+  const [url, init] = mockFetch.mock.calls[0];
+  expect(String(url)).toBe("http://localhost:8000/places/nearby/search");
+  expect(init?.method).toBe("POST");
+  expect(JSON.parse(init?.body as string)).toEqual({ lat: 41.88, lng: -87.62, radiusM: 2000, category: "food" });
+  expect(res).toEqual(body);
+});

@@ -48,11 +48,14 @@ class TripService:
                     raise
                 return repository.trip_from_row(existing)
 
-    async def replace_day(self, user_id: str, trip_id: str, day: Day) -> Trip:
-        row = await repository.get_trip_row(self.session, user_id, trip_id)
-        if row is None:
-            raise NotFound("Trip not found")
-        return repository.trip_from_row(await repository.replace_day(self.session, row, day))
+    async def apply_day_if_version(self, user_id: str, trip: Trip, day: Day, expected_version: int) -> Trip | None:
+        """Replaces one day of `trip` if the stored trip is still at `expected_version`. The caller commits.
+
+        `trip` must be the snapshot read at `expected_version`; the conditional update refuses the write otherwise.
+        """
+        days = [day.dump() if d.index == day.index else d.dump() for d in trip.days]
+        row = await repository.apply_day_if_version(self.session, user_id, trip.id, days, expected_version)
+        return repository.trip_from_row(row) if row else None
 
     async def day_route(self, trip: Trip, day_index: int, router: TravelRouter) -> DayRoute:
         if not 0 <= day_index < len(trip.days):

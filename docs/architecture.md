@@ -76,7 +76,9 @@ before streaming starts (so errors are plain HTTP errors). The router then strea
 `PlanningService.generate` runs the LangGraph pipeline and saves the trip, then sends `done` or `error`.
 Closing the connection cancels generation.
 - Adjust Day: `preview` computes and stores a proposal without touching the trip; `apply` checks expiry (410)
-and the trip version (409), then writes the day through `TripService.replace_day`.
+and the trip version (409), then writes the day with a conditional `UPDATE ... WHERE version = :expected` through
+`TripService.apply_day_if_version` and deletes the proposal in the same transaction. Both commit together or
+neither does; a concurrent apply that loses the version race gets 409.
 
 
 

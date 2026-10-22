@@ -28,6 +28,12 @@ async def get_proposal(session: AsyncSession, trip_id: str, proposal_id: str) ->
     return row if row and row.trip_id == trip_id else None
 
 
-async def delete_proposal(session: AsyncSession, row: ProposalRow) -> None:
-    await session.delete(row)
-    await session.commit()
+async def consume_proposal(session: AsyncSession, trip_id: str, proposal_id: str) -> str | None:
+    """Deletes the proposal and returns its id, or None if another request already consumed it. Does not commit."""
+    res = await session.execute(
+        delete(ProposalRow)
+        .where(ProposalRow.id == proposal_id, ProposalRow.trip_id == trip_id)
+        .returning(ProposalRow.id)
+        .execution_options(synchronize_session=False)
+    )
+    return res.scalar_one_or_none()

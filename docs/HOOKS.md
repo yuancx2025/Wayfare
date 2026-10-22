@@ -334,9 +334,12 @@ Paths in this table are relative to `frontend/`.
 | File | Hooks called |
 | --- | --- |
 | [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`) |
-| [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets` |
+| [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useToday` |
 | [app/(tabs)/explore.tsx](../frontend/app/%28tabs%29/explore.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useDebounced`, `useQuery` |
-| [app/(tabs)/profile.tsx](../frontend/app/%28tabs%29/profile.tsx) | `useStore`, `useSafeAreaInsets`, `useState`, `useEffect` |
+| [app/(tabs)/profile/index.tsx](../frontend/app/%28tabs%29/profile/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useToday` |
+| [app/(tabs)/profile/edit.tsx](../frontend/app/%28tabs%29/profile/edit.tsx) | `useStore`, `useState`, `useRef`, `useForm` |
+| [app/(tabs)/profile/preferences.tsx](../frontend/app/%28tabs%29/profile/preferences.tsx) | `useStore`, `useState`, `useEffect` |
+| [app/(tabs)/profile/history.tsx](../frontend/app/%28tabs%29/profile/history.tsx) | `useStore`, `useRouter`, `useToday` |
 | [app/create/index.tsx](../frontend/app/create/index.tsx) | `useStore`, `useRouter`, `useForm`, `useEffect`, `useRef`, `useDebounced`, `useQuery`, `useState` |
 | [app/create/preferences.tsx](../frontend/app/create/preferences.tsx) | `useStore`, `useRouter` |
 | [app/create/generating.tsx](../frontend/app/create/generating.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useEffect` |

@@ -19,14 +19,16 @@ jest.mock("@/state/store", () => ({
 jest.mock("@/lib/api", () => jest.requireActual("@/lib/api/types"));
 jest.mock("@/components/Icon", () => ({ Icon: () => null }));
 jest.mock("@/components/PreferencesForm", () => {
-  const React = require("react");
-  return (props: unknown) => React.createElement("PreferencesForm", props);
+  const React = jest.requireActual<typeof import("react")>("react");
+  return function PreferencesForm(props: object) {
+    return React.createElement("PreferencesForm", props);
+  };
 });
 jest.mock("@/components/ui", () => {
-  const React = require("react");
+  const React = jest.requireActual<typeof import("react")>("react");
   return Object.fromEntries(
     ["Button", "ErrorLine", "FieldInput", "FormField", "Spinner", "TopBar"].map((name) => [
-      name, (props: unknown) => React.createElement(name, props),
+      name, (props: object) => React.createElement(name, props),
     ]),
   );
 });

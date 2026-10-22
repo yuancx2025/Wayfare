@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { initials } from "@/domain/logic/profile";
 import { profileSchema, type ProfileValues } from "@/domain/schemas";
@@ -34,12 +34,12 @@ function EditProfileForm({ me }: { me: Me }) {
   const { saveProfile } = useStore();
   const [formError, setFormError] = useState<string | null>(null);
   // Captured once so a later setMe cannot replace text the user is already editing.
-  const seeded = useRef<ProfileValues>({ name: me.name, home: me.home });
-  const { control, handleSubmit, watch, setError, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<ProfileValues>({
-    defaultValues: seeded.current,
+  const [seeded] = useState<ProfileValues>(() => ({ name: me.name, home: me.home }));
+  const { control, handleSubmit, setError, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<ProfileValues>({
+    defaultValues: seeded,
     resolver: zodResolver(profileSchema),
   });
-  const preview = initials(watch("name"));
+  const preview = initials(useWatch({ control, name: "name" }));
 
   const submitInFlight = useRef(false);
   const validateAndSave = handleSubmit(async (values) => {

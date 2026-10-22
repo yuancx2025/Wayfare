@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { goBackToProfile } from "@/lib/back";
 import { useStore, errorMessage } from "@/state/store";
@@ -44,12 +44,13 @@ function PreferencesEditor({ defaultPrefs }: { defaultPrefs: Preferences }) {
   const dirty = !prefsEqual(draft, defaultPrefs);
   const noInterests = draft.interests.length === 0;
 
-  useEffect(() => {
-    setEditor((current) => ({
-      draft: prefsEqual(current.draft, current.baseline) ? defaultPrefs : current.draft,
+  // New defaults replace an untouched draft; an edited draft is kept.
+  if (editor.baseline !== defaultPrefs) {
+    setEditor({
+      draft: prefsEqual(editor.draft, editor.baseline) ? defaultPrefs : editor.draft,
       baseline: defaultPrefs,
-    }));
-  }, [defaultPrefs]);
+    });
+  }
 
   const changeDraft = (next: Preferences) => {
     setError(null);
@@ -80,7 +81,7 @@ function PreferencesEditor({ defaultPrefs }: { defaultPrefs: Preferences }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.note}>
           <Icon name="alert" size={14} color={colors.muted} />
-          <Text style={styles.noteText}>Used to prefill new trips. Saving won't change trips you've already planned.</Text>
+          <Text style={styles.noteText}>{"Used to prefill new trips. Saving won't change trips you've already planned."}</Text>
         </View>
         <PreferencesForm value={draft} onChange={changeDraft} />
         {noInterests ? <Text style={styles.warn}>Pick at least one interest.</Text> : null}

@@ -29,6 +29,8 @@ export default function TripMap(props: TripMapProps) {
   );
 
   useEffect(() => {
+    // Markers redraw their bitmaps only while tracking is on, so a new selection turns it on before the timer turns it off.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pairs with the timer below
     setTracking(true);
     const timer = setTimeout(() => setTracking(false), 400);
     return () => clearTimeout(timer);

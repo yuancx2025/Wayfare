@@ -19,8 +19,6 @@ export default function Generating() {
   const [error, setError] = useState("");
   const [step, setStep] = useState(0);
   const [attempt, setAttempt] = useState(0);
-  const draftRef = useRef(draft);
-  draftRef.current = draft;
   // Shared across retries so a request that succeeded after the client gave up is replayed, not duplicated.
   const idempotencyKey = useRef(randomUUID());
 
@@ -37,9 +35,7 @@ export default function Generating() {
   useEffect(() => {
     // Leaving the screen (Cancel or back) aborts the request.
     const ctrl = new AbortController();
-    setStatus("loading");
-    setStep(0);
-    api.generateTrip(draftRef.current, {
+    api.generateTrip(draft, {
       onStep: (i) => setStep(Math.min(i, messages.length - 1)),
       signal: ctrl.signal,
       idempotencyKey: idempotencyKey.current,
@@ -57,7 +53,7 @@ export default function Generating() {
         setStatus("error");
       });
     return () => ctrl.abort();
-    // Restart only when the user retries.
+    // Restart only when the user retries. Retry updates the draft and `attempt` in one render, so `draft` is current here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt]);
 
@@ -66,14 +62,15 @@ export default function Generating() {
       <View style={[styles.screen, { paddingTop: insets.top + space[6] }]}>
         <View style={styles.body}>
           <View style={styles.errorIcon}><Icon name="alert" size={32} color={colors.forestDark} /></View>
-          <Text style={styles.title}>We couldn't finish your plan</Text>
+          <Text style={styles.title}>{"We couldn't finish your plan"}</Text>
           <Text style={styles.copy}>{error} Your destination, dates and preferences are saved — nothing to re-enter.</Text>
           <View style={styles.actions}>
             <Button
               icon="refresh"
               onPress={() => {
                 updateDraft({ simulateFailure: false });
-                draftRef.current = { ...draftRef.current, simulateFailure: false };
+                setStatus("loading");
+                setStep(0);
                 setAttempt((a) => a + 1);
               }}
             >

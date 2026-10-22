@@ -51,8 +51,11 @@ You can also start a specific target directly from the repository root:
 # Browser
 npm --prefix frontend run web
 
-# iOS simulator
+# iOS simulator in Expo Go
 npm --prefix frontend run ios
+
+# iOS simulator: build/install our development app
+npm --prefix frontend run ios:dev
 
 # Android emulator: build/install our development app (reads the Maps key from .env)
 npm --prefix frontend run android
@@ -196,8 +199,11 @@ From the repository root, after installing the Expo dependencies:
 
 ```bash
 npm --prefix frontend run typecheck
+npm --prefix frontend run lint
 npm --prefix frontend test -- --runInBand
 ```
+
+The full pre-review sequence, including platform bundles and simulator builds, is in [the contributing guide](docs/contributing.md#validation-checklist).
 
 For backend tests:
 

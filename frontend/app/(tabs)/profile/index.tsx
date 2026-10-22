@@ -1,15 +1,20 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { recentPast } from "@/domain/logic/tripHistory";
+import { useToday } from "@/lib/useToday";
 import { useStore } from "@/state/store";
 import { Button, EmptyState, Spinner } from "@/components/ui";
 import { Icon, type IconName } from "@/components/Icon";
+import { TripHistoryRow } from "@/components/trip";
 import { colors, font, radius, space, touch } from "@/theme";
 
 export default function ProfileOverview() {
-  const { me, hydrated, loadError, refresh } = useStore();
+  const { me, summaries, hydrated, loadError, refresh } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const today = useToday();
+  const past = recentPast(summaries, today);
 
   if (!hydrated) {
     return <View style={styles.loading}><Spinner label="Loading your profile" /></View>;
@@ -54,7 +59,21 @@ export default function ProfileOverview() {
           <LinkRow icon="sliders" title="Travel preferences" subtitle="Defaults for your next trip" onPress={() => router.push("/profile/preferences")} />
           <LinkRow icon="calendar" title="Trip history" subtitle="Ongoing, upcoming, and past" onPress={() => router.push("/profile/history")} />
         </View>
-        {/* Recent past trips land here once trip dates are grouped. */}
+        {past.length > 0 ? (
+          <View style={styles.recent}>
+            <View style={styles.recentHead}>
+              <Text style={styles.recentTitle}>Recent past trips</Text>
+              <Pressable onPress={() => router.push("/profile/history")} accessibilityRole="link">
+                <Text style={styles.recentLink}>View history</Text>
+              </Pressable>
+            </View>
+            <View style={{ gap: space[3] }}>
+              {past.map((trip) => (
+                <TripHistoryRow key={trip.id} trip={trip} today={today} onPress={() => router.push(`/trip/${trip.id}`)} />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -105,4 +124,8 @@ const styles = StyleSheet.create({
   linkIcon: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.mint, alignItems: "center", justifyContent: "center" },
   linkTitle: { fontFamily: font.bodyBold, fontSize: 16, color: colors.ink },
   linkSub: { marginTop: 2, fontFamily: font.body, fontSize: 13, color: colors.muted },
+  recent: { paddingHorizontal: space[5], marginTop: space[5], gap: space[3] },
+  recentHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space[3] },
+  recentTitle: { fontFamily: font.displaySemi, fontSize: 18, color: colors.ink },
+  recentLink: { color: colors.forest, fontFamily: font.bodyBold, fontSize: 14 },
 });

@@ -103,6 +103,8 @@ export interface Trip {
   version?: number;
 }
 
+export type TripPhase = "ongoing" | "upcoming" | "past";
+
 export interface TripSummary {
   id: string;
   destinationId: string;

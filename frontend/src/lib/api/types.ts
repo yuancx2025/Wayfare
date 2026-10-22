@@ -24,6 +24,8 @@ export interface Api {
   generateTrip(draft: TripDraft, opts: GenerateOptions): Promise<Trip>;
   /** Offline only: adds the bundled New York sample trip. */
   loadSample?(): Promise<Trip>;
+  /** Offline only: replaces dated history fixtures without using the create-trip form. */
+  loadHistoryFixtures?(): Promise<Trip[]>;
 
   autocomplete(q: string, sessionToken: string): Promise<Suggestion[]>;
   resolveDestination(placeId: string): Promise<DestinationCard>;

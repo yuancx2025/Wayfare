@@ -82,6 +82,8 @@ interface Store extends State {
   saveProfile: (patch: ProfilePatch) => Promise<void>;
   /** Offline only; undefined when the backend is configured. */
   loadSample?: () => Promise<void>;
+  /** Offline only: past, ongoing, and today-boundary trips for history. */
+  loadHistoryFixtures?: () => Promise<void>;
   loadTrip: (id: string) => Promise<Trip>;
   refresh: () => Promise<void>;
   toast: string | null;
@@ -173,6 +175,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ? async () => {
         const trip = await api.loadSample!();
         dispatch({ type: "putTrip", trip });
+        refreshMe();
+      }
+      : undefined,
+    loadHistoryFixtures: api.loadHistoryFixtures
+      ? async () => {
+        const trips = await api.loadHistoryFixtures!();
+        for (const trip of trips) dispatch({ type: "putTrip", trip });
         refreshMe();
       }
       : undefined,

@@ -15,6 +15,35 @@ const DEFAULT_PROFILE = { name: "Alex Rivera", home: "Brooklyn, NY" };
 const STEP_MS = 850;
 const STEPS = 5;
 
+const FIXTURE_PREFS: TripDraft["prefs"] = {
+  ...DEFAULT_PREFS,
+  interests: [...DEFAULT_PREFS.interests],
+  food: [...DEFAULT_PREFS.food],
+};
+
+/** Past, ongoing, and today-boundary trips. Built directly so a past start date never goes through `createTripSchema`. */
+export function historyFixtureTrips(today = todayISO()): Trip[] {
+  const specs: { id: string; destinationId: string; start: number; end: number }[] = [
+    { id: "trip-history-past", destinationId: "chicago", start: -12, end: -8 },
+    { id: "trip-history-ends-today", destinationId: "seattle", start: -2, end: 0 },
+    { id: "trip-history-starts-today", destinationId: "nyc", start: 0, end: 2 },
+    { id: "trip-history-ongoing", destinationId: "san-francisco", start: -1, end: 3 },
+    { id: "trip-history-tomorrow", destinationId: "new-orleans", start: 1, end: 3 },
+  ];
+  return specs.map(({ id, destinationId, start, end }) => {
+    const destination = getDestination(destinationId);
+    return buildTrip(id, destination, {
+      destination: destination.name,
+      destinationId,
+      startDate: addDays(today, start),
+      endDate: addDays(today, end),
+      travelers: 2,
+      simulateFailure: false,
+      prefs: FIXTURE_PREFS,
+    });
+  });
+}
+
 export function sampleTrip(): Trip {
   const start = addDays(todayISO(), 24);
   return buildTrip("trip-nyc-seed", getDestination("nyc"), {
@@ -146,6 +175,13 @@ export function createLocalApi(): Api {
       const sample = sampleTrip();
       await save([sample, ...list]);
       return sample;
+    },
+    async loadHistoryFixtures() {
+      const list = await all();
+      const fixtures = historyFixtureTrips();
+      const ids = new Set(fixtures.map((trip) => trip.id));
+      await save([...fixtures, ...list.filter((trip) => !ids.has(trip.id))]);
+      return fixtures;
     },
 
     async autocomplete(q) {

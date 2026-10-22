@@ -5,6 +5,7 @@ import { readEvents } from "@/lib/api/sse";
 import { createLocalApi } from "@/lib/api/local";
 import { ApiError } from "@/lib/api/types";
 import { addDays, todayISO } from "@/domain/lib/format";
+import { groupTrips } from "@/domain/logic/tripHistory";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import type { TripDraft } from "@/domain/types";
 
@@ -127,6 +128,17 @@ describe("local api", () => {
     await api.loadSample!();
     const list = await api.listTrips();
     expect(list.map((t) => t.id)).toEqual(["trip-nyc-seed"]);
+  });
+
+  test("history fixtures cover past, ongoing, and upcoming without duplicating", async () => {
+    const api = createLocalApi();
+    await api.loadHistoryFixtures!();
+    await api.loadHistoryFixtures!();
+    const list = await api.listTrips();
+    const phases = groupTrips(list, todayISO()).map((section) => section.phase);
+    expect(phases).toEqual(["ongoing", "upcoming", "past"]);
+    expect(new Set(list.map((trip) => trip.id)).size).toBe(list.length);
+    expect(await createLocalApi().listTrips()).toHaveLength(list.length);
   });
 
   test("drops stored trips that don't match the model", async () => {

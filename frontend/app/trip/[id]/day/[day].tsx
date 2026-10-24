@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useStore, useTrip } from "@/state/store";
 import { useDayRoute } from "@/lib/useDayRoute";
@@ -7,7 +7,6 @@ import { useTripSession } from "@/state/tripSession";
 import { fmtDay, fmtDuration, fmtTime, plural } from "@/domain/lib/format";
 import { transportLabel } from "@/domain/logic/labels";
 import { Button, TopBar } from "@/components/ui";
-import { Icon } from "@/components/Icon";
 import TripMap from "@/components/TripMap";
 import { ActivityCard, DaySelector, TransportLeg, TripPlaceholder, freeTimeBefore } from "@/components/trip";
 import ActivityDetailSheet from "@/components/ActivityDetailSheet";

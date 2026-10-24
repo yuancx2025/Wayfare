@@ -7,10 +7,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import * as SplashScreen from "expo-splash-screen";
-import { StoreProvider } from "@/state/store";
+import { StoreProvider, useStore } from "@/state/store";
 import { TripSessionProvider } from "@/state/tripSession";
 import { Toast } from "@/components/ui";
-import { useStore } from "@/state/store";
 import { colors } from "@/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);

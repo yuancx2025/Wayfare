@@ -1,5 +1,5 @@
 import type {
-  Capabilities, DayRoute, DestinationCard, Me, Place, PlaceDetails, Preferences, Proposal, ProposalRequest, Suggestion, Trip,
+  Capabilities, DayRoute, DestinationCard, Me, Place, PlaceDetails, Preferences, ProfilePatch, Proposal, ProposalRequest, Suggestion, Trip,
   TripDraft, TripSummary,
 } from "@/domain/types";
 
@@ -14,6 +14,7 @@ export interface Api {
   mode: "remote" | "local";
   capabilities(): Promise<Capabilities>;
   getMe(): Promise<Me>;
+  updateProfile(patch: ProfilePatch): Promise<Me>;
   getPreferences(): Promise<Preferences>;
   savePreferences(prefs: Preferences): Promise<Preferences>;
 
@@ -23,6 +24,8 @@ export interface Api {
   generateTrip(draft: TripDraft, opts: GenerateOptions): Promise<Trip>;
   /** Offline only: adds the bundled New York sample trip. */
   loadSample?(): Promise<Trip>;
+  /** Offline only: replaces dated history fixtures without using the create-trip form. */
+  loadHistoryFixtures?(): Promise<Trip[]>;
 
   autocomplete(q: string, sessionToken: string): Promise<Suggestion[]>;
   resolveDestination(placeId: string): Promise<DestinationCard>;
@@ -40,8 +43,10 @@ export interface Api {
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  fieldErrors?: Record<string, string>;
+  constructor(status: number, message: string, fieldErrors?: Record<string, string>) {
     super(message);
     this.status = status;
+    this.fieldErrors = fieldErrors;
   }
 }

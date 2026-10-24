@@ -113,7 +113,7 @@ You should be able to say: startup seeds catalog and builds `Services`; each req
 | --- | --- | --- |
 | Used by | HTTP responses, planner output, adjustment previews | Database reads/writes |
 | Shape | Nested `days` with `Activity` objects, camelCase via `.dump()` | Flat columns + `prefs` and `days` as JSON blobs |
-| Versioning | `version` field on the contract | `version` column; incremented in `replace_day` |
+| Versioning | `version` field on the contract | `version` column; incremented in `apply_day_if_version` |
 | Ownership | No `user_id` on contract (scoped in service layer) | `user_id` FK to `users` |
 
 Conversion lives in the trips **repository**: `trip_from_row`, `summary_from_row`, `_trip_row`. Services and other features should use **`Trip`**, not `TripRow`. `TripDep` in `trips/dependencies.py` loads a `Trip` for the current user or 404s before the route handler runs.
@@ -146,9 +146,10 @@ Repositories own commits today (not a unit-of-work wrapper):
 | --- | --- | --- |
 | `get_or_create_user` | Yes, on create | Handles `IntegrityError` for concurrent first requests |
 | `save_default_prefs` | Yes | |
-| `save_trip` / `delete_trip` / `replace_day` | Yes | |
+| `save_trip` / `delete_trip` | Yes | |
 | `create_proposal` | Yes | Also deletes expired proposals in the same transaction |
 | `stage_trip` | No | Used inside user-creation transaction for demo trip |
+| `apply_day_if_version` / `consume_proposal` | No | `AdjustmentService.apply` commits both once, or rolls both back |
 
 **Per-request session:** Most routes use one `SessionDep`. Multiple service calls in one handler share that session until the request ends.
 
@@ -324,7 +325,9 @@ Same idea for routing: implement `TravelRouter` and swap in `build_services`.
 1. Load `ProposalRow` by id and `trip_id`; 404 if missing.
 2. **`expires_at`** vs `utcnow()` → **410 Gone** with message to open Adjust Day again (`proposal_ttl_s`, default 30 minutes). Expired rows are also bulk-deleted when creating new proposals.
 3. **`base_version != trip.version`** → **409 Conflict** (trip changed since preview — e.g. another apply or edit). `trip` here is the current `Trip` from `TripDep`, loaded at request start.
-4. `TripService.replace_day` writes the stored day JSON; `delete_proposal` commits removal of the preview.
+4. `TripService.apply_day_if_version` runs `UPDATE trips ... WHERE id, user_id, version = base_version RETURNING`; no row means another apply won, so 409.
+5. `consume_proposal` deletes the preview with `DELETE ... RETURNING`; no row means another request consumed it, so 410.
+6. One `commit()` for both writes. Any exception, including the 409 and 410 above, rolls both back.
 
 Preview does **not** bump `version`; only apply does.
 
@@ -332,28 +335,19 @@ Preview does **not** bump `version`; only apply does.
 
 `agent.py` builds LangChain tools over a **working copy** of the day (`WorkingDay`), searches places via `services.places.nearby`, then `finish` + `diff_days` like other kinds. Requires `services.agent_enabled` (LLM supports tool binding); otherwise `PlanningError` → 400/503 via `AppError`.
 
-### Concurrent writes (current behavior and gap)
+### Concurrent writes
 
-**What works today**
+`apply` uses a conditional `UPDATE trips ... WHERE version = :expected` instead of `SELECT ... FOR UPDATE` or `SERIALIZABLE`. It is one round trip and works under PostgreSQL's default READ COMMITTED isolation:
 
-- Optimistic check: apply compares `prop.base_version` to current `trip.version`.
-- Two tabs applying the same proposal: second may 409 if the first already applied.
-- Stale proposal after edit: 409.
+- Two different proposals for the same trip: both requests can pass the Python version check. The second `UPDATE` waits for the first to commit, then re-checks `version`, matches no row, and returns 409.
+- The same proposal applied twice: the loser gets 404 if the proposal is already gone when it reads, 409 if it loses the `UPDATE`, or 410 if the `DELETE` finds nothing.
+- Stale proposal after another edit: 409.
 
-**What is not atomic**
+The new `days` JSON is built in Python from the trip read at request start. That is safe only because the `WHERE version = :expected` clause refuses the write when the row has moved on.
 
-`apply` does: read trip version → read proposal → `replace_day` (read row, write, commit) → delete proposal. Two clients with **different** valid proposals could interleave: both pass the version check if they read the same `version` before either commits; last write wins on `days` JSON without comparing proposal ids.
+The session uses `expire_on_commit=False`, so the `TripRow` loaded by `TripDep` is stale after the Core `UPDATE`. The response is built from the `RETURNING` row instead.
 
-**Checkpoint: how would you prevent conflicting applies?**
-
-Reasonable directions (not implemented yet; pick one in a focused PR):
-
-1. **Single SQL update:** `UPDATE trips SET days = :days, version = version + 1 WHERE id = :id AND version = :expected` — if `rowcount == 0`, return 409. Apply and version bump in one statement.
-2. **Row lock:** `SELECT ... FOR UPDATE` on `TripRow` for the duration of apply, combined with the version check.
-3. **Proposal consumption:** `UPDATE proposals SET consumed = true WHERE id = :id AND trip_id = :tid` before mutating trip, or delete proposal first in the same transaction as the trip update.
-4. **ETag / If-Match** on apply endpoint carrying `trip.version` for clearer clients.
-
-Add integration tests that fire two concurrent `apply` requests and assert exactly one succeeds.
+[`tests/test_concurrency.py`](../backend/tests/test_concurrency.py) holds two requests until both have read the trip, then asserts one 200 and one 409. It also checks the same proposal applied twice, a rollback when the proposal delete fails, and that another user gets 404.
 
 ### Tests worth knowing
 

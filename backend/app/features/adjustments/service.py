@@ -11,6 +11,10 @@ from app.features.trips.service import TripService
 from app.integrations.services import Services
 
 
+EXPIRED = "This preview expired. Open Adjust Day again."
+STALE = "This day changed since the preview. Open Adjust Day again."
+
+
 def _alt_key(trip_id: str, day_index: int, activity_id: str) -> str:
     return f"alt:{trip_id}:{day_index}:{activity_id}"[:512]
 
@@ -84,13 +88,22 @@ class AdjustmentService:
         return proposal
 
     async def apply(self, user_id: str, trip: Trip, proposal_id: str) -> Trip:
-        prop = await repository.get_proposal(self.session, trip.id, proposal_id)
-        if prop is None:
-            raise NotFound("Proposal not found")
-        if prop.expires_at < utcnow():
-            raise Gone("This preview expired. Open Adjust Day again.")
-        if prop.base_version != trip.version:
-            raise Conflict("This day changed since the preview. Open Adjust Day again.")
-        updated = await self.trips.replace_day(user_id, trip.id, Day.model_validate(prop.day))
-        await repository.delete_proposal(self.session, prop)
+        """The version check, the day write, and the proposal delete commit together or not at all."""
+        try:
+            prop = await repository.get_proposal(self.session, trip.id, proposal_id)
+            if prop is None:
+                raise NotFound("Proposal not found")
+            if prop.expires_at < utcnow():
+                raise Gone(EXPIRED)
+            if prop.base_version != trip.version:
+                raise Conflict(STALE)
+            updated = await self.trips.apply_day_if_version(user_id, trip, Day.model_validate(prop.day), prop.base_version)
+            if updated is None:
+                raise Conflict(STALE)
+            if await repository.consume_proposal(self.session, trip.id, proposal_id) is None:
+                raise Gone(EXPIRED)
+            await self.session.commit()
+        except BaseException:
+            await self.session.rollback()
+            raise
         return updated

@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type ReactNode } from "react";
-import type { Capabilities, Me, Preferences, Trip, TripDraft, TripSummary } from "@/domain/types";
+import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripSummary } from "@/domain/types";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import { api, ApiError } from "@/lib/api";
 import { summarize } from "@/lib/api/local";
@@ -79,8 +79,11 @@ interface Store extends State {
   putTrip: (trip: Trip, opts?: { isNew?: boolean }) => void;
   deleteTrip: (id: string) => Promise<void>;
   saveDefaultPrefs: (prefs: Preferences) => Promise<void>;
+  saveProfile: (patch: ProfilePatch) => Promise<void>;
   /** Offline only; undefined when the backend is configured. */
   loadSample?: () => Promise<void>;
+  /** Offline only: past, ongoing, and today-boundary trips for history. */
+  loadHistoryFixtures?: () => Promise<void>;
   loadTrip: (id: string) => Promise<Trip>;
   refresh: () => Promise<void>;
   toast: string | null;
@@ -120,7 +123,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  const refreshMe = useCallback(() => { api.getMe().then((me) => dispatch({ type: "setMe", me })).catch(() => undefined); }, []);
+  // A getMe started before the latest profile save must not overwrite that save.
+  const meEpoch = useRef(0);
+  const refreshMe = useCallback(() => {
+    const seen = meEpoch.current;
+    api.getMe().then((me) => {
+      if (seen === meEpoch.current) dispatch({ type: "setMe", me });
+    }).catch(() => undefined);
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -156,10 +166,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const saved = await api.savePreferences(prefs);
       dispatch({ type: "saveDefaultPrefs", prefs: saved });
     },
+    saveProfile: async (patch) => {
+      const mine = ++meEpoch.current;
+      const me = await api.updateProfile(patch);
+      if (mine === meEpoch.current) dispatch({ type: "setMe", me });
+    },
     loadSample: api.loadSample
       ? async () => {
         const trip = await api.loadSample!();
         dispatch({ type: "putTrip", trip });
+        refreshMe();
+      }
+      : undefined,
+    loadHistoryFixtures: api.loadHistoryFixtures
+      ? async () => {
+        const trips = await api.loadHistoryFixtures!();
+        for (const trip of trips) dispatch({ type: "putTrip", trip });
         refreshMe();
       }
       : undefined,

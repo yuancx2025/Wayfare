@@ -43,3 +43,11 @@ async def get_user(session: AsyncSession, user_id: str) -> User | None:
 async def save_default_prefs(session: AsyncSession, user: User, prefs: Preferences) -> None:
     user.default_prefs = prefs.dump()
     await session.commit()
+
+
+async def update_profile(session: AsyncSession, user: User, fields: dict[str, str]) -> None:
+    if "name" in fields:
+        user.name = fields["name"]
+    if "home" in fields:
+        user.home = fields["home"]
+    await session.commit()

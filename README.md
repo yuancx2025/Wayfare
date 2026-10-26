@@ -10,6 +10,8 @@ The full walkthrough above loops automatically without audio. [Watch or download
 
 For the hook inventory, usage, and custom-hook benefits, see [the hooks guide](docs/HOOKS.md).
 
+[Figma Design](https://www.figma.com/design/EyQYceyXYRnBoHiZklYW8s/Untitled?node-id=49-121&t=QggkgPMnNADbJggp-0)
+
 ## First-time setup: choose what you need
 
 Start with the offline app, then add services as needed. Installing the frontend does not require any API keys.

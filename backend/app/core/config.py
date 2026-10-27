@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     proposal_ttl_s: int = 30 * 60
     default_user_id: str = "demo-user"
 
+    # Clerk session verification. CLERK_JWT_KEY (the PEM public key) verifies tokens locally without a network
+    # call; CLERK_SECRET_KEY is the fallback and fetches Clerk's signing keys instead.
+    clerk_secret_key: str | None = None
+    clerk_jwt_key: str | None = None
+    # The Clerk Frontend API URL, e.g. https://your-app.clerk.accounts.dev. Tokens from any other issuer are rejected.
+    clerk_issuer: str | None = None
+    # Web origins allowed to send tokens (matched against the token's `azp`). Native apps send no origin.
+    clerk_authorized_parties: list[str] = Field(default_factory=list)
+
     @field_validator("database_url")
     @classmethod
     def require_postgres(cls, value: str) -> str:

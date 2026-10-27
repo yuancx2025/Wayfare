@@ -199,7 +199,7 @@ export function createLocalApi(): Api {
     },
     async nearbyPlaces(req) {
       if (req.radiusM !== undefined && (req.radiusM < 100 || req.radiusM > MAX_NEARBY_RADIUS_M)) {
-        throw new ApiError(422, "Pick a radius between 100 m and 5 km.");
+        throw new ApiError(422, "Pick a radius between 100 m and 30 km.");
       }
       return { source: "catalog" as const, places: rankNearby(DESTINATIONS.flatMap((d) => d.places), req) };
     },

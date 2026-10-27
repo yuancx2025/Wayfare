@@ -56,7 +56,7 @@ Use foreground location APIs and configure the relevant permission descriptions.
 ### Coordinate-based discovery — Backend owner
 
 - Add authenticated `POST /places/nearby/search` accepting latitude, longitude, radius, and category.
-- Default to a 2 km radius, allow up to 5 km, and return at most 20 results ordered by distance.
+- Default to a 2 km radius, allow up to 30 km, and return at most 20 results ordered by distance. *(Raised from 5 km in review on PR #2: 5 km was too narrow for attractions and restaurants.)*
 - Return normalized places, distance in meters, and the actual result source.
 - Add coordinate-based provider support while preserving existing planner/adjustment calls.
 - Reuse Google's nearby-search client for live results.

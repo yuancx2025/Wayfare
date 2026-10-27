@@ -13,7 +13,7 @@ NEARBY_CATEGORIES: dict[NearbyCategory, list[Category]] = {
     "all": ["food", "culture", "museums", "nature", "architecture", "shopping", "nightlife"],
 }
 DEFAULT_NEARBY_RADIUS_M = 2000
-MAX_NEARBY_RADIUS_M = 5000
+MAX_NEARBY_RADIUS_M = 30000
 MAX_NEARBY_RESULTS = 20
 
 

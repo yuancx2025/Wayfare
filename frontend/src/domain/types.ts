@@ -44,7 +44,7 @@ export type NearbyCategory = "food" | "attractions" | "all";
 export interface NearbyRequest {
   lat: number;
   lng: number;
-  radiusM?: number; // default 2000, at most 5000
+  radiusM?: number; // default 2000, at most 30000
   category?: NearbyCategory;
 }
 

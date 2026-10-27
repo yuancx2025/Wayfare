@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DESTINATIONS } from "@/domain/data/places";
 import { fmtDistance } from "@/domain/lib/format";
 import { interestLabel } from "@/domain/logic/labels";
-import { DEFAULT_NEARBY_RADIUS_M, MAX_NEARBY_RADIUS_M } from "@/domain/logic/nearby";
+import { DEFAULT_NEARBY_RADIUS_M, NEARBY_RADIUS_STEPS } from "@/domain/logic/nearby";
 import type { NearbyCategory } from "@/domain/types";
 import { api } from "@/lib/api";
 import { LOCATION_PROBLEMS, useCurrentLocation } from "@/state/location";
@@ -39,6 +39,7 @@ export function NearbySection() {
   const problem = LOCATION_PROBLEMS[loc.status];
   const places = nearby.data?.places ?? [];
   const visible = showAll ? places : places.slice(0, PREVIEW_COUNT);
+  const wider = NEARBY_RADIUS_STEPS.find((r) => r > radiusM);
   const locate = () => { void loc.locate(); };
 
   return (
@@ -100,8 +101,8 @@ export function NearbySection() {
               body={nearby.data.source === "catalog"
                 ? `Without live places, Wayfare only knows ${CATALOG_CITIES}.`
                 : "Try another category or a wider radius."}
-              action={radiusM < MAX_NEARBY_RADIUS_M
-                ? <Button variant="secondary" onPress={() => setRadiusM(MAX_NEARBY_RADIUS_M)}>Search within 5 km</Button>
+              action={wider
+                ? <Button variant="secondary" onPress={() => setRadiusM(wider)}>Search within {fmtDistance(wider)}</Button>
                 : undefined}
             />
           ) : (

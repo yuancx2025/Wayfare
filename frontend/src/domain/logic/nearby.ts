@@ -2,7 +2,9 @@ import type { Category, NearbyCategory, NearbyPlace, NearbyRequest, Place } from
 import { distanceKm } from "./generate";
 
 export const DEFAULT_NEARBY_RADIUS_M = 2000;
-export const MAX_NEARBY_RADIUS_M = 5000;
+export const MAX_NEARBY_RADIUS_M = 30000;
+// "Search wider" steps when nothing is close by.
+export const NEARBY_RADIUS_STEPS = [2000, 10000, MAX_NEARBY_RADIUS_M];
 const MAX_NEARBY_RESULTS = 20;
 
 // Same groups as NEARBY_CATEGORIES in backend/app/features/discovery/schemas.py.

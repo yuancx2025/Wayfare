@@ -254,9 +254,9 @@ async def test_nearby_search_ranks_catalog_places_inside_the_radius(make_client)
 
 async def test_nearby_search_never_stretches_the_catalog(make_client):
     client = await make_client()
-    kansas = (await client.post("/places/nearby/search", json={"lat": 39.0, "lng": -98.0, "radiusM": 5000})).json()
+    kansas = (await client.post("/places/nearby/search", json={"lat": 39.0, "lng": -98.0, "radiusM": 30000})).json()
     assert kansas == {"source": "catalog", "places": []}
-    for bad in ({"lat": 41.88, "lng": -87.62, "radiusM": 9000}, {"lat": 95, "lng": 0}, {"lat": 41.88, "lng": -87.62, "category": "bars"}):
+    for bad in ({"lat": 41.88, "lng": -87.62, "radiusM": 40000}, {"lat": 95, "lng": 0}, {"lat": 41.88, "lng": -87.62, "category": "bars"}):
         assert (await client.post("/places/nearby/search", json=bad)).status_code == 422
 
 

@@ -123,7 +123,7 @@ Change the subtitle under **Create Trip** in the Trips screen. Next, trace how `
 | 3 | [`app/create/index.tsx`](../frontend/app/create/index.tsx) | Form fields, `Controller`, date picker, autocomplete |
 | 4 | [`src/domain/schemas.ts`](../frontend/src/domain/schemas.ts) | Zod validation and 10-day trip limit |
 | 5 | [`app/create/preferences.tsx`](../frontend/app/create/preferences.tsx), [`src/components/PreferencesForm.tsx`](../frontend/src/components/PreferencesForm.tsx) | Shared preference form for a specific trip |
-| 6 | [`app/(tabs)/profile.tsx`](../frontend/app/%28tabs%29/profile.tsx) | Persistent profile defaults, dirty/saving state |
+| 6 | [`app/(tabs)/profile/edit.tsx`](../frontend/app/%28tabs%29/profile/edit.tsx), [`app/(tabs)/profile/preferences.tsx`](../frontend/app/%28tabs%29/profile/preferences.tsx) | Profile name and home form, persistent preference defaults, dirty/saving state |
 | 7 | [`app/(tabs)/explore.tsx`](../frontend/app/%28tabs%29/explore.tsx), [`src/lib/useDebounced.ts`](../frontend/src/lib/useDebounced.ts) | Search query caching and starting a draft from Explore |
 
 ### Four distinct kinds of state

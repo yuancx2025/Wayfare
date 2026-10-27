@@ -164,6 +164,60 @@ async def test_replace_flow_uses_alternatives(make_client):
     assert custom.status_code == 400 and "LLM" in custom.json()["detail"]
 
 
+async def test_patch_profile_applies_partial_trimmed_updates(make_client):
+    client = await make_client()
+    before = (await client.get("/me")).json()
+    assert (await client.patch("/me", json={})).json() == before
+
+    home_only = (await client.patch("/me", json={"home": "  Queens, NY  "})).json()
+    assert home_only["name"] == "Traveler" and home_only["home"] == "Queens, NY" and home_only["initials"] == "T"
+    assert home_only["stats"] == before["stats"]
+
+    renamed = (await client.patch("/me", json={"name": "  Ada Lovelace  "})).json()
+    assert renamed["name"] == "Ada Lovelace" and renamed["home"] == "Queens, NY" and renamed["initials"] == "AL"
+
+    assert (await client.patch("/me", json={"home": "   "})).json()["home"] == ""
+    cleared = (await client.patch("/me", json={"home": ""})).json()
+    assert cleared["name"] == "Ada Lovelace" and cleared["home"] == ""
+    assert (await client.get("/me/preferences")).json()["pace"] == "balanced"
+
+
+async def test_patch_profile_rejects_invalid_payloads(make_client):
+    client = await make_client()
+    before = (await client.get("/me")).json()
+    long = "x" * 121
+    payloads = [
+        {"name": ""},
+        {"name": "   "},
+        {"name": long},
+        {"home": long},
+        {"name": None},
+        {"home": None},
+        {"name": 12},
+        {"id": "x"},
+        {"stats": {"trips": 1, "daysPlanned": 0, "countries": 0}},
+        {"travelingSince": 2020},
+    ]
+    for payload in payloads:
+        response = await client.patch("/me", json=payload)
+        assert response.status_code == 422, payload
+    assert (await client.get("/me")).json() == before
+
+
+async def test_patch_profile_persists_and_stays_scoped_to_the_user(make_client):
+    client = await make_client()
+    assert (await client.patch("/me", json={"name": "Kept", "home": "Boston"})).status_code == 200
+
+    again = await make_client()
+    me = (await again.get("/me")).json()
+    assert me["name"] == "Kept" and me["home"] == "Boston" and me["initials"] == "K"
+
+    demo = (await again.get("/me", headers={"X-User-Id": "demo-user"})).json()
+    assert demo["name"] == "Alex Rivera" and demo["home"] == "Brooklyn, NY"
+    other = (await again.get("/me", headers={"X-User-Id": "other-user"})).json()
+    assert other["name"] == "Traveler" and other["home"] == ""
+
+
 async def test_expired_postgres_proposal_is_rejected_without_mutating_trip(make_client):
     from datetime import timedelta
     from app.db.base import utcnow

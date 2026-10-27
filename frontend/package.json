@@ -38,6 +38,8 @@
     "@react-native/jest-preset": "^0.86.3",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
     "jest": "^30.5.2",
     "jest-expo": "^57.0.5",
     "typescript": "~6.0.3"
@@ -46,10 +48,13 @@
     "start": "expo start",
     "start:go": "expo start --go",
     "android": "expo run:android",
+    "android:dev": "expo run:android",
     "android:go": "expo start --go --android",
     "ios": "expo start --go --ios",
+    "ios:dev": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "lint": "expo lint",
     "test": "jest"
   },
   "jest": {

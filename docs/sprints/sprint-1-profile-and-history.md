@@ -20,7 +20,7 @@ This is a planning document. Shared capacity, release boundaries, and delivery r
 - Show name, home location, initials avatar, planned-trip statistics, and recent past trips.
 - Prepare lightweight Figma wireframes for these four screens before implementing their layout.
 
-The existing [Profile screen](../../frontend/app/%28tabs%29/profile.tsx) supplies the starting profile and preference functionality.
+The [Profile stack](../../frontend/app/%28tabs%29/profile/) holds the [overview](../../frontend/app/%28tabs%29/profile/index.tsx), [Edit Profile](../../frontend/app/%28tabs%29/profile/edit.tsx), [Travel Preferences](../../frontend/app/%28tabs%29/profile/preferences.tsx), and [Trip History](../../frontend/app/%28tabs%29/profile/history.tsx) screens.
 
 ### Profile persistence — Backend owner
 

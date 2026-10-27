@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import Row, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts.travel import Day, Preferences, Trip
+from app.db.base import utcnow
 from app.features.trips.models import TripRow
 from app.features.trips.schemas import TripSummary
 
@@ -19,7 +20,7 @@ def _trip_row(user_id: str, trip: Trip, idempotency_key: str | None) -> TripRow:
     )
 
 
-def trip_from_row(row: TripRow) -> Trip:
+def trip_from_row(row: TripRow | Row) -> Trip:
     return Trip(
         id=row.id, destination_id=row.destination_id, destination=row.destination, country=row.country,
         image=row.image, start_date=row.start_date, end_date=row.end_date, travelers=row.travelers,
@@ -71,11 +72,14 @@ async def delete_trip(session: AsyncSession, row: TripRow) -> None:
     await session.commit()
 
 
-async def replace_day(session: AsyncSession, row: TripRow, day: Day) -> TripRow:
-    days = list(row.days)
-    days[day.index] = day.dump()
-    row.days = days
-    row.adjusted = True
-    row.version += 1
-    await session.commit()
-    return row
+async def apply_day_if_version(session: AsyncSession, user_id: str, trip_id: str, days: list[dict], expected: int) -> Row | None:
+    """Writes `days` only while the stored version is still `expected`. Returns the updated row, or None. Does not commit."""
+    trips = TripRow.__table__
+    res = await session.execute(
+        update(trips)
+        .where(trips.c.id == trip_id, trips.c.user_id == user_id, trips.c.version == expected)
+        # `onupdate` only runs for ORM flushes, so `updated_at` is set here.
+        .values(days=days, adjusted=True, version=trips.c.version + 1, updated_at=utcnow())
+        .returning(*trips.c)
+    )
+    return res.one_or_none()

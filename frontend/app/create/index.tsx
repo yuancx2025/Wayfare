@@ -37,6 +37,8 @@ export default function CreateTrip() {
   }, [draftNonce]);
 
   useEffect(() => {
+    // React Compiler is not enabled; this subscription mirrors the form into the trip draft.
+    // eslint-disable-next-line react-hooks/incompatible-library
     const sub = watch((values) => {
       updateDraft({
         destination: values.destination ?? "",
@@ -94,7 +96,7 @@ export default function CreateTrip() {
       <Progress step={1} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.pageTitle}>Where and when?</Text>
-        <Text style={styles.subtitle}>The basics. Next you'll set your pace and interests.</Text>
+        <Text style={styles.subtitle}>{"The basics. Next you'll set your pace and interests."}</Text>
         <Controller
           control={control}
           name="destination"

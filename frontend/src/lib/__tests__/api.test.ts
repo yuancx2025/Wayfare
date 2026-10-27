@@ -5,6 +5,7 @@ import { readEvents } from "@/lib/api/sse";
 import { createLocalApi } from "@/lib/api/local";
 import { ApiError } from "@/lib/api/types";
 import { addDays, todayISO } from "@/domain/lib/format";
+import { groupTrips } from "@/domain/logic/tripHistory";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import type { TripDraft } from "@/domain/types";
 
@@ -129,9 +130,74 @@ describe("local api", () => {
     expect(list.map((t) => t.id)).toEqual(["trip-nyc-seed"]);
   });
 
+  test("history fixtures cover past, ongoing, and upcoming without duplicating", async () => {
+    const api = createLocalApi();
+    await api.loadHistoryFixtures!();
+    await api.loadHistoryFixtures!();
+    const list = await api.listTrips();
+    const phases = groupTrips(list, todayISO()).map((section) => section.phase);
+    expect(phases).toEqual(["ongoing", "upcoming", "past"]);
+    expect(new Set(list.map((trip) => trip.id)).size).toBe(list.length);
+    expect(await createLocalApi().listTrips()).toHaveLength(list.length);
+  });
+
   test("drops stored trips that don't match the model", async () => {
     await AsyncStorage.setItem("wayfare.trips.v2", JSON.stringify([{ id: 1 }]));
     expect(await createLocalApi().listTrips()).toEqual([]);
+  });
+
+  test("profile edits survive a new local api and leave other keys alone", async () => {
+    const api = createLocalApi();
+    await api.savePreferences({ ...DEFAULT_PREFS, pace: "packed" });
+    const { trip } = await generate(api);
+    const saved = await api.updateProfile({ name: "  Sam Lee  " });
+    expect(saved).toMatchObject({
+      id: "demo-user", name: "Sam Lee", home: "Brooklyn, NY", initials: "SL", travelingSince: 2019,
+    });
+    expect(saved.stats.trips).toBe(1);
+
+    const me = await createLocalApi().getMe();
+    expect(me).toMatchObject({ name: "Sam Lee", home: "Brooklyn, NY", initials: "SL", travelingSince: 2019 });
+    expect(me.stats.trips).toBe(1);
+    expect(JSON.parse((await AsyncStorage.getItem("wayfare.defaultPrefs.v1"))!).pace).toBe("packed");
+    expect(JSON.parse((await AsyncStorage.getItem("wayfare.trips.v2"))!)[0].id).toBe(trip.id);
+
+    const cleared = await createLocalApi().updateProfile({ home: "" });
+    expect(cleared).toMatchObject({ name: "Sam Lee", home: "" });
+  });
+
+  test("a missing or invalid profile keeps the defaults", async () => {
+    const me = await createLocalApi().getMe();
+    expect(me).toMatchObject({ name: "Alex Rivera", home: "Brooklyn, NY", initials: "AR", travelingSince: 2019 });
+    expect(me.stats).toEqual({ trips: 0, daysPlanned: 0, countries: 0 });
+    expect(await AsyncStorage.getItem("wayfare.profile.v1")).toBeNull();
+
+    await AsyncStorage.setItem("wayfare.profile.v1", JSON.stringify({ name: "" }));
+    expect(await createLocalApi().getMe()).toMatchObject({ name: "Alex Rivera", home: "Brooklyn, NY" });
+  });
+
+  test("a rejected profile write leaves the stored and cached profile unchanged", async () => {
+    const api = createLocalApi();
+    await api.updateProfile({ name: "Sam Lee" });
+    const setItem = jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("quota"));
+    try {
+      await expect(api.updateProfile({ name: "Pat Kim" })).rejects.toThrow(/quota/);
+      expect(await api.getMe()).toMatchObject({ name: "Sam Lee", initials: "SL" });
+      expect(JSON.parse((await AsyncStorage.getItem("wayfare.profile.v1"))!)).toEqual({ name: "Sam Lee", home: "Brooklyn, NY" });
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  test("preference writes surface storage failures", async () => {
+    const api = createLocalApi();
+    const setItem = jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("quota"));
+    try {
+      await expect(api.savePreferences(DEFAULT_PREFS)).rejects.toThrow(/quota/);
+      expect(await AsyncStorage.getItem("wayfare.defaultPrefs.v1")).toBeNull();
+    } finally {
+      setItem.mockRestore();
+    }
   });
 });
 

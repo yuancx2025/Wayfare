@@ -45,11 +45,14 @@ export default function AdjustDaySheet({ open, trip, dayIndex, onClose, onApplie
   const seq = useRef(0);
   const day = trip.days[dayIndex];
 
+  // Reopening the sheet, switching days, or a new trip version starts a fresh adjustment.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset is keyed to props, not derived from them
     if (open) setError(null);
   }, [open, dayIndex]);
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset is keyed to props, not derived from them
     setStep({ name: "menu" });
     setProposals({});
     setBusy(null);

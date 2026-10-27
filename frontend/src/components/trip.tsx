@@ -3,28 +3,25 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import type { Activity, Day, Leg, Preferences, TripSummary } from "@/domain/types";
-import { daysBetween, fmtDayNum, fmtDuration, fmtRange, fmtTime, fmtWeekday, plural, todayISO } from "@/domain/lib/format";
+import { fmtDayNum, fmtDuration, fmtRange, fmtTime, fmtWeekday, plural } from "@/domain/lib/format";
+import { statusLabel } from "@/domain/logic/tripHistory";
 import { CATEGORY_LABEL, budgetLabel, foodLabel, interestLabel, paceLabel, transportLabel } from "@/domain/logic/labels";
 import { Icon, type IconName } from "./Icon";
 import { Button, EmptyState, Spinner } from "./ui";
 import { api } from "@/lib/api";
 import { colors, font, radius, space } from "@/theme";
 
-export function tripStatus(trip: { startDate: string; endDate: string }) {
-  const today = todayISO();
-  const until = daysBetween(today, trip.startDate);
-  if (daysBetween(trip.endDate, today) > 0) return "Completed";
-  if (until <= 0) return "Happening now";
-  return until === 1 ? "Tomorrow" : `In ${until} days`;
+export function tripStatus(trip: { startDate: string; endDate: string }, today: string) {
+  return statusLabel(trip, today);
 }
 
-export function TripCard({ trip, onPress }: { trip: TripSummary; onPress: () => void }) {
+export function TripCard({ trip, today, onPress }: { trip: TripSummary; today: string; onPress: () => void }) {
   return (
     <Pressable style={styles.card} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${trip.destination} trip`}>
       <Image source={{ uri: api.imageUrl(trip.image) }} style={StyleSheet.absoluteFill} contentFit="cover" />
       <LinearGradient colors={["rgba(0,0,0,0.05)", "rgba(6,24,19,0.84)"]} style={StyleSheet.absoluteFill} />
       <View style={styles.badges}>
-        <Text style={styles.badgeLight}>{tripStatus(trip)}</Text>
+        <Text style={styles.badgeLight}>{tripStatus(trip, today)}</Text>
         <Text style={styles.badgeForest}>{trip.adjusted ? "Adjusted" : "Itinerary ready"}</Text>
       </View>
       <View style={styles.cardCopy}>
@@ -32,6 +29,20 @@ export function TripCard({ trip, onPress }: { trip: TripSummary; onPress: () => 
         <Text style={styles.cardTitle}>{trip.destination}, {trip.country}</Text>
         <Text style={styles.cardFoot}>{plural(trip.travelers, "traveler")} · {trip.stopCount} stops planned</Text>
       </View>
+    </Pressable>
+  );
+}
+
+export function TripHistoryRow({ trip, today, onPress }: { trip: TripSummary; today: string; onPress: () => void }) {
+  return (
+    <Pressable style={styles.historyRow} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${trip.destination} trip`}>
+      <Image source={{ uri: api.imageUrl(trip.image) }} style={styles.historyImage} contentFit="cover" />
+      <View style={styles.historyCopy}>
+        <Text style={styles.historyStatus}>{tripStatus(trip, today)}</Text>
+        <Text style={styles.historyTitle} numberOfLines={1}>{trip.destination}</Text>
+        <Text style={styles.historyMeta} numberOfLines={1}>{fmtRange(trip.startDate, trip.endDate)} · {plural(trip.dayCount, "day")}</Text>
+      </View>
+      <Icon name="chevron" size={18} color={colors.muted} />
     </Pressable>
   );
 }
@@ -180,6 +191,12 @@ const styles = StyleSheet.create({
   cardMeta: { color: "rgba(255,255,255,0.82)", fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase" },
   cardTitle: { marginTop: 4, color: colors.white, fontFamily: font.display, fontSize: 26 },
   cardFoot: { marginTop: 6, color: "rgba(255,255,255,0.92)", fontFamily: font.body, fontSize: 13 },
+  historyRow: { minHeight: 88, flexDirection: "row", alignItems: "center", gap: space[3], padding: space[3], borderRadius: radius.lg, backgroundColor: colors.cream },
+  historyImage: { width: 64, height: 64, borderRadius: radius.sm, backgroundColor: colors.ink },
+  historyCopy: { flex: 1, gap: 2 },
+  historyStatus: { color: colors.forest, fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 0.6, textTransform: "uppercase" },
+  historyTitle: { color: colors.ink, fontFamily: font.displaySemi, fontSize: 16 },
+  historyMeta: { color: colors.muted, fontFamily: font.body, fontSize: 13 },
   dayRow: { paddingHorizontal: space[5], paddingVertical: space[2], gap: space[2] },
   dayPill: { minWidth: 62, minHeight: 68, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.line, backgroundColor: colors.white, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
   dayPillOn: { backgroundColor: colors.forest, borderColor: colors.forest },

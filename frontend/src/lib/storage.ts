@@ -16,6 +16,9 @@ export const storage = {
       /* quota or private mode */
     }
   },
+  async setItemStrict(key: string, value: string): Promise<void> {
+    await AsyncStorage.setItem(key, value);
+  },
   async removeItem(key: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(key);
@@ -36,3 +39,6 @@ export async function loadJSON<T>(key: string): Promise<T | null> {
 }
 
 export const saveJSON = (key: string, value: unknown) => storage.setItem(key, JSON.stringify(value));
+
+/** Like `saveJSON`, but a failed write rejects instead of being ignored. */
+export const saveJSONStrict = (key: string, value: unknown) => storage.setItemStrict(key, JSON.stringify(value));

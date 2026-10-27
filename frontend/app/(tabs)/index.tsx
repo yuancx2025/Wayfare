@@ -1,6 +1,8 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { groupTrips } from "@/domain/logic/tripHistory";
+import { useToday } from "@/lib/useToday";
 import { useStore } from "@/state/store";
 import { Button, EmptyState, SectionHeading, Spinner } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -11,6 +13,8 @@ export default function Trips() {
   const { summaries, hydrated, loadError, refresh, me, startDraft, loadSample, showToast } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const today = useToday();
+  const sections = hydrated && !loadError ? groupTrips(summaries, today) : [];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const create = () => { startDraft(); router.push("/create"); };
@@ -20,11 +24,22 @@ export default function Trips() {
   const firstName = me?.name.split(" ")[0];
 
   return (
-    <FlatList
+    <SectionList
       style={styles.screen}
       contentContainerStyle={{ paddingTop: insets.top + space[4], paddingBottom: space[6] }}
-      data={summaries}
-      keyExtractor={(t) => t.id}
+      sections={sections}
+      keyExtractor={(trip) => trip.id}
+      stickySectionHeadersEnabled={false}
+      renderSectionHeader={({ section }) => (
+        <View style={styles.section}>
+          <SectionHeading title={section.title} />
+        </View>
+      )}
+      renderItem={({ item }) => (
+        <View style={styles.cardWrap}>
+          <TripCard trip={item} today={today} onPress={() => router.push(`/trip/${item.id}`)} />
+        </View>
+      )}
       ListHeaderComponent={
         <View>
           <View style={styles.header}>
@@ -53,7 +68,7 @@ export default function Trips() {
               body={loadError}
               action={<Button icon="refresh" onPress={() => { void refresh(); }}>Try again</Button>}
             />
-          ) : summaries.length === 0 ? (
+          ) : sections.length === 0 ? (
             <EmptyState
               icon="map"
               title="Plan your first trip"
@@ -65,18 +80,9 @@ export default function Trips() {
                 </View>
               }
             />
-          ) : (
-            <View style={styles.section}>
-              <SectionHeading eyebrow={`${summaries.length} saved`} title="Upcoming & saved" />
-            </View>
-          )}
+          ) : null}
         </View>
       }
-      renderItem={({ item }) => (
-        <View style={styles.cardWrap}>
-          <TripCard trip={item} onPress={() => router.push(`/trip/${item.id}`)} />
-        </View>
-      )}
       ListFooterComponent={
         <Pressable style={styles.inspo} onPress={() => router.push("/explore")}>
           <Icon name="compass" size={18} color={colors.muted} />

@@ -9,6 +9,7 @@ import { useStore, useTrip } from "@/state/store";
 import { api } from "@/lib/api";
 import { useTripSession } from "@/state/tripSession";
 import { fmtDay, fmtRange, plural } from "@/domain/lib/format";
+import { useToday } from "@/lib/useToday";
 import { BottomSheet, Button, SectionHeading } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import TripMap from "@/components/TripMap";
@@ -25,6 +26,7 @@ export default function Overview() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [menu, setMenu] = useState(false);
+  const today = useToday();
   const { trip, loading, error } = useTrip(id || undefined);
 
   if (!trip) return <TripPlaceholder loading={loading} error={error} onBack={goBack} />;
@@ -58,7 +60,7 @@ export default function Overview() {
             <Pressable style={styles.glass} onPress={() => setMenu(true)} accessibilityLabel="Trip options"><Icon name="more" color={colors.white} /></Pressable>
           </View>
           <View style={styles.heroCopy}>
-            <Text style={styles.status}>{tripStatus(trip)}</Text>
+            <Text style={styles.status}>{tripStatus(trip, today)}</Text>
             <Text style={styles.heroTitle}>{trip.destination}</Text>
             <Text style={styles.heroDates}>{fmtRange(trip.startDate, trip.endDate)}</Text>
           </View>

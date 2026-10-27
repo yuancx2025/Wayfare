@@ -14,6 +14,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   ios: {
     supportsTablet: true,
+    bundleIdentifier: "com.yuancx2025.wayfare",
   },
   android: {
     package: "com.yuancx2025.wayfare",

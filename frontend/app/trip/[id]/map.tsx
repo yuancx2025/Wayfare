@@ -98,7 +98,7 @@ export default function MapScreen() {
             </Text>
           </Pressable>
           {farAway && nearestKm != null ? (
-            <Text style={styles.locateNote}>You're {fmtDistance(nearestKm * 1000)} from this day's stops</Text>
+            <Text style={styles.locateNote}>{`You're ${fmtDistance(nearestKm * 1000)} from this day's stops`}</Text>
           ) : null}
           {problem ? (
             <Pressable onPress={problem.settings ? loc.openSettings : undefined} disabled={!problem.settings} accessibilityRole={problem.settings ? "button" : undefined}>

@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetch } from "expo/fetch";
 import { createRemoteApi } from "@/lib/api/remote";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
-import type { TripDraft } from "@/domain/types";
+import type { TripDraft, TripMetadataPatch } from "@/domain/types";
 
 jest.mock("expo/fetch", () => ({ fetch: jest.fn() }));
 jest.mock("expo-crypto", () => ({ randomUUID: () => "12345678-1234-1234-1234-123456789abc" }));
@@ -51,7 +51,7 @@ test("generation streams progress and passes cancellation and retry identity to 
   const actual = await createRemoteApi("http://localhost:8000/").generateTrip(draft, {
     onStep, signal: ctrl.signal, idempotencyKey: "retry-identity",
   });
-  expect(actual).toEqual(trip);
+  expect(actual).toEqual({ ...trip, isFavorite: false, visited: false });
   expect(onStep).toHaveBeenCalledWith(1);
   expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/trips/generate", expect.objectContaining({
     signal: ctrl.signal,
@@ -107,3 +107,45 @@ test("optional place details handle missing places but surface provider failures
   expect(await api.placeDetails("missing")).toBeNull();
   await expect(api.placeDetails("upstream-error")).rejects.toMatchObject({ status: 502 });
 });
+
+test("legacy trip reads default metadata and preserve values supplied by a newer backend", async () => {
+  const api = createRemoteApi("http://localhost:8000");
+  mockFetch.mockResolvedValueOnce(response([{ id: "legacy" }, { id: "new", isFavorite: true, visited: true }]));
+  expect(await api.listTrips()).toEqual([
+    { id: "legacy", isFavorite: false, visited: false }, { id: "new", isFavorite: true, visited: true },
+  ]);
+  mockFetch.mockResolvedValueOnce(response({ id: "legacy", version: 7 }));
+  expect(await api.getTrip("legacy")).toEqual({ id: "legacy", version: 7, isFavorite: false, visited: false });
+  mockFetch.mockResolvedValueOnce(response({ id: "new", version: 8, isFavorite: true, visited: false }));
+  expect(await api.applyProposal("new", "preview")).toMatchObject({ version: 8, isFavorite: true, visited: false });
+});
+
+test("metadata PATCH sends an explicit value and exposes only metadata in the response", async () => {
+  const api = createRemoteApi("http://localhost:8000/");
+  mockFetch.mockResolvedValue(response({ id: "trip/a", isFavorite: true, visited: false, version: 1, days: [] }));
+  expect(await api.updateTripMetadata("trip/a", { isFavorite: true })).toEqual({ id: "trip/a", isFavorite: true, visited: false });
+  expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/trips/trip%2Fa", expect.objectContaining({
+    method: "PATCH", body: JSON.stringify({ isFavorite: true }),
+    headers: expect.objectContaining({ "Content-Type": "application/json" }),
+  }));
+});
+
+test.each([{}, { isFavorite: null }, { isFavorite: "true" }, { days: [] }])("invalid metadata never reaches the network: %j", async (patch) => {
+  await expect(createRemoteApi("http://localhost:8000").updateTripMetadata("trip", patch as TripMetadataPatch)).rejects.toThrow();
+  expect(mockFetch).not.toHaveBeenCalled();
+});
+
+test.each([401, 404, 405, 500])("metadata errors propagate without a guest-storage fallback: %s", async (status) => {
+  await AsyncStorage.clear();
+  mockFetch.mockResolvedValue(response({ detail: "Metadata unavailable" }, status));
+  await expect(createRemoteApi("http://localhost:8000").updateTripMetadata("trip", { isFavorite: true }))
+    .rejects.toMatchObject({ status, message: "Metadata unavailable" });
+  expect(await AsyncStorage.getItem("wayfare.trips.v2")).toBeNull();
+});
+
+test.each([{ id: "other", isFavorite: true, visited: false }, { id: "trip", isFavorite: true }])(
+  "an incomplete or mismatched metadata response is rejected: %j", async (body) => {
+    mockFetch.mockResolvedValue(response(body));
+    await expect(createRemoteApi("http://localhost:8000").updateTripMetadata("trip", { isFavorite: true })).rejects.toThrow();
+  },
+);

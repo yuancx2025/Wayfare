@@ -75,6 +75,26 @@ const daySchema = z.looseObject({
   activities: z.array(activitySchema),
 });
 
+export const tripMetadataSchema = z.object({
+  isFavorite: z.boolean().default(false),
+  visited: z.boolean().default(false),
+});
+
+/** Omitted fields are unchanged; every supplied field must be an explicit boolean. */
+export const tripMetadataPatchSchema = z.strictObject({
+  isFavorite: z.boolean().optional(),
+  visited: z.boolean().optional(),
+}).refine(
+  (patch) => Object.keys(patch).length > 0 && Object.values(patch).every((value) => typeof value === "boolean"),
+  "Provide at least one explicit metadata value",
+);
+
+export const tripMetadataResultSchema = z.object({
+  id: z.string(),
+  isFavorite: z.boolean(),
+  visited: z.boolean(),
+});
+
 export const tripSchema = z.looseObject({
   id: z.string(),
   destinationId: z.string(),
@@ -89,6 +109,7 @@ export const tripSchema = z.looseObject({
   adjusted: z.boolean(),
   createdAt: z.number(),
   version: z.number().optional(),
+  ...tripMetadataSchema.shape,
 });
 
 export const tripListSchema = z.array(tripSchema);

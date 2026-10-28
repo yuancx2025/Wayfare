@@ -1,14 +1,15 @@
 import type { Api } from "./types";
 import { ApiError } from "./types";
+import { createLocalTripRepository } from "./localTrips";
 import type { DestinationCard, Destination, Me, ProfilePatch, Proposal, Trip, TripDraft, TripSummary } from "@/domain/types";
-import { loadJSON, saveJSON, saveJSONStrict } from "@/lib/storage";
+import { loadJSON, saveJSONStrict } from "@/lib/storage";
 import { DESTINATIONS, findDestination, getDestination } from "@/domain/data/places";
 import { buildTrip, GenerationError } from "@/domain/logic/generate";
 import { proposeAdjustment, proposeReplacement, replacementCandidates } from "@/domain/logic/adjust";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import { initials } from "@/domain/logic/profile";
 import { addDays, todayISO } from "@/domain/lib/format";
-import { preferencesSchema, profileSchema, tripListSchema } from "@/domain/schemas";
+import { preferencesSchema, profileSchema, tripMetadataPatchSchema } from "@/domain/schemas";
 
 const KEYS = { trips: "wayfare.trips.v2", prefs: "wayfare.defaultPrefs.v1", profile: "wayfare.profile.v1" };
 const DEFAULT_PROFILE = { name: "Alex Rivera", home: "Brooklyn, NY" };
@@ -69,6 +70,7 @@ export function summarize(t: Trip): TripSummary {
     id: t.id, destinationId: t.destinationId, destination: t.destination, country: t.country, image: t.image,
     startDate: t.startDate, endDate: t.endDate, travelers: t.travelers, adjusted: t.adjusted, createdAt: t.createdAt,
     dayCount: t.days.length, stopCount: t.days.reduce((s, d) => s + d.activities.length, 0),
+    isFavorite: t.isFavorite, visited: t.visited,
   };
 }
 
@@ -82,24 +84,13 @@ const wait = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve, r
 
 type StoredProfile = { name: string; home: string };
 
-/** Offline stand-in for the FastAPI backend: same contract, backed by AsyncStorage and the bundled catalog. */
+/** Supported offline adapter, backed by AsyncStorage and the bundled catalog. */
 export function createLocalApi(): Api {
-  let trips: Trip[] | null = null;
+  const tripStorage = createLocalTripRepository(KEYS.trips);
+  const all = tripStorage.list;
   let profile: StoredProfile | null = null;
   const proposals = new Map<string, { tripId: string; proposal: Proposal }>();
 
-  async function all(): Promise<Trip[]> {
-    if (!trips) {
-      // Stored data that doesn't match the trip model is dropped instead of crashing the home screen.
-      const parsed = tripListSchema.safeParse(await loadJSON<unknown>(KEYS.trips));
-      trips = parsed.success ? (parsed.data as Trip[]) : [];
-    }
-    return trips;
-  }
-  async function save(next: Trip[]) {
-    trips = next;
-    await saveJSON(KEYS.trips, next);
-  }
   async function currentProfile(): Promise<StoredProfile> {
     if (profile) return profile;
     const parsed = profileSchema.safeParse(await loadJSON<unknown>(KEYS.profile));
@@ -152,8 +143,20 @@ export function createLocalApi(): Api {
 
     listTrips: async () => (await all()).map(summarize),
     getTrip: find,
+    async updateTripMetadata(id, patch) {
+      const metadata = tripMetadataPatchSchema.parse(patch);
+      return tripStorage.mutate((list) => {
+        const trip = list.find((item) => item.id === id);
+        if (!trip) throw new ApiError(404, "Trip not found");
+        const updated = { ...trip, ...metadata };
+        return {
+          trips: list.map((item) => item.id === id ? updated : item),
+          result: { id, isFavorite: updated.isFavorite, visited: updated.visited },
+        };
+      });
+    },
     async deleteTrip(id) {
-      await save((await all()).filter((t) => t.id !== id));
+      await tripStorage.mutate((list) => ({ trips: list.filter((t) => t.id !== id), result: undefined }));
     },
 
     async generateTrip(draft, { onStep, signal }) {
@@ -165,23 +168,25 @@ export function createLocalApi(): Api {
       }
       if (draft.simulateFailure) throw new GenerationError("The planner timed out while checking opening hours.");
       const trip = buildTrip(`trip-${dest.id}-${Date.now().toString(36)}`, dest, draft);
-      await save([trip, ...(await all())]);
-      return trip;
+      return tripStorage.mutate((list) => ({ trips: [trip, ...list], result: trip }));
     },
     async loadSample() {
-      const list = await all();
-      const existing = list.find((t) => t.id === "trip-nyc-seed");
-      if (existing) return existing;
-      const sample = sampleTrip();
-      await save([sample, ...list]);
-      return sample;
+      return tripStorage.mutate((list) => {
+        const existing = list.find((t) => t.id === "trip-nyc-seed");
+        if (existing) return { trips: list, result: existing };
+        const sample = sampleTrip();
+        return { trips: [sample, ...list], result: sample };
+      });
     },
     async loadHistoryFixtures() {
-      const list = await all();
-      const fixtures = historyFixtureTrips();
-      const ids = new Set(fixtures.map((trip) => trip.id));
-      await save([...fixtures, ...list.filter((trip) => !ids.has(trip.id))]);
-      return fixtures;
+      return tripStorage.mutate((list) => {
+        const fixtures = historyFixtureTrips().map((trip) => {
+          const existing = list.find((item) => item.id === trip.id);
+          return { ...trip, isFavorite: existing?.isFavorite ?? false, visited: existing?.visited ?? false };
+        });
+        const ids = new Set(fixtures.map((trip) => trip.id));
+        return { trips: [...fixtures, ...list.filter((trip) => !ids.has(trip.id))], result: fixtures };
+      });
     },
 
     async autocomplete(q) {
@@ -234,17 +239,17 @@ export function createLocalApi(): Api {
       return { ...proposal, proposalId };
     },
     async applyProposal(tripId, proposalId) {
-      const entry = proposals.get(proposalId);
-      if (!entry || entry.tripId !== tripId) throw new ApiError(410, "This preview expired. Please try again.");
+      const updated = await tripStorage.mutate((list) => {
+        const entry = proposals.get(proposalId);
+        if (!entry || entry.tripId !== tripId) throw new ApiError(410, "This preview expired. Please try again.");
+        const trip = list.find((t) => t.id === tripId);
+        if (!trip) throw new ApiError(404, "Trip not found");
+        const { day } = entry.proposal;
+        const result = { ...trip, adjusted: true, version: (trip.version ?? 1) + 1, days: trip.days.map((d) => d.index === day.index ? day : d) };
+        return { trips: list.map((t) => t.id === tripId ? result : t), result };
+      });
+      // Failed writes leave the preview available for retry.
       proposals.delete(proposalId);
-      const { day } = entry.proposal;
-      let updated: Trip | undefined;
-      await save((await all()).map((t) => {
-        if (t.id !== tripId) return t;
-        updated = { ...t, adjusted: true, version: (t.version ?? 1) + 1, days: t.days.map((d) => (d.index === day.index ? day : d)) };
-        return updated;
-      }));
-      if (!updated) throw new ApiError(404, "Trip not found");
       return updated;
     },
 

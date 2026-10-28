@@ -87,7 +87,18 @@ export interface Day {
   activities: Activity[];
 }
 
-export interface Trip {
+/** Collection metadata is independent of itinerary dates, contents, and version. */
+export interface TripMetadata {
+  isFavorite: boolean;
+  visited: boolean;
+}
+
+export type TripMetadataPatch = Partial<TripMetadata>;
+export interface TripMetadataResult extends TripMetadata {
+  id: string;
+}
+
+export interface Trip extends TripMetadata {
   id: string;
   destinationId: string;
   destination: string;
@@ -105,7 +116,7 @@ export interface Trip {
 
 export type TripPhase = "ongoing" | "upcoming" | "past";
 
-export interface TripSummary {
+export interface TripSummary extends TripMetadata {
   id: string;
   destinationId: string;
   destination: string;

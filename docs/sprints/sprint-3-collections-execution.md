@@ -14,6 +14,8 @@ Build one reviewable slice at a time. Commit and push completed increments, and 
 
 Observed authentication handoff gaps are dependencies, not work to silently take over: the inspected branch exposes `useAuthSession()` with `mode`, Clerk `userId`, and `continueAsGuest`; its business API entry point is still a singleton and its `UserIdDep` still uses X-User-Id. A verifier module exists, but those business paths are not yet connected to it. Recheck this snapshot before integration rather than assuming the branch is finished.
 
+Rechecked after fetching on October 28: `origin/main` remains at `48d627b` and `origin/authentication-with-clerk` at `371c758`. Neither inspected trip model contains collection metadata yet. The frontend contract below is this branch's proposed integration contract, not evidence of an agreed or deployed account database baseline. No authentication code or shared database was changed in increment 1.
+
 ## 2. Existing components and constraints
 
 | Existing area | Reuse | Constraint to address |
@@ -68,7 +70,7 @@ Two local-storage issues must be covered when introducing new fields: entire-lis
 | 6. Account/provider integration | Connect the auth owner's final shared API/scope/reset contracts and Nearby entry point | A/B isolation, late-response protection, cloud text across two installations, photos explicitly device-local |
 | 7. Release checks and review preparation | Fix regressions, run required checks, and record limitations | Original generation/maps/adjustments still work; actual evidence distinguishes mocks and real services |
 
-Increment 1 is the next implementation task. This planning commit introduces no collections application behavior. Do not implement every increment in one session.
+Deliver one increment per development session. Increment 1 establishes the storage and adapter boundary; the next increment adds the user-visible favorite journey and its backend implementation.
 
 ## 5. Seven-day capacity plan
 
@@ -97,7 +99,9 @@ Treat the budgets as estimates. Repair failed acceptance before expanding scope.
 | Native image APIs | SDK-57-compatible dependencies and native builds | Picker cancellation, copy failure, missing file, and scope-change mocks | System gallery, persistent file reads after restart on iOS/Android |
 | Figma | Applicable frames and review for new feature screens | Existing Profile/trip components and nonvisual contracts | Confirmed layout reference and native visual comparison |
 
-The supplied design export contains existing Profile and authentication screens, but no dedicated Favorites, Saved Places, or journal-editor frames were identified. Reuse established components for entry controls; obtain or review the missing screen designs before claiming visual fidelity. Do not treat the existing home container named “Trip journal” as a journal-editor specification.
+The local design now contains ten first-delivery Favorite Trips frames and is kept outside the repository. Navigation must reuse the original icon-and-label four-tab bar: Trips, Explore, Saved, Profile. Favorite Trips remains under Profile, as explicitly specified by the original Sprint 3 document. Saved Places is intended for Saved; that tab placement is a design decision because the original sprint does not specify its navigation location. Do not move Favorite Trips into Saved without updating this decision. Saved Places and journal-editor designs remain later work. Do not treat the existing home container named “Trip journal” as a journal-editor specification.
+
+The navigation correction has been written to the local design artifact. Figma became unresponsive during re-import, so that corrected artifact still needs visual verification. Increment 1 contains no screen or navigation changes and makes no claim of native visual acceptance.
 
 Do not change `core/auth.py`, auth session/provider code, or the root login flow in this branch to work around missing handoffs. A mocked identity is never evidence of authenticated privacy. Do not publicly deploy the current X-User-Id development backend.
 
@@ -107,8 +111,8 @@ If auth or PostgreSQL is late, continue local persistence and UI/contract work, 
 
 ## 7. Regression and collaboration checklist
 
-- [ ] Confirm metadata field defaults across old local records, generation, Trip and TripSummary.
-- [ ] Confirm strict local writes and overlapping mutations do not lose user changes.
+- [x] Confirm frontend metadata defaults across old local records, generation, Trip and TripSummary; backend serialization is deferred to increment 2.
+- [x] Confirm strict local writes and overlapping mutations do not lose user changes in adapter tests.
 - [ ] Confirm favorite/visited/journal operations leave itinerary version and valid proposals intact.
 - [ ] Confirm provider/kind ID distinctions and concurrent saved-place deduplication.
 - [ ] Confirm journal ownership, length boundaries, time-zone rules, failed read/save behavior and cascade deletion.
@@ -123,4 +127,10 @@ If auth or PostgreSQL is late, continue local persistence and UI/contract work, 
 
 - The retired authentication branch has been removed locally and remotely; its committed history is backed up outside the repository.
 - This branch is based on current main and does not include the retired authentication changes or the other developers' unmerged feature branches.
-- This document is the preparation increment. Collections implementation starts with increment 1 after contract/design handoffs are made explicit.
+- Increment 1 implements required `isFavorite` and `visited` booleans in frontend trip/detail summaries, defaults legacy reads to false, and adds explicit metadata patches returning only `{ id, isFavorite, visited }`.
+- Local trip operations share a queue per storage key and read fresh committed records. Favorite, delete, sample/fixture insertion, and adjustment application all use that boundary. No in-memory success is published before a strict write completes. This queue coordinates adapters within one JavaScript runtime; it is not a cross-process storage transaction.
+- Valid legacy entries remain readable next to malformed entries. Writes retain the unreadable entries and unknown fields for recovery. Storage read failures, malformed JSON, invalid collection containers, and collections with no readable entries reject rather than displaying a false empty state.
+- Metadata updates preserve itinerary dates, contents, creation time, and version. Refreshing dated fixtures preserves collection metadata. Failed adjustment writes retain the preview for retry.
+- The remote adapter normalizes legacy trip responses and includes the proposed metadata PATCH contract. Network tests use mocked fetch; a working server endpoint, PostgreSQL persistence, and authenticated ownership are not delivered by this increment.
+- Validation on October 28: frontend typecheck and lint passed; all 82 tests in 7 Jest suites passed using `npm test -- --runInBand --watchman=false`. Watchman is disabled because its state directory is outside this workspace's sandbox. iOS and Android JavaScript exports passed. Persistence/failure/concurrency tests use the official AsyncStorage Jest mock and fresh adapter instances; simulator restart, native visual checks, real backend requests, and PostgreSQL acceptance remain pending.
+- Next: implement the owned backend PATCH without resetting a database, merge metadata into the Store without replacing itinerary data, then connect the reusable card/detail action and Profile Favorite Trips states to the approved visual reference.

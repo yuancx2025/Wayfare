@@ -1,6 +1,6 @@
 import type {
   Capabilities, DayRoute, DestinationCard, Me, Place, PlaceDetails, Preferences, ProfilePatch, Proposal, ProposalRequest, Suggestion, Trip,
-  TripDraft, TripSummary,
+  TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary,
 } from "@/domain/types";
 
 export interface GenerateOptions {
@@ -20,6 +20,8 @@ export interface Api {
 
   listTrips(): Promise<TripSummary[]>;
   getTrip(id: string): Promise<Trip>;
+  /** Sets explicit collection values; never replaces or versions the itinerary. */
+  updateTripMetadata(id: string, patch: TripMetadataPatch): Promise<TripMetadataResult>;
   deleteTrip(id: string): Promise<void>;
   generateTrip(draft: TripDraft, opts: GenerateOptions): Promise<Trip>;
   /** Offline only: adds the bundled New York sample trip. */

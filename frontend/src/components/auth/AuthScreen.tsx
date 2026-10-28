@@ -10,13 +10,15 @@ interface AuthScreenProps {
   section: string;
   title: string;
   intro?: string;
+  /** Optional illustration above the title, e.g. the mail icon on the code screen. */
+  art?: ReactNode;
   children: ReactNode;
   /** Pinned to the bottom on tall screens; scrolls with the form on short ones. */
   footer?: ReactNode;
 }
 
 /** Shared layout for every authentication screen. */
-export function AuthScreen({ section, title, intro, children, footer }: AuthScreenProps) {
+export function AuthScreen({ section, title, intro, art, children, footer }: AuthScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // No back arrow when sign-in is the first screen of the app; shown when opened from Profile or another auth screen.
@@ -37,6 +39,7 @@ export function AuthScreen({ section, title, intro, children, footer }: AuthScre
           <Text style={styles.section}>{section}</Text>
         </View>
 
+        {art ? <View style={styles.art}>{art}</View> : null}
         <Text style={styles.title} accessibilityRole="header">{title}</Text>
         {intro ? <Text style={styles.intro}>{intro}</Text> : null}
 
@@ -48,13 +51,22 @@ export function AuthScreen({ section, title, intro, children, footer }: AuthScre
   );
 }
 
-export function TextLink({ children, onPress, align = "center" }: { children: string; onPress: () => void; align?: "center" | "right" }) {
+interface TextLinkProps {
+  children: string;
+  onPress: () => void;
+  align?: "center" | "right";
+  disabled?: boolean;
+}
+
+export function TextLink({ children, onPress, align = "center", disabled = false }: TextLinkProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.link, align === "right" && styles.linkRight]}
+      disabled={disabled}
+      style={[styles.link, align === "right" && styles.linkRight, disabled && styles.linkDisabled]}
       hitSlop={6}
       accessibilityRole="link"
+      accessibilityState={{ disabled }}
     >
       <Text style={styles.linkText}>{children}</Text>
     </Pressable>
@@ -67,6 +79,7 @@ const styles = StyleSheet.create({
   nav: { minHeight: touch, flexDirection: "row", alignItems: "center", gap: space[1] },
   back: { width: 32, height: touch, justifyContent: "center" },
   section: { color: colors.muted, fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1, textTransform: "uppercase" },
+  art: { marginTop: space[6] },
   title: { marginTop: space[5], fontFamily: font.display, fontSize: 32, color: colors.ink },
   intro: { marginTop: space[2], fontFamily: font.body, fontSize: 15, lineHeight: 22, color: colors.muted },
   body: { marginTop: space[6], gap: space[4] },
@@ -74,5 +87,6 @@ const styles = StyleSheet.create({
   footer: { marginTop: "auto", paddingTop: space[6], gap: space[3] },
   link: { minHeight: 44, justifyContent: "center", alignSelf: "center" },
   linkRight: { alignSelf: "flex-end" },
+  linkDisabled: { opacity: 0.5 },
   linkText: { color: colors.forest, fontFamily: font.bodyBold, fontSize: 14 },
 });

@@ -1,16 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "@clerk/expo";
 import { storage } from "@/lib/storage";
+import { resolveMode, type AuthMode } from "./mode";
+
+export type { AuthMode } from "./mode";
 
 const GUEST_KEY = "wayfare.guest";
-
-/**
- * - loading: still reading the saved session; keep the splash screen up.
- * - account: a Clerk session is active; data lives in the cloud.
- * - guest: the user chose to plan without an account; data stays on this device.
- * - signedOut: neither; show the sign-in screen.
- */
-export type AuthMode = "loading" | "account" | "guest" | "signedOut";
 
 interface AuthSession {
   mode: AuthMode;
@@ -49,15 +44,6 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
     [mode, userId, continueAsGuest],
   );
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;
-}
-
-function resolveMode(clerkLoaded: boolean, signedIn: boolean, guest: boolean | null): AuthMode {
-  if (clerkLoaded && signedIn) return "account";
-  if (guest === null) return "loading";
-  // Guests don't wait for Clerk, so guest mode opens even when Clerk can't be reached.
-  if (guest) return "guest";
-  if (!clerkLoaded) return "loading";
-  return "signedOut";
 }
 
 export function useAuthSession() {

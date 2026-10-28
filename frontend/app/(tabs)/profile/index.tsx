@@ -7,6 +7,7 @@ import { useStore } from "@/state/store";
 import { Button, EmptyState, Spinner } from "@/components/ui";
 import { Icon, type IconName } from "@/components/Icon";
 import { TripHistoryRow } from "@/components/trip";
+import { AccountCard } from "@/components/auth/AccountCard";
 import { colors, font, radius, space, touch } from "@/theme";
 
 export default function ProfileOverview() {
@@ -28,6 +29,8 @@ export default function ProfileOverview() {
           body={loadError ?? "Couldn't load your profile."}
           action={<Button icon="refresh" onPress={() => { void refresh(); }}>Try again</Button>}
         />
+        {/* Keep sign-in/out reachable even when profile data can't load. */}
+        <AccountCard />
       </View>
     );
   }
@@ -74,6 +77,7 @@ export default function ProfileOverview() {
             </View>
           </View>
         ) : null}
+        <AccountCard />
       </ScrollView>
     </View>
   );

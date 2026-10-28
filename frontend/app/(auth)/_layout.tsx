@@ -10,6 +10,9 @@ export default function AuthLayout() {
       <Stack.Screen name="sign-in" />
       <Stack.Screen name="sign-up" />
       <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="verify" />
+      {/* No swipe-back: the reset code has already been used. */}
+      <Stack.Screen name="reset-password" options={{ gestureEnabled: false }} />
     </Stack>
   );
 }

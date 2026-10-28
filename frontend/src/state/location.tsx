@@ -1,20 +1,26 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Linking } from "react-native";
 import * as Location from "expo-location";
+import { TimeoutError, withTimeout } from "@/lib/withTimeout";
+import { useLocationPermission, type LocationPermission } from "./locationPermission";
 
-export type LocationStatus = "idle" | "locating" | "ready" | "denied" | "blocked" | "off" | "timeout" | "error";
+/** State of the position fix only. Whether we may read it lives in `useLocationPermission`. */
+export type FixStatus = "idle" | "locating" | "ready" | "off" | "timeout" | "error";
+
+export interface LocationProblem { title: string; body: string; settings?: boolean }
 
 export interface CurrentLocation {
-  status: LocationStatus;
+  status: FixStatus;
+  permission: LocationPermission;
+  /** What to tell the user, from the permission first and then the last fix attempt. */
+  problem?: LocationProblem;
   position: { lat: number; lng: number } | null;
-  /** The user granted approximate location only (iOS "Precise: Off", Android coarse). */
   approximate: boolean;
-  /** Asks for permission on first use, then takes a single fix. Also serves as "refresh". */
+  /** Asks for permission if needed, then takes a single fix. Also serves as "refresh". */
   locate: () => Promise<void>;
   openSettings: () => void;
 }
 
-export const LOCATION_PROBLEMS: Partial<Record<LocationStatus, { title: string; body: string; settings?: boolean }>> = {
+const PROBLEMS: Record<"denied" | "blocked" | "off" | "timeout" | "error", LocationProblem> = {
   denied: { title: "Location not shared", body: "Nearby places need your location. You can still search destinations above." },
   blocked: { title: "Location is off for Wayfare", body: "Allow location access for Wayfare in Settings, or keep searching destinations above.", settings: true },
   off: { title: "Location Services are off", body: "Turn on Location Services in your device settings, then try again. Destination search still works." },
@@ -25,18 +31,6 @@ export const LOCATION_PROBLEMS: Partial<Record<LocationStatus, { title: string; 
 const FIX_TIMEOUT_MS = 15000;
 const CHECK_TIMEOUT_MS = 5000;
 
-class FixTimeout extends Error {}
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new FixTimeout()), ms);
-    promise.then(
-      (v) => { clearTimeout(timer); resolve(v); },
-      (e) => { clearTimeout(timer); reject(e); },
-    );
-  });
-}
-
 const Ctx = createContext<CurrentLocation | null>(null);
 
 /**
@@ -44,9 +38,9 @@ const Ctx = createContext<CurrentLocation | null>(null);
  * The last fix lives in memory for this session; nothing watches location or stores it.
  */
 export function LocationProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<LocationStatus>("idle");
+  const { permission, approximate, request, openSettings } = useLocationPermission();
+  const [status, setStatus] = useState<FixStatus>("idle");
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
-  const [approximate, setApproximate] = useState(false);
   const latest = useRef(0);
   const mounted = useRef(true);
 
@@ -61,28 +55,30 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         if (current()) setStatus("off");
         return;
       }
-      let perm = await withTimeout(Location.getForegroundPermissionsAsync(), CHECK_TIMEOUT_MS);
-      // No timeout here: the system prompt waits for the user.
-      if (!perm.granted && perm.canAskAgain) perm = await Location.requestForegroundPermissionsAsync();
-      if (!perm.granted) {
-        if (current()) setStatus(perm.canAskAgain ? "denied" : "blocked");
+      if ((await request()) !== "granted") {
+        if (current()) setStatus("idle");
         return;
       }
       const fix = await withTimeout(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }), FIX_TIMEOUT_MS);
       if (!current()) return;
       setPosition({ lat: fix.coords.latitude, lng: fix.coords.longitude });
-      setApproximate(perm.ios?.accuracy === "reduced" || perm.android?.accuracy === "coarse");
       setStatus("ready");
     } catch (e) {
-      if (current()) setStatus(e instanceof FixTimeout ? "timeout" : "error");
+      if (current()) setStatus(e instanceof TimeoutError ? "timeout" : "error");
     }
-  }, []);
+  }, [request]);
 
-  const openSettings = useCallback(() => { void Linking.openSettings(); }, []);
+  // If access is revoked (e.g. in Settings), the last position stops being shown.
+  const refused = permission === "denied" || permission === "blocked";
+  const shownStatus: FixStatus = refused && status !== "locating" ? "idle" : status;
+  const shownPosition = refused ? null : position;
+  const problem = refused
+    ? PROBLEMS[permission]
+    : status === "off" || status === "timeout" || status === "error" ? PROBLEMS[status] : undefined;
 
   const value = useMemo<CurrentLocation>(
-    () => ({ status, position, approximate, locate, openSettings }),
-    [status, position, approximate, locate, openSettings],
+    () => ({ status: shownStatus, permission, problem, position: shownPosition, approximate, locate, openSettings }),
+    [shownStatus, permission, problem, shownPosition, approximate, locate, openSettings],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Activity } from "@/domain/types";
 import { fmtDistance, fmtDuration, fmtTime } from "@/domain/lib/format";
 import { distanceKm } from "@/domain/logic/generate";
-import { LOCATION_PROBLEMS, useCurrentLocation } from "@/state/location";
+import { useCurrentLocation } from "@/state/location";
 import { CATEGORY_LABEL, LEG_LABEL } from "@/domain/logic/labels";
 import { api } from "@/lib/api";
 import { BottomSheet, Button } from "./ui";
@@ -94,7 +94,7 @@ export default function ActivityDetailSheet({ activity, number, date, onClose, o
 /** "How far am I?" for this stop. Uses the shared fix; locates only when tapped. */
 function DistanceFromYou({ to }: { to: { lat: number; lng: number } }) {
   const loc = useCurrentLocation();
-  const problem = LOCATION_PROBLEMS[loc.status];
+  const problem = loc.problem;
   if (loc.status === "ready" && loc.position) {
     return (
       <View style={styles.distance}>

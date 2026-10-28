@@ -44,7 +44,8 @@ The [API adapter](../frontend/src/lib/api/index.ts) chooses the backend when `EX
 | Custom | `useDebounced` | Delay changes to search input |
 | Custom | `useDayRoute` | Fetch route geometry for a trip/day/version |
 | Custom | `usePlaceDetails` | Fetch details for a scheduled activity |
-| Custom | `useCurrentLocation` | Ask for location only on request and take one foreground fix |
+| Custom | `useLocationPermission` | Know whether location may be read, checked silently at launch and on return to the app |
+| Custom | `useCurrentLocation` | Take one foreground fix only when the user asks, shared by every screen |
 
 `jest.useFakeTimers()` is a test utility, not a React hook. `createContext`, `Controller`, `keepPreviousData`, `withTiming`, and form methods such as `watch` are also not separate hooks.
 
@@ -183,20 +184,28 @@ The key separates trips, itinerary versions, and days. An adjusted trip's new ve
 
 Fetching is disabled in offline mode and while the trip is missing. The hook returns data or `null`, hiding loading/error information. Without route geometry, the native map can draw an illustrative line connecting stops in visit order rather than road directions.
 
+### `useLocationPermission()` — whether location may be read
+
+**Source:** [src/state/locationPermission.tsx](../frontend/src/state/locationPermission.tsx)
+
+**Why we have it:** Permission is a different question from "where is the user". Keeping it in its own provider lets screens know it before anything is tapped, without reading GPS.
+
+`LocationPermissionProvider` (mounted in `app/_layout.tsx`) calls `getForegroundPermissionsAsync()` in a `useEffect` at launch and again on every `AppState` return to `active`, so a change made in Settings applies without a restart. These checks never show a prompt. It returns `permission` (`checking`, `undetermined`, `granted`, `denied` or `blocked`), `approximate`, `request` and `openSettings`. `request()` shows the system prompt only when it still can; it never reads a position. The check has a 5 s timeout and falls back to `undetermined`.
+
 ### `useCurrentLocation()` — on-request foreground position
 
 **Source:** [src/state/location.tsx](../frontend/src/state/location.tsx)
 
-**Why we have it:** Explore's Nearby section, the day map and stop details need the same permission rules, timeouts and failure states, and one fix should serve all three. `LocationProvider` (mounted in `app/_layout.tsx`) owns that state; the hook reads it, like `useTripSession`.
+**Why we have it:** Explore's Nearby section, the day map and stop details need the same timeouts and failure states, and one fix should serve all three. `LocationProvider` sits inside `LocationPermissionProvider` and owns the fix, like `useTripSession` owns the selection.
 
 ```tsx
 const loc = useCurrentLocation();
-loc.locate(); // asks the first time, then takes one fix; call again to refresh
+loc.locate(); // asks for permission if needed, then takes one fix; call again to refresh
 ```
 
-It returns `status` (`idle`, `locating`, `ready`, `denied`, `blocked`, `off`, `timeout` or `error`), `position`, `approximate` and `openSettings`. Nothing happens until `locate()` is called, so the app never prompts on launch. `blocked` means the user chose "don't ask again"; the screens then offer Settings plus Try again.
+It returns `status` for the fix only (`idle`, `locating`, `ready`, `off`, `timeout` or `error`), the current `permission`, a ready-to-show `problem`, `position`, `approximate` and `openSettings`. Nothing reads the position until `locate()` is called. If permission is revoked, the last position is no longer returned.
 
-Each native call has a timeout (5 s for checks, 15 s for the fix), so the spinner always ends. Only the system permission prompt waits for the user. A `useRef` run counter drops results from an older `locate()` call, and an unmount ref avoids setting state after the screen closes. It takes a single fix with `getCurrentPositionAsync` and never watches the position.
+The fix has a 15 s timeout, so the spinner always ends. A `useRef` run counter drops results from an older `locate()` call, and an unmount ref avoids setting state after the screen closes. It takes a single fix with `getCurrentPositionAsync` and never watches the position.
 
 ### `usePlaceDetails(activity, date)` — activity enrichment
 
@@ -349,7 +358,7 @@ Paths in this table are relative to `frontend/`.
 
 | File | Hooks called |
 | --- | --- |
-| [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`); mounts `LocationProvider` |
+| [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`); mounts `LocationPermissionProvider` and `LocationProvider` |
 | [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useToday` |
 | [app/(tabs)/explore.tsx](../frontend/app/%28tabs%29/explore.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useDebounced`, `useQuery` |
 | [app/(tabs)/profile/index.tsx](../frontend/app/%28tabs%29/profile/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useToday` |
@@ -366,7 +375,8 @@ Paths in this table are relative to `frontend/`.
 | [src/state/tripSession.tsx](../frontend/src/state/tripSession.tsx) | `useState`, `useCallback`, `useMemo`, `useContext` |
 | [src/lib/useDebounced.ts](../frontend/src/lib/useDebounced.ts) | `useState`, `useEffect` |
 | [src/lib/useDayRoute.ts](../frontend/src/lib/useDayRoute.ts) | `useQuery` |
-| [src/state/location.tsx](../frontend/src/state/location.tsx) | `useState`, `useRef`, `useEffect`, `useCallback`, `useMemo`, `useContext` |
+| [src/state/locationPermission.tsx](../frontend/src/state/locationPermission.tsx) | `useState`, `useRef`, `useEffect`, `useCallback`, `useMemo`, `useContext` |
+| [src/state/location.tsx](../frontend/src/state/location.tsx) | `useLocationPermission`, `useState`, `useRef`, `useEffect`, `useCallback`, `useMemo`, `useContext` |
 | [src/components/NearbySection.tsx](../frontend/src/components/NearbySection.tsx) | `useCurrentLocation`, `useState`, `useQuery` |
 | [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails`, `useCurrentLocation` |
 | [src/components/AdjustDaySheet.tsx](../frontend/src/components/AdjustDaySheet.tsx) | `useStore`, `useState`, `useRef`, `useEffect` |

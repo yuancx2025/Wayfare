@@ -7,7 +7,7 @@ import { interestLabel } from "@/domain/logic/labels";
 import { DEFAULT_NEARBY_RADIUS_M, NEARBY_RADIUS_STEPS } from "@/domain/logic/nearby";
 import type { NearbyCategory } from "@/domain/types";
 import { api } from "@/lib/api";
-import { LOCATION_PROBLEMS, useCurrentLocation } from "@/state/location";
+import { useCurrentLocation } from "@/state/location";
 import { Button, ChipGroup, EmptyState, SectionHeading, Spinner } from "@/components/ui";
 import TripMap from "@/components/TripMap";
 import { colors, font, radius, space } from "@/theme";
@@ -36,7 +36,7 @@ export function NearbySection() {
     enabled: !!pos,
     retry: false,
   });
-  const problem = LOCATION_PROBLEMS[loc.status];
+  const problem = loc.problem;
   const places = nearby.data?.places ?? [];
   const visible = showAll ? places : places.slice(0, PREVIEW_COUNT);
   const wider = NEARBY_RADIUS_STEPS.find((r) => r > radiusM);
@@ -51,14 +51,7 @@ export function NearbySection() {
           <Button variant="ghost" full={false} onPress={() => setOpen((v) => !v)}>{open ? "Hide" : "Show"}</Button>
         ) : undefined}
       />
-      {loc.status === "idle" ? (
-        <View style={styles.intro}>
-          <Text style={styles.text}>
-            See food and sights within walking distance. Wayfare asks for your location only when you tap below, and never tracks you in the background.
-          </Text>
-          <Button icon="pin" onPress={locate}>Use my location</Button>
-        </View>
-      ) : loc.status === "locating" ? (
+      {loc.status === "locating" ? (
         <Spinner label="Finding your location" />
       ) : problem ? (
         <EmptyState
@@ -72,6 +65,15 @@ export function NearbySection() {
             </View>
           }
         />
+      ) : loc.status === "idle" ? (
+        <View style={styles.intro}>
+          <Text style={styles.text}>
+            {loc.permission === "granted"
+              ? "See food and sights within walking distance. Location is already allowed; Wayfare reads it only when you tap below."
+              : "See food and sights within walking distance. Wayfare asks for your location only when you tap below, and never tracks you in the background."}
+          </Text>
+          <Button icon="pin" onPress={locate}>{loc.permission === "granted" ? "Show places near me" : "Use my location"}</Button>
+        </View>
       ) : pos && !open ? (
         <Text style={styles.meta}>
           {nearby.data ? `${nearby.data.places.length} places within ${fmtDistance(radiusM)}` : "Nearby places hidden"} · tap Show to see them

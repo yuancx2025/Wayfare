@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTrip } from "@/state/store";
 import { useDayRoute } from "@/lib/useDayRoute";
-import { LOCATION_PROBLEMS, useCurrentLocation } from "@/state/location";
+import { useCurrentLocation } from "@/state/location";
 import { useTripSession } from "@/state/tripSession";
 import { fmtDay, fmtDistance, fmtDuration, fmtTime } from "@/domain/lib/format";
 import { distanceKm } from "@/domain/logic/generate";
@@ -34,7 +34,7 @@ export default function MapScreen() {
   const { trip, loading, error } = useTrip(id || undefined);
   const loc = useCurrentLocation();
   const here = loc.status === "ready" ? loc.position : null;
-  const problem = LOCATION_PROBLEMS[loc.status];
+  const problem = loc.problem;
 
   useEffect(() => {
     if (session.tripId !== id) session.bind(id, Number.isFinite(routeDay) ? routeDay : 0);

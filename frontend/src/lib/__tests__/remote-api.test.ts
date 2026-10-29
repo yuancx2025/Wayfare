@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetch } from "expo/fetch";
 import { createRemoteApi } from "@/lib/api/remote";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
-import type { TripDraft, TripMetadataPatch } from "@/domain/types";
+import type { SavedPlaceReference, TripDraft, TripMetadataPatch } from "@/domain/types";
 
 jest.mock("expo/fetch", () => ({ fetch: jest.fn() }));
 jest.mock("expo-crypto", () => ({ randomUUID: () => "12345678-1234-1234-1234-123456789abc" }));
@@ -149,3 +149,40 @@ test.each([{ id: "other", isFavorite: true, visited: false }, { id: "trip", isFa
     await expect(createRemoteApi("http://localhost:8000").updateTripMetadata("trip", { isFavorite: true })).rejects.toThrow();
   },
 );
+
+const savedReference: SavedPlaceReference = { provider: "google", kind: "destination", externalId: "opaque-provider-id" };
+const savedPlace = { ...savedReference, id: "saved-1", createdAt: 1000 };
+
+test("saved places use the shared identity transport and encoded removal ID", async () => {
+  const api = createRemoteApi("http://localhost:8000/");
+  mockFetch.mockResolvedValueOnce(response(savedPlace)).mockResolvedValueOnce(response([savedPlace])).mockResolvedValueOnce(response(undefined, 204));
+  expect(await api.savePlace(savedReference)).toEqual(savedPlace);
+  expect(await api.listSavedPlaces()).toEqual([savedPlace]);
+  await api.removeSavedPlace("saved/id?");
+  expect(mockFetch).toHaveBeenNthCalledWith(1, "http://localhost:8000/me/saved-places", expect.objectContaining({
+    method: "POST", body: JSON.stringify(savedReference), headers: expect.objectContaining({ "X-User-Id": expect.any(String) }),
+  }));
+  expect(mockFetch).toHaveBeenLastCalledWith("http://localhost:8000/me/saved-places/saved%2Fid%3F", expect.objectContaining({ method: "DELETE" }));
+});
+
+test("invalid saved input rejects before a request and mismatched responses never report success", async () => {
+  const api = createRemoteApi("http://localhost:8000");
+  await expect(api.savePlace({ ...savedReference, owner: "other" } as SavedPlaceReference)).rejects.toThrow();
+  expect(mockFetch).not.toHaveBeenCalled();
+  mockFetch.mockResolvedValueOnce(response({ ...savedPlace, kind: "place" }));
+  await expect(api.savePlace(savedReference)).rejects.toMatchObject({ status: 502 });
+  mockFetch.mockResolvedValueOnce(response([{ ...savedPlace, externalId: null }]));
+  await expect(api.listSavedPlaces()).rejects.toThrow();
+});
+
+test("remote saved-place failures never fall back to guest storage or an empty result", async () => {
+  const api = createRemoteApi("http://localhost:8000");
+  await AsyncStorage.removeItem("wayfare.guest.savedPlaces.v1");
+  mockFetch.mockRejectedValueOnce(new Error("Offline"));
+  await expect(api.savePlace(savedReference)).rejects.toThrow("Offline");
+  expect(await AsyncStorage.getItem("wayfare.guest.savedPlaces.v1")).toBeNull();
+  mockFetch.mockResolvedValueOnce(response({ detail: "Unavailable" }, 503));
+  await expect(api.listSavedPlaces()).rejects.toMatchObject({ status: 503 });
+  mockFetch.mockResolvedValueOnce(response({ detail: "Saved place not found" }, 404));
+  await expect(api.removeSavedPlace(savedPlace.id)).rejects.toMatchObject({ status: 404 });
+});

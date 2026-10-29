@@ -13,6 +13,7 @@ from app.core.exceptions import AppError
 from app.core.routing import ApiRouter
 from app.db.session import dispose_engine, get_sessionmaker
 from app.features.adjustments.router import router as adjustments_router
+from app.features.collections.router import router as collections_router
 from app.features.discovery.destinations_router import router as destinations_router
 from app.features.discovery.places_router import router as places_router
 from app.features.planning.router import router as planning_router
@@ -54,7 +55,7 @@ def create_app(services: Services | None = None) -> FastAPI:
         s: Services = request.app.state.services
         return Capabilities(google=s.places.source == "google", llm=s.llm is not None, agent=s.agent_enabled)
 
-    for r in (health, profiles_router, places_router, destinations_router, trips_router, planning_router, adjustments_router):
+    for r in (health, profiles_router, collections_router, places_router, destinations_router, trips_router, planning_router, adjustments_router):
         app.include_router(r)
     return app
 

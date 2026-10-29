@@ -1,6 +1,7 @@
 import type { Api } from "./types";
 import { ApiError } from "./types";
 import { createLocalTripRepository } from "./localTrips";
+import { createLocalSavedPlaceRepository } from "./localSavedPlaces";
 import type { DestinationCard, Destination, Me, ProfilePatch, Proposal, Trip, TripDraft, TripSummary } from "@/domain/types";
 import { loadJSON, saveJSONStrict } from "@/lib/storage";
 import { DESTINATIONS, findDestination, getDestination } from "@/domain/data/places";
@@ -11,7 +12,7 @@ import { initials } from "@/domain/logic/profile";
 import { addDays, todayISO } from "@/domain/lib/format";
 import { preferencesSchema, profileSchema, tripMetadataPatchSchema } from "@/domain/schemas";
 
-const KEYS = { trips: "wayfare.trips.v2", prefs: "wayfare.defaultPrefs.v1", profile: "wayfare.profile.v1" };
+const KEYS = { trips: "wayfare.trips.v2", prefs: "wayfare.defaultPrefs.v1", profile: "wayfare.profile.v1", savedPlaces: "wayfare.guest.savedPlaces.v1" };
 const DEFAULT_PROFILE = { name: "Alex Rivera", home: "Brooklyn, NY" };
 const STEP_MS = 850;
 const STEPS = 5;
@@ -87,6 +88,7 @@ type StoredProfile = { name: string; home: string };
 /** Supported offline adapter, backed by AsyncStorage and the bundled catalog. */
 export function createLocalApi(): Api {
   const tripStorage = createLocalTripRepository(KEYS.trips);
+  const savedPlaces = createLocalSavedPlaceRepository(KEYS.savedPlaces);
   const all = tripStorage.list;
   let profile: StoredProfile | null = null;
   const proposals = new Map<string, { tripId: string; proposal: Proposal }>();
@@ -217,6 +219,10 @@ export function createLocalApi(): Api {
       };
     },
     dayRoute: async () => null,
+
+    listSavedPlaces: savedPlaces.list,
+    savePlace: savedPlaces.save,
+    removeSavedPlace: savedPlaces.remove,
 
     async alternatives(tripId, day, activityId) {
       return replacementCandidates(await find(tripId), day, activityId);

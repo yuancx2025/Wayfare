@@ -1,6 +1,6 @@
 import type {
   Capabilities, DayRoute, DestinationCard, Me, Place, PlaceDetails, Preferences, ProfilePatch, Proposal, ProposalRequest, Suggestion, Trip,
-  TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary,
+  SavedPlace, SavedPlaceReference, TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary,
 } from "@/domain/types";
 
 export interface GenerateOptions {
@@ -34,6 +34,11 @@ export interface Api {
   listDestinations(q: string): Promise<DestinationCard[]>;
   placeDetails(placeId: string, visit?: { date: string; startMin: number; durationMin: number }): Promise<PlaceDetails | null>;
   dayRoute(tripId: string, day: number): Promise<DayRoute | null>;
+
+  listSavedPlaces(): Promise<SavedPlace[]>;
+  /** Idempotent by provider, kind and exact externalId within the current owner/scope. */
+  savePlace(reference: SavedPlaceReference): Promise<SavedPlace>;
+  removeSavedPlace(id: string): Promise<void>;
 
   alternatives(tripId: string, day: number, activityId: string): Promise<Place[]>;
   propose(tripId: string, day: number, req: ProposalRequest): Promise<Proposal>;

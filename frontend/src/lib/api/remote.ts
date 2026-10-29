@@ -7,7 +7,8 @@ import type { Trip, TripDraft, TripSummary } from "@/domain/types";
 import { GenerationError } from "@/domain/logic/generate";
 import { storage } from "@/lib/storage";
 import { withTripMetadata } from "@/domain/logic/tripMetadata";
-import { tripMetadataPatchSchema, tripMetadataResultSchema } from "@/domain/schemas";
+import { savedPlaceListSchema, savedPlaceReferenceSchema, savedPlaceSchema, tripMetadataPatchSchema, tripMetadataResultSchema } from "@/domain/schemas";
+import { savedPlaceKey } from "@/domain/logic/savedPlaces";
 
 const USER_KEY = "wayfare.userId";
 
@@ -88,6 +89,14 @@ export function createRemoteApi(base: string): Api {
       return result;
     },
     deleteTrip: (id) => request(`/trips/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    listSavedPlaces: async () => savedPlaceListSchema.parse(await request("/me/saved-places")),
+    async savePlace(input) {
+      const reference = savedPlaceReferenceSchema.parse(input);
+      const saved = savedPlaceSchema.parse(await request("/me/saved-places", json("POST", reference)));
+      if (savedPlaceKey(saved) !== savedPlaceKey(reference)) throw new ApiError(502, "The saved place response belongs to a different reference.");
+      return saved;
+    },
+    removeSavedPlace: (id) => request(`/me/saved-places/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
     async generateTrip(draft: TripDraft, { onStep, signal, idempotencyKey }: GenerateOptions): Promise<Trip> {
       // expo/fetch exposes the response body as a stream on native, which React Native's global fetch does not.

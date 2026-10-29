@@ -8,7 +8,7 @@ Build one reviewable slice at a time. Commit and push completed increments, and 
 ## 1. Current ownership and branch boundaries
 
 - Authentication is being implemented on `origin/authentication-with-clerk` (inspected at `371c758`). Do not duplicate it, merge it implicitly, or restore our retired authentication transport work into this branch.
-- Nearby discovery is being implemented on `origin/ziqi/sprint-4-location-nearby` (inspected at `7173dba`). Provide reusable save actions for its owner to connect.
+- Nearby discovery is being implemented on `origin/ziqi/sprint-4-location-nearby` (inspected at `7fe32b1`). Provide reusable save actions for its owner to connect.
 - This branch starts from main and owns trip favorites, saved places, explicit visited status, journals, and device-local journal photos.
 - The original Sprint 3 scope is in `sprint-3-collections-and-travel-memories.md`. A dated past trip must never automatically count as visited.
 
@@ -64,13 +64,14 @@ Two local-storage issues must be covered when introducing new fields: entire-lis
 | --- | --- | --- |
 | 1. Favorite contract and local persistence | Confirm schema ownership; add metadata defaults, strict local mutations, and tests | Old trips remain readable; favorites survive a new adapter instance; write failure does not display success; version unchanged |
 | 2. Favorite trip journey | Add card/detail controls and Profile favorites; add the owned remote PATCH using the agreed schema | All trip views agree; restart persists; metadata does not invalidate an adjustment preview |
-| 3. Saved places | Implement reference identity, local/remote storage, unique constraint, list/details/remove, and a shared save action | Duplicate and concurrent saves deduplicate; provider failures are recoverable; Nearby owner has a small integration example |
+| 3A. Saved-place persistence | Add explicit reference identity, local/remote adapters, owned endpoints and database uniqueness | Concurrent saves deduplicate; failures reject; references stay removable without provider lookup |
+| 3B. Saved-place journey | Complete Figma frames, shared save control, Saved list/details/remove and provider resolution | Native flow matches the reviewed design; unavailable entries stay removable; Nearby integration example works |
 | 4. Visited status and journal text | Add explicit visited controls, eligibility rules, editor, owned endpoints, cascade and failure handling | Past is not visited; draft survives failed save; deleted trip removes its journal but preserves saved places |
 | 5. Device-local photo | Use Expo ImagePicker/FileSystem, namespace association, replace/remove, and missing-file handling | Real gallery selection and restart on both simulators; no local URI enters cloud requests |
 | 6. Account/provider integration | Connect the auth owner's final shared API/scope/reset contracts and Nearby entry point | A/B isolation, late-response protection, cloud text across two installations, photos explicitly device-local |
 | 7. Release checks and review preparation | Fix regressions, run required checks, and record limitations | Original generation/maps/adjustments still work; actual evidence distinguishes mocks and real services |
 
-Deliver one increment per development session. Increments 1 and 2 establish trip metadata persistence and the Favorite Trips journey. Complete the outstanding native acceptance checks before expanding into saved-place implementation.
+Deliver one increment per development session. Increments 1 and 2 establish trip metadata persistence and the Favorite Trips journey. The outstanding Android/native checks remain required for full acceptance. If UI tooling is unavailable, independent persistence work can continue in a separate slice; do not mark the native gate complete.
 
 ## 5. Seven-day capacity plan
 
@@ -162,4 +163,17 @@ The original corrected local design artifact still needs Figma re-import verific
 
 The owner predicate is tested with the existing `X-User-Id` development dependency. It is not verified account privacy. Clerk token verification, stable account/guest scoping, account switching and cross-installation acceptance remain increment 6 handoffs.
 
-Next session: finish the outstanding Android/native checks, then agree on saved-place reference identity (`provider`, `kind`, `externalId`) and begin increment 3 as a separate slice. Journal and photo work has not started. Do not open a PR yet.
+### Increment 3A: saved-place identity and persistence
+
+- Fetch on October 29 found Nearby advanced to `7fe32b1`; its `NearbyResults.source` and `NearbyPlace.place.id` can form explicit place references. No other branch was merged or messaged.
+- Added the proposed `SavedPlaceReference`/`SavedPlace` contract, shared validation and a structured identity key. See [Saved-place integration contract](../saved-place-contract.md) for payloads and mapping examples. This is implemented on this feature branch; it is not an agreement or deployment by the auth/Nearby owners.
+- Local and remote adapters expose `listSavedPlaces`, `savePlace` and `removeSavedPlace`. Only reference fields, an entry ID and creation time are persisted; presentation will reuse catalog/provider detail resolution in 3B.
+- Local trip and collection repositories reuse the existing queue implementation through one shared storage-lock utility. Saved references use the explicit guest key `wayfare.guest.savedPlaces.v1`. Fresh reads and strict writes protect concurrent adapters; failures reject rather than publishing success. Unknown fields and malformed entries are retained for recovery.
+- The new collections feature owns GET/POST/DELETE `/me/saved-places`. PostgreSQL enforces owner/provider/kind/reference uniqueness. Repeated saves retain ID and creation time; an atomic upsert handles competing saves without a conflict-then-read race with removal. A bounded SHA-256 index key supports long opaque external IDs; the exact original text is checked before returning an existing reference.
+- Saved references have a user foreign key and no trip foreign key. Trip deletion preserves them; user deletion cascades. Persistence never calls Google, Gemini or destination resolution, so a stale/unavailable reference can still be listed or removed.
+- Upgrade 002 was exercised in the disposable test database and applied only to the isolated local development database. No shared database was upgraded. Models remain the baseline for fresh databases.
+- Validation: frontend typecheck/lint and all 120 tests in 10 Jest suites passed; iOS and Android JavaScript exports passed. The full backend suite passed 119 tests against real isolated PostgreSQL 14. Coverage includes cross-adapter concurrency, failures/retry, corrupt storage, exact reference distinctions, long IDs, database uniqueness, digest-collision rejection, owner filtering, rollback and deletion boundaries.
+- Actual loopback HTTP smoke passed create/repeated save/list/owner predicate/delete against FastAPI and isolated PostgreSQL. Frontend transport tests use mocked fetch; local persistence tests use the official AsyncStorage Jest mock. There is no new Saved Places native UI in this slice, and no live Google or Clerk acceptance is claimed.
+- Android is connected through adb, but its native window is still absent from the UI-control inventory. Existing Android visual/interaction/restart gates remain open. No new dependency or native configuration was added.
+
+Next session: complete Saved Places Figma states using the existing four-icon navigation, then implement 3B with provider-aware resolution and a reusable save action. Keep the Android acceptance task open. Journal and photo work has not started. Do not open a PR yet.

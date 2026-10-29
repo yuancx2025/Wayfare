@@ -1,18 +1,7 @@
 import { tripSchema } from "@/domain/schemas";
 import type { Trip } from "@/domain/types";
 import { loadJSONStrict, saveJSONStrict } from "@/lib/storage";
-
-// Adapters sharing a storage key must also share a read/modify/write queue.
-// A future account namespace can use a different key without sharing its queue.
-const queues = new Map<string, Promise<void>>();
-
-function serialize<T>(key: string, operation: () => Promise<T>): Promise<T> {
-  const next = (queues.get(key) ?? Promise.resolve()).then(operation);
-  const settled = next.then(() => undefined, () => undefined);
-  queues.set(key, settled);
-  void settled.then(() => { if (queues.get(key) === settled) queues.delete(key); });
-  return next;
-}
+import { withStorageLock } from "./storageQueue";
 
 export function createLocalTripRepository(key: string) {
   async function read() {
@@ -31,8 +20,8 @@ export function createLocalTripRepository(key: string) {
 
   return {
     // Read fresh committed records instead of keeping competing adapter caches.
-    list: () => serialize(key, async () => (await read()).trips),
-    mutate: <T>(update: (trips: Trip[]) => { trips: Trip[]; result: T }): Promise<T> => serialize(key, async () => {
+    list: () => withStorageLock(key, async () => (await read()).trips),
+    mutate: <T>(update: (trips: Trip[]) => { trips: Trip[]; result: T }): Promise<T> => withStorageLock(key, async () => {
       const snapshot = await read();
       const next = update(snapshot.trips);
       if (next.trips !== snapshot.trips) {

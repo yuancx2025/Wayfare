@@ -11,11 +11,12 @@ from app.contracts import travel
 from app.features.planning import schemas as planning_schemas
 from app.features.profiles import schemas as profile_schemas
 from app.features.trips import schemas as trip_schemas
+from app.features.collections import schemas as collection_schemas
 
 TYPES_TS = Path(__file__).resolve().parents[2] / "frontend" / "src" / "domain" / "types.ts"
 # Client-only fields that intentionally have no server counterpart.
 CLIENT_ONLY = {"Destination": {"places"}, "TripDraft": {"simulateFailure"}}
-MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripSummary", "TripMetadataResult", "TripDraft", "Me", "ProfilePatch"]
+MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripSummary", "TripMetadataResult", "TripDraft", "Me", "ProfilePatch", "SavedPlaceReference", "SavedPlace"]
 
 
 def ts_interfaces() -> dict[str, dict[str, bool]]:
@@ -41,7 +42,7 @@ def allows_none(annotation) -> bool:
 @pytest.mark.parametrize("name", MODELS)
 def test_model_matches_typescript_interface(name):
     ts = ts_interfaces()[name]
-    model = getattr(travel, name, None) or getattr(planning_schemas, name, None) or getattr(profile_schemas, name, None) or getattr(trip_schemas, name, None)
+    model = next((getattr(module, name) for module in (travel, planning_schemas, profile_schemas, trip_schemas, collection_schemas) if hasattr(module, name)), None)
     assert model is not None, f"{name} is missing from the Pydantic models"
     by_alias = {f.alias or k: f for k, f in model.model_fields.items()}
     for field, optional in ts.items():

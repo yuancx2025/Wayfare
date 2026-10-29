@@ -165,6 +165,19 @@ export interface PlaceDetails {
   source: "catalog" | "google";
 }
 
+/** Provider identity, independent of itinerary activities and destination cache IDs. */
+export interface SavedPlaceReference {
+  provider: "catalog" | "google";
+  kind: "destination" | "place";
+  externalId: string;
+}
+
+/** Presentation is resolved separately; provider responses are not permanent saved records. */
+export interface SavedPlace extends SavedPlaceReference {
+  id: string;
+  createdAt: number;
+}
+
 export interface Me {
   id: string;
   name: string;

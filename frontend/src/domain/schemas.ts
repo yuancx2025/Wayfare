@@ -114,4 +114,19 @@ export const tripSchema = z.looseObject({
 
 export const tripListSchema = z.array(tripSchema);
 
+const savedPlaceReferenceFields = {
+  provider: z.enum(["catalog", "google"]),
+  kind: z.enum(["destination", "place"]),
+  // Keep opaque IDs byte-for-byte. Reject whitespace/control characters rather than trimming.
+  externalId: z.string().min(1).regex(/^[^\x00-\x20\x7f]+$/, "Use the provider's external identifier"),
+};
+
+export const savedPlaceReferenceSchema = z.strictObject(savedPlaceReferenceFields);
+export const savedPlaceSchema = z.looseObject({
+  ...savedPlaceReferenceFields,
+  id: z.string().min(1),
+  createdAt: z.number().int().nonnegative(),
+});
+export const savedPlaceListSchema = z.array(savedPlaceSchema);
+
 export type CreateTripValues = z.infer<typeof createTripSchema>;

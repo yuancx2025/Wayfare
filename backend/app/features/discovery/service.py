@@ -2,12 +2,13 @@ from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.contracts.travel import Destination, PlaceDetails, Suggestion
+from app.contracts.travel import Destination, Place, PlaceDetails, Suggestion
 from app.core.exceptions import BadGateway, Conflict, NotFound, Unprocessable, UpstreamError
 from app.domain.scheduler import is_open_during
 from app.features.discovery import repository
 from app.features.discovery.enrichment import enrich
 from app.integrations.places.catalog_data import catalog_destinations, load_catalog
+from app.integrations.places.catalog import CatalogPlaceProvider
 from app.integrations.services import Services
 
 
@@ -74,6 +75,19 @@ class DestinationService:
             raise Conflict("This trip's destination is no longer available")
         return dest
 
+    async def saved_destination(self, provider: str, external_id: str) -> Destination:
+        if provider == "catalog":
+            entry = load_catalog().get(external_id)
+            if entry is None:
+                raise NotFound("Destination details are no longer available")
+            return entry[0]
+        if self.services.places.source != "google":
+            raise BadGateway("Google destination details are unavailable right now")
+        destination = await self.resolve(external_id)
+        if destination.place_id != external_id:
+            raise NotFound("Destination details are no longer available")
+        return destination
+
 
 class PlaceService:
     def __init__(self, services: Services):
@@ -104,3 +118,18 @@ class PlaceService:
         if not url:
             raise NotFound("No photo")
         return url
+
+    async def saved_place(self, provider: str, external_id: str) -> tuple[Place, PlaceDetails]:
+        selected = CatalogPlaceProvider() if provider == "catalog" else self.services.places
+        if selected.source != provider:
+            raise BadGateway("Google place details are unavailable right now")
+        try:
+            place = await selected.get_place(external_id)
+            details = await selected.details(external_id) if place else None
+        except UpstreamError as error:
+            raise BadGateway("Place details are unavailable right now") from error
+        if place is None or details is None:
+            raise NotFound("Place details are no longer available")
+        if place.id != external_id or details.place_id != external_id or details.source != provider:
+            raise BadGateway("Place details belong to a different reference")
+        return place, details

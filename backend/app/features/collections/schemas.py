@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import ConfigDict, Field, StrictStr, field_validator
 
 from app.contracts.base import ApiModel
+from app.contracts.travel import Interest
 
 
 class SavedPlaceReference(ApiModel):
@@ -24,3 +25,17 @@ class SavedPlaceReference(ApiModel):
 class SavedPlace(SavedPlaceReference):
     id: str
     created_at: int
+
+
+class SavedPlaceDetails(ApiModel):
+    reference: SavedPlaceReference
+    name: str
+    subtitle: str
+    description: str
+    image: str | None = None
+    rating: float | None = None
+    website_uri: str | None = None
+    google_maps_uri: str | None = None
+    weekday_descriptions: list[str] | None = None
+    destination_id: str | None = None
+    best_for: list[Interest] | None = None

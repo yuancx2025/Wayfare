@@ -186,3 +186,13 @@ test("remote saved-place failures never fall back to guest storage or an empty r
   mockFetch.mockResolvedValueOnce(response({ detail: "Saved place not found" }, 404));
   await expect(api.removeSavedPlace(savedPlace.id)).rejects.toMatchObject({ status: 404 });
 });
+
+test("saved details use the owned encoded route and reject malformed provider identity", async () => {
+  const api = createRemoteApi("http://localhost:8000");
+  const details = { reference: savedReference, name: "A destination", subtitle: "A country", description: "Provider content", destinationId: "cached-city-id" };
+  mockFetch.mockResolvedValueOnce(response(details));
+  expect(await api.getSavedPlaceDetails("saved/id?")).toEqual(details);
+  expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/me/saved-places/saved%2Fid%3F/details", expect.any(Object));
+  mockFetch.mockResolvedValueOnce(response({ ...details, reference: { ...savedReference, provider: "unknown" } }));
+  await expect(api.getSavedPlaceDetails("saved-1")).rejects.toThrow();
+});

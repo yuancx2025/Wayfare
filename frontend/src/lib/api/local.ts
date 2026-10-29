@@ -2,6 +2,7 @@ import type { Api } from "./types";
 import { ApiError } from "./types";
 import { createLocalTripRepository } from "./localTrips";
 import { createLocalSavedPlaceRepository } from "./localSavedPlaces";
+import { catalogSavedPlaceDetails } from "@/domain/logic/savedPlaces";
 import type { DestinationCard, Destination, Me, ProfilePatch, Proposal, Trip, TripDraft, TripSummary } from "@/domain/types";
 import { loadJSON, saveJSONStrict } from "@/lib/storage";
 import { DESTINATIONS, findDestination, getDestination } from "@/domain/data/places";
@@ -223,6 +224,15 @@ export function createLocalApi(): Api {
     listSavedPlaces: savedPlaces.list,
     savePlace: savedPlaces.save,
     removeSavedPlace: savedPlaces.remove,
+    async getSavedPlaceDetails(id) {
+      const saved = (await savedPlaces.list()).find((item) => item.id === id);
+      if (!saved) throw new ApiError(404, "Saved place not found");
+      if (saved.provider === "google") throw new ApiError(503, "Google place details are unavailable in offline mode.");
+      const { provider, kind, externalId } = saved;
+      const details = catalogSavedPlaceDetails({ provider, kind, externalId });
+      if (!details) throw new ApiError(404, "Place details are no longer available.");
+      return details;
+    },
 
     async alternatives(tripId, day, activityId) {
       return replacementCandidates(await find(tripId), day, activityId);

@@ -178,6 +178,21 @@ export interface SavedPlace extends SavedPlaceReference {
   createdAt: number;
 }
 
+/** Resolved presentation only; never written into a saved-reference record. */
+export interface SavedPlaceDetails {
+  reference: SavedPlaceReference;
+  name: string;
+  subtitle: string;
+  description: string;
+  image?: string;
+  rating?: number;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  weekdayDescriptions?: string[];
+  destinationId?: string;
+  bestFor?: Interest[];
+}
+
 export interface Me {
   id: string;
   name: string;

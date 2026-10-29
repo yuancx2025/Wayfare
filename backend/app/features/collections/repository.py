@@ -25,6 +25,11 @@ async def list_saved_places(session: AsyncSession, user_id: str) -> list[SavedPl
     return list(result.scalars())
 
 
+async def get_saved_place(session: AsyncSession, user_id: str, saved_id: str) -> SavedPlaceRow | None:
+    result = await session.execute(select(SavedPlaceRow).where(SavedPlaceRow.id == saved_id, SavedPlaceRow.user_id == user_id))
+    return result.scalar_one_or_none()
+
+
 async def save_place(session: AsyncSession, user_id: str, reference: SavedPlaceReference) -> SavedPlaceRow:
     """Atomic upsert under the unique owner/reference key; caller commits."""
     identity = {

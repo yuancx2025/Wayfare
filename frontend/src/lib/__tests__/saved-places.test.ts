@@ -2,8 +2,9 @@ import { beforeEach, expect, jest, test } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createLocalApi } from "@/lib/api/local";
 import { createLocalSavedPlaceRepository } from "@/lib/api/localSavedPlaces";
-import { savedPlaceKey } from "@/domain/logic/savedPlaces";
+import { destinationSaveReference, savedPlaceKey } from "@/domain/logic/savedPlaces";
 import type { SavedPlaceReference } from "@/domain/types";
+import { DESTINATIONS } from "@/domain/data/places";
 
 jest.mock("expo-crypto", () => {
   let id = 0;
@@ -115,4 +116,24 @@ test("repository namespaces isolate data without claiming authenticated account 
   expect(a.id).not.toBe(b.id);
   await first.remove(a.id);
   expect(await second.list()).toEqual([b]);
+});
+
+test("catalog details resolve without itinerary fields and unknown references remain removable", async () => {
+  const api = createLocalApi();
+  const saved = await api.savePlace(place);
+  const details = await api.getSavedPlaceDetails(saved.id);
+  expect(details.name).toBe("The Met");
+  expect(details.reference).toEqual(place);
+  expect(details).not.toHaveProperty("startMin");
+  const google = await api.savePlace({ provider: "google", kind: "place", externalId: "provider-id" });
+  await expect(api.getSavedPlaceDetails(google.id)).rejects.toMatchObject({ status: 503 });
+  await api.removeSavedPlace(google.id);
+  await expect(api.getSavedPlaceDetails(google.id)).rejects.toMatchObject({ status: 404 });
+});
+
+test("destination references distinguish the catalog registry, provider IDs and missing provenance", () => {
+  const { places: _places, ...catalog } = DESTINATIONS[0];
+  expect(destinationSaveReference({ ...catalog, placeId: catalog.id })).toEqual({ provider: "catalog", kind: "destination", externalId: catalog.id });
+  expect(destinationSaveReference({ ...catalog, id: "cached-city", placeId: "google-city-id" })).toEqual({ provider: "google", kind: "destination", externalId: "google-city-id" });
+  expect(destinationSaveReference({ ...catalog, id: "unresolved-city" })).toBeNull();
 });

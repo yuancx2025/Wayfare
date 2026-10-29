@@ -1,4 +1,4 @@
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import type { Activity } from "@/domain/types";
 import { fmtDuration, fmtTime } from "@/domain/lib/format";
@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { BottomSheet, Button } from "./ui";
 import { Icon, type IconName } from "./Icon";
 import { colors, font, radius, touch } from "@/theme";
+import { SavePlaceButton } from "./SavePlaceButton";
 
 function usePlaceDetails(activity: Activity | null, date?: string) {
   return useQuery({
@@ -15,13 +16,15 @@ function usePlaceDetails(activity: Activity | null, date?: string) {
     enabled: !!activity,
     staleTime: 10 * 60 * 1000,
     retry: false,
-  }).data;
+  });
 }
 
 export default function ActivityDetailSheet({ activity, number, date, onClose, onShowMap }: {
   activity: Activity | null; number: number; date?: string; onClose: () => void; onShowMap?: () => void;
 }) {
-  const details = usePlaceDetails(activity, date);
+  const placeQuery = usePlaceDetails(activity, date);
+  const details = placeQuery.data;
+  const { height } = useWindowDimensions();
   const hours = details?.weekdayDescriptions ?? [];
 
   return (
@@ -29,10 +32,13 @@ export default function ActivityDetailSheet({ activity, number, date, onClose, o
       open={!!activity}
       onClose={onClose}
       title={activity ? `Stop ${number}` : undefined}
-      footer={onShowMap ? <Button variant="secondary" icon="map" onPress={onShowMap}>Show on map</Button> : undefined}
+      footer={activity ? <View style={styles.footer}>
+        {details && details.placeId === activity.placeId ? <SavePlaceButton reference={{ provider: details.source, kind: "place", externalId: details.placeId }} name={details.name} full /> : placeQuery.isError || placeQuery.data === null ? <Button variant="ghost" icon="refresh" onPress={() => { void placeQuery.refetch(); }}>Retry place details</Button> : null}
+        {onShowMap ? <Button variant="secondary" icon="map" onPress={onShowMap}>Show on map</Button> : null}
+      </View> : undefined}
     >
       {activity ? (
-        <View style={styles.detail}>
+        <ScrollView style={{ maxHeight: height * 0.5 }} contentContainerStyle={styles.detail}>
           <Text style={styles.cat}>{CATEGORY_LABEL[activity.category]}</Text>
           <Text style={styles.name}>{activity.name}</Text>
           <View style={styles.areaRow}>
@@ -82,7 +88,7 @@ export default function ActivityDetailSheet({ activity, number, date, onClose, o
                 : "Travel times are estimates and don't account for live conditions."}
             </Text>
           ) : null}
-        </View>
+        </ScrollView>
       ) : null}
     </BottomSheet>
   );
@@ -107,6 +113,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  footer: { gap: 12 },
   detail: { gap: 12 },
   cat: { alignSelf: "flex-start", backgroundColor: colors.mint, color: colors.forest, fontFamily: font.bodyBold, fontSize: 12, borderRadius: 999, overflow: "hidden", paddingVertical: 4, paddingHorizontal: 8 },
   name: { fontFamily: font.display, fontSize: 24, color: colors.ink },

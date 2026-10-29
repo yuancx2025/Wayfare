@@ -7,7 +7,7 @@ import type { Trip, TripDraft, TripSummary } from "@/domain/types";
 import { GenerationError } from "@/domain/logic/generate";
 import { storage } from "@/lib/storage";
 import { withTripMetadata } from "@/domain/logic/tripMetadata";
-import { savedPlaceListSchema, savedPlaceReferenceSchema, savedPlaceSchema, tripMetadataPatchSchema, tripMetadataResultSchema } from "@/domain/schemas";
+import { savedPlaceDetailsSchema, savedPlaceListSchema, savedPlaceReferenceSchema, savedPlaceSchema, tripMetadataPatchSchema, tripMetadataResultSchema } from "@/domain/schemas";
 import { savedPlaceKey } from "@/domain/logic/savedPlaces";
 
 const USER_KEY = "wayfare.userId";
@@ -97,6 +97,7 @@ export function createRemoteApi(base: string): Api {
       return saved;
     },
     removeSavedPlace: (id) => request(`/me/saved-places/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    getSavedPlaceDetails: async (id) => savedPlaceDetailsSchema.parse(await request(`/me/saved-places/${encodeURIComponent(id)}/details`)),
 
     async generateTrip(draft: TripDraft, { onStep, signal, idempotencyKey }: GenerateOptions): Promise<Trip> {
       // expo/fetch exposes the response body as a stream on native, which React Native's global fetch does not.

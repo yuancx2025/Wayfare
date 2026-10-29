@@ -16,7 +16,7 @@ from app.features.collections import schemas as collection_schemas
 TYPES_TS = Path(__file__).resolve().parents[2] / "frontend" / "src" / "domain" / "types.ts"
 # Client-only fields that intentionally have no server counterpart.
 CLIENT_ONLY = {"Destination": {"places"}, "TripDraft": {"simulateFailure"}}
-MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripSummary", "TripMetadataResult", "TripDraft", "Me", "ProfilePatch", "SavedPlaceReference", "SavedPlace"]
+MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripSummary", "TripMetadataResult", "TripDraft", "Me", "ProfilePatch", "SavedPlaceReference", "SavedPlace", "SavedPlaceDetails"]
 
 
 def ts_interfaces() -> dict[str, dict[str, bool]]:

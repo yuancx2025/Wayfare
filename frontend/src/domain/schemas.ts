@@ -128,5 +128,18 @@ export const savedPlaceSchema = z.looseObject({
   createdAt: z.number().int().nonnegative(),
 });
 export const savedPlaceListSchema = z.array(savedPlaceSchema);
+export const savedPlaceDetailsSchema = z.object({
+  reference: savedPlaceReferenceSchema,
+  name: z.string().min(1),
+  subtitle: z.string(),
+  description: z.string(),
+  image: z.string().optional(),
+  rating: z.number().optional(),
+  websiteUri: z.string().optional(),
+  googleMapsUri: z.string().optional(),
+  weekdayDescriptions: z.array(z.string()).optional(),
+  destinationId: z.string().optional(),
+  bestFor: preferencesSchema.shape.interests.optional(),
+});
 
 export type CreateTripValues = z.infer<typeof createTripSchema>;

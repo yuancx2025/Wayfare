@@ -1,6 +1,6 @@
 from app.core.routing import ApiRouter
 from app.features.collections.dependencies import CollectionServiceDep
-from app.features.collections.schemas import SavedPlace, SavedPlaceReference
+from app.features.collections.schemas import SavedPlace, SavedPlaceDetails, SavedPlaceReference
 from app.features.profiles.dependencies import UserIdDep
 
 router = ApiRouter(prefix="/me/saved-places", tags=["collections"])
@@ -14,6 +14,11 @@ async def list_saved_places(collections: CollectionServiceDep, user_id: UserIdDe
 @router.post("", response_model=SavedPlace)
 async def save_place(reference: SavedPlaceReference, collections: CollectionServiceDep, user_id: UserIdDep) -> SavedPlace:
     return await collections.save_place(user_id, reference)
+
+
+@router.get("/{saved_id}/details", response_model=SavedPlaceDetails)
+async def saved_place_details(saved_id: str, collections: CollectionServiceDep, user_id: UserIdDep) -> SavedPlaceDetails:
+    return await collections.get_details(user_id, saved_id)
 
 
 @router.delete("/{saved_id}", status_code=204)

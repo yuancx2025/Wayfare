@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import type { Activity, Day, Leg, Preferences, TripSummary } from "@/domain/types";
 import { fmtDayNum, fmtDuration, fmtRange, fmtTime, fmtWeekday, plural } from "@/domain/lib/format";
 import { statusLabel } from "@/domain/logic/tripHistory";
 import { CATEGORY_LABEL, budgetLabel, foodLabel, interestLabel, paceLabel, transportLabel } from "@/domain/logic/labels";
 import { Icon, type IconName } from "./Icon";
 import { Button, EmptyState, Spinner } from "./ui";
+import { FavoriteButton } from "./FavoriteButton";
 import { api } from "@/lib/api";
 import { colors, font, radius, space } from "@/theme";
 
@@ -17,19 +17,18 @@ export function tripStatus(trip: { startDate: string; endDate: string }, today: 
 
 export function TripCard({ trip, today, onPress }: { trip: TripSummary; today: string; onPress: () => void }) {
   return (
-    <Pressable style={styles.card} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${trip.destination} trip`}>
-      <Image source={{ uri: api.imageUrl(trip.image) }} style={StyleSheet.absoluteFill} contentFit="cover" />
-      <LinearGradient colors={["rgba(0,0,0,0.05)", "rgba(6,24,19,0.84)"]} style={StyleSheet.absoluteFill} />
-      <View style={styles.badges}>
-        <Text style={styles.badgeLight}>{tripStatus(trip, today)}</Text>
-        <Text style={styles.badgeForest}>{trip.adjusted ? "Adjusted" : "Itinerary ready"}</Text>
-      </View>
-      <View style={styles.cardCopy}>
-        <Text style={styles.cardMeta}>{fmtRange(trip.startDate, trip.endDate)} · {plural(trip.dayCount, "day")}</Text>
-        <Text style={styles.cardTitle}>{trip.destination}, {trip.country}</Text>
-        <Text style={styles.cardFoot}>{plural(trip.travelers, "traveler")} · {trip.stopCount} stops planned</Text>
-      </View>
-    </Pressable>
+    <View style={styles.card}>
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${trip.destination} trip`}>
+        <Image source={{ uri: api.imageUrl(trip.image) }} style={styles.cardImage} contentFit="cover" />
+        <View style={styles.badges} pointerEvents="none"><Text style={styles.badgeLight}>{tripStatus(trip, today)}</Text></View>
+        <View style={styles.cardCopy}>
+          <Text style={styles.cardTitle}>{trip.destination}, {trip.country}</Text>
+          <Text style={styles.cardMeta}>{fmtRange(trip.startDate, trip.endDate)} · {plural(trip.dayCount, "day")}</Text>
+          <Text style={styles.cardFoot}>{plural(trip.travelers, "traveler")} · {trip.stopCount} stops planned{trip.adjusted ? " · Adjusted" : ""}</Text>
+        </View>
+      </Pressable>
+      <View style={styles.favoriteAction}><FavoriteButton trip={trip} /></View>
+    </View>
   );
 }
 
@@ -183,14 +182,15 @@ const transportIcon = (t: Preferences["transport"]): IconName => (t === "walking
 
 const styles = StyleSheet.create({
   placeholder: { flex: 1, justifyContent: "center", backgroundColor: colors.paper },
-  card: { height: 236, borderRadius: radius.xl, overflow: "hidden", backgroundColor: colors.ink },
-  badges: { position: "absolute", top: 14, left: 14, right: 14, flexDirection: "row", justifyContent: "space-between" },
+  card: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, overflow: "hidden", backgroundColor: colors.white },
+  cardImage: { height: 174, width: "100%", backgroundColor: colors.cream },
+  favoriteAction: { position: "absolute", top: 12, right: 14 },
+  badges: { position: "absolute", top: 14, left: 14, right: 66, flexDirection: "row" },
   badgeLight: { backgroundColor: "rgba(255,254,250,0.92)", color: colors.ink, borderRadius: 999, overflow: "hidden", paddingVertical: 7, paddingHorizontal: 11, fontFamily: font.bodyBold, fontSize: 12 },
-  badgeForest: { backgroundColor: "rgba(22,75,59,0.86)", color: colors.white, borderRadius: 999, overflow: "hidden", paddingVertical: 7, paddingHorizontal: 11, fontFamily: font.bodyBold, fontSize: 12 },
-  cardCopy: { position: "absolute", left: 18, right: 18, bottom: 18 },
-  cardMeta: { color: "rgba(255,255,255,0.82)", fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase" },
-  cardTitle: { marginTop: 4, color: colors.white, fontFamily: font.display, fontSize: 26 },
-  cardFoot: { marginTop: 6, color: "rgba(255,255,255,0.92)", fontFamily: font.body, fontSize: 13 },
+  cardCopy: { padding: 18, gap: 8, minHeight: 132 },
+  cardMeta: { color: colors.muted, fontFamily: font.body, fontSize: 13 },
+  cardTitle: { color: colors.ink, fontFamily: font.displaySemi, fontSize: 21 },
+  cardFoot: { alignSelf: "flex-start", backgroundColor: colors.cream, borderRadius: radius.sm, paddingVertical: 5, paddingHorizontal: 10, color: colors.forest, fontFamily: font.bodySemi, fontSize: 11 },
   historyRow: { minHeight: 88, flexDirection: "row", alignItems: "center", gap: space[3], padding: space[3], borderRadius: radius.lg, backgroundColor: colors.cream },
   historyImage: { width: 64, height: 64, borderRadius: radius.sm, backgroundColor: colors.ink },
   historyCopy: { flex: 1, gap: 2 },

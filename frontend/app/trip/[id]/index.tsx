@@ -17,6 +17,7 @@ import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
 import { colors, font, radius, space, touch } from "@/theme";
 import { goBack } from "@/lib/back";
 import { one } from "@/lib/params";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 export default function Overview() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
@@ -57,7 +58,10 @@ export default function Overview() {
           <LinearGradient colors={["rgba(0,0,0,0.05)", "rgba(6,24,19,0.84)"]} style={StyleSheet.absoluteFill} />
           <View style={[styles.heroBar, { top: insets.top + space[3] }]}>
             <Pressable style={styles.glass} onPress={goBack} accessibilityLabel="Back to trips"><Icon name="back" color={colors.white} /></Pressable>
-            <Pressable style={styles.glass} onPress={() => setMenu(true)} accessibilityLabel="Trip options"><Icon name="more" color={colors.white} /></Pressable>
+            <View style={styles.heroActions}>
+              <FavoriteButton trip={trip} />
+              <Pressable style={styles.glass} onPress={() => setMenu(true)} accessibilityLabel="Trip options"><Icon name="more" color={colors.white} /></Pressable>
+            </View>
           </View>
           <View style={styles.heroCopy}>
             <Text style={styles.status}>{tripStatus(trip, today)}</Text>
@@ -131,6 +135,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   hero: { justifyContent: "flex-end" },
   heroBar: { position: "absolute", left: space[4], right: space[4], flexDirection: "row", justifyContent: "space-between" },
+  heroActions: { flexDirection: "row", alignItems: "center", gap: space[2] },
   glass: { width: touch, height: touch, borderRadius: touch / 2, backgroundColor: "rgba(15,30,25,0.38)", alignItems: "center", justifyContent: "center" },
   heroCopy: { padding: space[5], paddingBottom: 44 },
   status: { alignSelf: "flex-start", backgroundColor: "rgba(255,254,250,0.92)", color: colors.ink, borderRadius: 999, overflow: "hidden", paddingVertical: 7, paddingHorizontal: 11, fontFamily: font.bodyBold, fontSize: 12 },

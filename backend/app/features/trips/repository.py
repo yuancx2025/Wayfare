@@ -16,6 +16,7 @@ def _trip_row(user_id: str, trip: Trip, idempotency_key: str | None) -> TripRow:
         country=trip.country, image=trip.image, start_date=trip.start_date, end_date=trip.end_date,
         travelers=trip.travelers, prefs=data["prefs"], days=data["days"], adjusted=trip.adjusted,
         version=trip.version, idempotency_key=idempotency_key,
+        is_favorite=trip.is_favorite, visited=trip.visited,
         created_at=datetime.fromtimestamp(trip.created_at / 1000, tz=timezone.utc),
     )
 
@@ -26,6 +27,7 @@ def trip_from_row(row: TripRow | Row) -> Trip:
         image=row.image, start_date=row.start_date, end_date=row.end_date, travelers=row.travelers,
         prefs=Preferences.model_validate(row.prefs), days=[Day.model_validate(d) for d in row.days],
         adjusted=row.adjusted, created_at=int(row.created_at.timestamp() * 1000), version=row.version,
+        is_favorite=row.is_favorite, visited=row.visited,
     )
 
 
@@ -35,6 +37,7 @@ def summary_from_row(row: TripRow) -> TripSummary:
         image=row.image, start_date=row.start_date, end_date=row.end_date, travelers=row.travelers,
         day_count=len(row.days), stop_count=sum(len(d["activities"]) for d in row.days), adjusted=row.adjusted,
         created_at=int(row.created_at.timestamp() * 1000),
+        is_favorite=row.is_favorite, visited=row.visited,
     )
 
 
@@ -70,6 +73,18 @@ async def delete_trip(session: AsyncSession, row: TripRow) -> None:
     # PostgreSQL removes proposals through the foreign key's ON DELETE CASCADE.
     await session.delete(row)
     await session.commit()
+
+
+async def update_metadata(session: AsyncSession, user_id: str, trip_id: str, patch: dict[str, bool]) -> Row | None:
+    """Update only supplied metadata columns under the owner predicate; caller commits."""
+    trips = TripRow.__table__
+    result = await session.execute(
+        update(trips)
+        .where(trips.c.id == trip_id, trips.c.user_id == user_id)
+        .values(**patch, updated_at=utcnow())
+        .returning(trips.c.id, trips.c.is_favorite, trips.c.visited)
+    )
+    return result.one_or_none()
 
 
 async def apply_day_if_version(session: AsyncSession, user_id: str, trip_id: str, days: list[dict], expected: int) -> Row | None:

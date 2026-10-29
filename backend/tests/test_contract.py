@@ -10,22 +10,27 @@ import pytest
 from app.contracts import travel
 from app.features.planning import schemas as planning_schemas
 from app.features.profiles import schemas as profile_schemas
+from app.features.trips import schemas as trip_schemas
 
 TYPES_TS = Path(__file__).resolve().parents[2] / "frontend" / "src" / "domain" / "types.ts"
 # Client-only fields that intentionally have no server counterpart.
 CLIENT_ONLY = {"Destination": {"places"}, "TripDraft": {"simulateFailure"}}
-MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripDraft", "Me", "ProfilePatch"]
+MODELS = ["Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripSummary", "TripMetadataResult", "TripDraft", "Me", "ProfilePatch"]
 
 
 def ts_interfaces() -> dict[str, dict[str, bool]]:
     """interface name -> {field: optional}"""
     src = TYPES_TS.read_text()
-    out = {}
-    for name, body in re.findall(r"export interface (\w+) \{(.*?)\n\}", src, re.S):
+    out, parents = {}, {}
+    for name, bases, body in re.findall(r"export interface (\w+)(?: extends ([\w, ]+))? \{(.*?)\n\}", src, re.S):
         fields = {}
         for m in re.finditer(r"^\s*(\w+)(\??):", body, re.M):
             fields[m.group(1)] = m.group(2) == "?"
         out[name] = fields
+        parents[name] = bases.split(",") if bases else []
+    for name, bases in parents.items():
+        for base in bases:
+            out[name] = {**out[base.strip()], **out[name]}
     return out
 
 
@@ -36,7 +41,7 @@ def allows_none(annotation) -> bool:
 @pytest.mark.parametrize("name", MODELS)
 def test_model_matches_typescript_interface(name):
     ts = ts_interfaces()[name]
-    model = getattr(travel, name, None) or getattr(planning_schemas, name, None) or getattr(profile_schemas, name, None)
+    model = getattr(travel, name, None) or getattr(planning_schemas, name, None) or getattr(profile_schemas, name, None) or getattr(trip_schemas, name, None)
     assert model is not None, f"{name} is missing from the Pydantic models"
     by_alias = {f.alias or k: f for k, f in model.model_fields.items()}
     for field, optional in ts.items():

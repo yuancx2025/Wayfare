@@ -1,11 +1,12 @@
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type ReactNode } from "react";
-import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripSummary } from "@/domain/types";
+import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripMetadataResult, TripSummary } from "@/domain/types";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import { api, ApiError } from "@/lib/api";
 import { summarize } from "@/lib/api/local";
 
 interface State {
   hydrated: boolean;
+  refreshing: boolean;
   loadError: string | null;
   summaries: TripSummary[];
   trips: Record<string, Trip>;
@@ -14,14 +15,18 @@ interface State {
   draftNonce: number;
   me: Me | null;
   capabilities: Capabilities;
+  favoritePending: Record<string, boolean>;
 }
 
 type Action =
-  | { type: "hydrate"; summaries: TripSummary[]; defaultPrefs: Preferences; me: Me; capabilities: Capabilities }
+  | { type: "hydrate"; summaries: TripSummary[]; defaultPrefs: Preferences; me: Me; capabilities: Capabilities; preserveMetadataIds: Set<string> }
+  | { type: "refreshStarted" }
   | { type: "loadFailed"; message: string }
   | { type: "startDraft"; destination?: string; destinationId?: string }
   | { type: "updateDraft"; patch: Partial<TripDraft> }
-  | { type: "putTrip"; trip: Trip; isNew?: boolean }
+  | { type: "putTrip"; trip: Trip; isNew?: boolean; preserveMetadata?: boolean }
+  | { type: "tripMetadata"; metadata: TripMetadataResult }
+  | { type: "favoritePending"; id: string; pending: boolean }
   | { type: "deleteTrip"; id: string }
   | { type: "saveDefaultPrefs"; prefs: Preferences }
   | { type: "setMe"; me: Me };
@@ -40,26 +45,57 @@ const emptyDraft = (prefs: Preferences, destination = "", destinationId?: string
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case "hydrate":
+    case "refreshStarted":
+      return { ...state, refreshing: true };
+    case "hydrate": {
+      const summaries = action.summaries.map((summary) => {
+        const current = state.summaries.find((trip) => trip.id === summary.id) ?? state.trips[summary.id];
+        return current && action.preserveMetadataIds.has(summary.id)
+          ? { ...summary, isFavorite: current.isFavorite, visited: current.visited } : summary;
+      });
+      const trips = { ...state.trips };
+      for (const summary of summaries) {
+        if (trips[summary.id]) trips[summary.id] = { ...trips[summary.id], isFavorite: summary.isFavorite, visited: summary.visited };
+      }
       return {
-        ...state, hydrated: true, loadError: null, summaries: action.summaries, defaultPrefs: action.defaultPrefs,
+        ...state, hydrated: true, refreshing: false, loadError: null, summaries, trips, defaultPrefs: action.defaultPrefs,
         draft: emptyDraft(action.defaultPrefs), me: action.me, capabilities: action.capabilities,
       };
+    }
     case "loadFailed":
-      return { ...state, hydrated: true, loadError: action.message };
+      return { ...state, hydrated: true, refreshing: false, loadError: action.message };
     case "startDraft":
       return { ...state, draftNonce: state.draftNonce + 1, draft: emptyDraft(state.defaultPrefs, action.destination, action.destinationId) };
     case "updateDraft":
       return { ...state, draft: { ...state.draft, ...action.patch } };
     case "putTrip": {
-      const summary = summarize(action.trip);
+      const current = state.trips[action.trip.id];
+      const base = current && (current.version ?? 1) > (action.trip.version ?? 1) ? current : action.trip;
+      const metadata = state.summaries.find((trip) => trip.id === base.id) ?? current;
+      const trip = action.preserveMetadata && metadata
+        ? { ...base, isFavorite: metadata.isFavorite, visited: metadata.visited } : base;
+      const summary = summarize(trip);
       const summaries = state.summaries.some((s) => s.id === summary.id)
         ? state.summaries.map((s) => (s.id === summary.id ? summary : s))
         : [summary, ...state.summaries];
       return {
-        ...state, summaries, trips: { ...state.trips, [action.trip.id]: action.trip },
+        ...state, summaries, trips: { ...state.trips, [trip.id]: trip },
         draft: action.isNew ? emptyDraft(state.defaultPrefs) : state.draft,
       };
+    }
+    case "tripMetadata": {
+      const { id, isFavorite, visited } = action.metadata;
+      return {
+        ...state,
+        summaries: state.summaries.map((trip) => trip.id === id ? { ...trip, isFavorite, visited } : trip),
+        trips: state.trips[id] ? { ...state.trips, [id]: { ...state.trips[id], isFavorite, visited } } : state.trips,
+      };
+    }
+    case "favoritePending": {
+      const favoritePending = { ...state.favoritePending };
+      if (action.pending) favoritePending[action.id] = true;
+      else delete favoritePending[action.id];
+      return { ...state, favoritePending };
     }
     case "deleteTrip": {
       const { [action.id]: _gone, ...trips } = state.trips;
@@ -80,6 +116,7 @@ interface Store extends State {
   deleteTrip: (id: string) => Promise<void>;
   saveDefaultPrefs: (prefs: Preferences) => Promise<void>;
   saveProfile: (patch: ProfilePatch) => Promise<void>;
+  setTripFavorite: (id: string, isFavorite: boolean) => Promise<void>;
   /** Offline only; undefined when the backend is configured. */
   loadSample?: () => Promise<void>;
   /** Offline only: past, ongoing, and today-boundary trips for history. */
@@ -97,6 +134,7 @@ export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : "S
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, {
     hydrated: false,
+    refreshing: false,
     loadError: null,
     summaries: [],
     trips: {},
@@ -105,19 +143,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     draftNonce: 0,
     me: null,
     capabilities: NO_CAPABILITIES,
+    favoritePending: {},
   });
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef(new Map<string, Promise<Trip>>());
+  const pendingFavorites = useRef(new Map<string, { value: boolean; promise: Promise<void> }>());
+  const metadataEpoch = useRef(new Map<string, number>());
+  const removedTrips = useRef(new Set<string>());
+  const refreshEpoch = useRef(0);
 
   const refresh = useCallback(async () => {
+    const mine = ++refreshEpoch.current;
+    const epochs = new Map(metadataEpoch.current);
+    const preserveMetadataIds = new Set(pendingFavorites.current.keys());
+    dispatch({ type: "refreshStarted" });
     try {
       const [summaries, defaultPrefs, me, capabilities] = await Promise.all([
         api.listTrips(), api.getPreferences(), api.getMe(), api.capabilities().catch(() => NO_CAPABILITIES),
       ]);
-      dispatch({ type: "hydrate", summaries, defaultPrefs, me, capabilities });
+      if (mine !== refreshEpoch.current) return;
+      for (const [id, epoch] of metadataEpoch.current) {
+        if (epochs.get(id) !== epoch) preserveMetadataIds.add(id);
+      }
+      dispatch({ type: "hydrate", summaries: summaries.filter((trip) => !removedTrips.current.has(trip.id)), defaultPrefs, me, capabilities, preserveMetadataIds });
     } catch (e) {
-      dispatch({ type: "loadFailed", message: errorMessage(e) });
+      if (mine === refreshEpoch.current) dispatch({ type: "loadFailed", message: errorMessage(e) });
     }
   }, []);
 
@@ -141,11 +192,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const loadTrip = useCallback((id: string) => {
     const inflight = pending.current.get(id);
     if (inflight) return inflight;
+    const epoch = metadataEpoch.current.get(id);
+    const wasPending = pendingFavorites.current.has(id);
     const p = api.getTrip(id)
-      .then((trip) => { dispatch({ type: "putTrip", trip }); return trip; })
+      .then((trip) => {
+        if (removedTrips.current.has(id)) throw new ApiError(404, "Trip not found");
+        dispatch({ type: "putTrip", trip, preserveMetadata: wasPending || epoch !== metadataEpoch.current.get(id) });
+        return trip;
+      })
       .finally(() => pending.current.delete(id));
     pending.current.set(id, p);
     return p;
+  }, []);
+
+  const setTripFavorite = useCallback(function setFavorite(id: string, isFavorite: boolean): Promise<void> {
+    const active = pendingFavorites.current.get(id);
+    if (active) {
+      return active.value === isFavorite ? active.promise : active.promise.catch(() => undefined).then(() => setFavorite(id, isFavorite));
+    }
+    if (removedTrips.current.has(id)) return Promise.reject(new ApiError(404, "Trip not found"));
+    metadataEpoch.current.set(id, (metadataEpoch.current.get(id) ?? 0) + 1);
+    dispatch({ type: "favoritePending", id, pending: true });
+    const promise = api.updateTripMetadata(id, { isFavorite }).then((metadata) => {
+      if (!removedTrips.current.has(id)) dispatch({ type: "tripMetadata", metadata });
+    }).finally(() => {
+      pendingFavorites.current.delete(id);
+      dispatch({ type: "favoritePending", id, pending: false });
+    });
+    pendingFavorites.current.set(id, { value: isFavorite, promise });
+    return promise;
   }, []);
 
   const value = useMemo<Store>(() => ({
@@ -154,11 +229,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     showToast,
     refresh,
     loadTrip,
+    setTripFavorite,
     startDraft: (destination, destinationId) => dispatch({ type: "startDraft", destination, destinationId }),
     updateDraft: (patch) => dispatch({ type: "updateDraft", patch }),
-    putTrip: (trip, opts) => { dispatch({ type: "putTrip", trip, isNew: opts?.isNew }); refreshMe(); },
+    putTrip: (trip, opts) => {
+      if (opts?.isNew) removedTrips.current.delete(trip.id);
+      if (removedTrips.current.has(trip.id)) return;
+      dispatch({ type: "putTrip", trip, isNew: opts?.isNew, preserveMetadata: !opts?.isNew });
+      refreshMe();
+    },
     deleteTrip: async (id) => {
       await api.deleteTrip(id);
+      removedTrips.current.add(id);
       dispatch({ type: "deleteTrip", id });
       refreshMe();
     },
@@ -174,6 +256,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     loadSample: api.loadSample
       ? async () => {
         const trip = await api.loadSample!();
+        removedTrips.current.delete(trip.id);
         dispatch({ type: "putTrip", trip });
         refreshMe();
       }
@@ -181,11 +264,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     loadHistoryFixtures: api.loadHistoryFixtures
       ? async () => {
         const trips = await api.loadHistoryFixtures!();
-        for (const trip of trips) dispatch({ type: "putTrip", trip });
+        for (const trip of trips) {
+          removedTrips.current.delete(trip.id);
+          dispatch({ type: "putTrip", trip });
+        }
         refreshMe();
       }
       : undefined,
-  }), [state, toast, showToast, refresh, loadTrip, refreshMe]);
+  }), [state, toast, showToast, refresh, loadTrip, refreshMe, setTripFavorite]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

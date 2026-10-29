@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 export type IconName =
   | "arrow" | "back" | "calendar" | "car" | "check" | "chevron" | "clock" | "compass" | "edit" | "heart" | "home"
   | "map" | "minus" | "more" | "pin" | "plane" | "plus" | "search" | "spark" | "star" | "user" | "users" | "wallet"
-  | "x" | "walk" | "train" | "sliders" | "trash" | "utensils" | "refresh" | "leaf" | "swap" | "alert";
+  | "x" | "walk" | "train" | "sliders" | "trash" | "utensils" | "refresh" | "leaf" | "swap" | "alert" | "heart-outline" | "bookmark";
 
 type IonName = ComponentProps<typeof Ionicons>["name"];
 
@@ -19,6 +19,8 @@ const MAP: Record<IconName, IonName> = {
   compass: "compass-outline",
   edit: "create-outline",
   heart: "heart",
+  "heart-outline": "heart-outline",
+  bookmark: "bookmark-outline",
   home: "home-outline",
   map: "map-outline",
   minus: "remove",

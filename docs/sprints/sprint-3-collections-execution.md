@@ -70,7 +70,7 @@ Two local-storage issues must be covered when introducing new fields: entire-lis
 | 6. Account/provider integration | Connect the auth owner's final shared API/scope/reset contracts and Nearby entry point | A/B isolation, late-response protection, cloud text across two installations, photos explicitly device-local |
 | 7. Release checks and review preparation | Fix regressions, run required checks, and record limitations | Original generation/maps/adjustments still work; actual evidence distinguishes mocks and real services |
 
-Deliver one increment per development session. Increment 1 establishes the storage and adapter boundary; the next increment adds the user-visible favorite journey and its backend implementation.
+Deliver one increment per development session. Increments 1 and 2 establish trip metadata persistence and the Favorite Trips journey. Complete the outstanding native acceptance checks before expanding into saved-place implementation.
 
 ## 5. Seven-day capacity plan
 
@@ -111,9 +111,10 @@ If auth or PostgreSQL is late, continue local persistence and UI/contract work, 
 
 ## 7. Regression and collaboration checklist
 
-- [x] Confirm frontend metadata defaults across old local records, generation, Trip and TripSummary; backend serialization is deferred to increment 2.
+- [x] Confirm metadata defaults across legacy local records, generation, Trip and TripSummary, including backend serialization.
 - [x] Confirm strict local writes and overlapping mutations do not lose user changes in adapter tests.
-- [ ] Confirm favorite/visited/journal operations leave itinerary version and valid proposals intact.
+- [x] Confirm favorite and visited metadata updates leave itinerary version and valid proposals intact.
+- [ ] Confirm the same invariant for journal operations when implemented.
 - [ ] Confirm provider/kind ID distinctions and concurrent saved-place deduplication.
 - [ ] Confirm journal ownership, length boundaries, time-zone rules, failed read/save behavior and cascade deletion.
 - [ ] Confirm picker cancellation, file replacement/cleanup, missing files and switching accounts during selection.
@@ -125,12 +126,40 @@ If auth or PostgreSQL is late, continue local persistence and UI/contract work, 
 
 ## 8. Current status
 
-- The retired authentication branch has been removed locally and remotely; its committed history is backed up outside the repository.
-- This branch is based on current main and does not include the retired authentication changes or the other developers' unmerged feature branches.
-- Increment 1 implements required `isFavorite` and `visited` booleans in frontend trip/detail summaries, defaults legacy reads to false, and adds explicit metadata patches returning only `{ id, isFavorite, visited }`.
-- Local trip operations share a queue per storage key and read fresh committed records. Favorite, delete, sample/fixture insertion, and adjustment application all use that boundary. No in-memory success is published before a strict write completes. This queue coordinates adapters within one JavaScript runtime; it is not a cross-process storage transaction.
-- Valid legacy entries remain readable next to malformed entries. Writes retain the unreadable entries and unknown fields for recovery. Storage read failures, malformed JSON, invalid collection containers, and collections with no readable entries reject rather than displaying a false empty state.
-- Metadata updates preserve itinerary dates, contents, creation time, and version. Refreshing dated fixtures preserves collection metadata. Failed adjustment writes retain the preview for retry.
-- The remote adapter normalizes legacy trip responses and includes the proposed metadata PATCH contract. Network tests use mocked fetch; a working server endpoint, PostgreSQL persistence, and authenticated ownership are not delivered by this increment.
-- Validation on October 28: frontend typecheck and lint passed; all 82 tests in 7 Jest suites passed using `npm test -- --runInBand --watchman=false`. Watchman is disabled because its state directory is outside this workspace's sandbox. iOS and Android JavaScript exports passed. Persistence/failure/concurrency tests use the official AsyncStorage Jest mock and fresh adapter instances; simulator restart, native visual checks, real backend requests, and PostgreSQL acceptance remain pending.
-- Next: implement the owned backend PATCH without resetting a database, merge metadata into the Store without replacing itinerary data, then connect the reusable card/detail action and Profile Favorite Trips states to the approved visual reference.
+The retired authentication branch was removed locally and remotely, with committed history backed up outside the repository. This branch starts from main and excludes retired authentication changes and other developers' unmerged branches. Fetch on October 29 still showed `main@48d627b` and `authentication-with-clerk@371c758`; no new account database baseline was available. No shared database or authentication implementation was modified.
+
+### Increment 1: persistence boundary
+
+- Required `isFavorite` and `visited` booleans default legacy trip/detail summaries to false. Explicit metadata patches return only `{ id, isFavorite, visited }`.
+- Local mutations share a queue per storage key and read fresh committed records. Favorite, delete, fixture insertion and adjustment application use this boundary. The queue coordinates adapters within one JavaScript runtime, not separate processes.
+- Strict storage writes reject failures before publishing success. Valid legacy records remain readable next to malformed entries; writes preserve unreadable entries and unknown fields for recovery. Corrupt containers and read failures reject rather than displaying false empty states.
+- Metadata does not change itinerary dates, contents, creation time or version. Dated fixture refresh preserves metadata; a failed adjustment write retains the proposal for retry.
+- October 28 validation: 82 frontend tests, typecheck, lint and both platform JavaScript exports passed. Storage tests use the official AsyncStorage Jest mock and fresh adapter instances.
+
+### Increment 2: Favorite Trips journey
+
+- Shared card/detail favorite controls use explicit desired values, show a pending state across views and publish confirmed writes only. The heart is a sibling of the card's navigation control. Removing a favorite from detail leaves the trip open.
+- Profile links to Favorite Trips with a live count. The list filters existing summaries, with loading, empty, read-failure/retry and pull-to-refresh states. It uses the approved paper/forest/mint palette, typography and white-body trip cards.
+- The four icon-and-label tabs are Trips, Explore, Saved and Profile. Saved is a truthful coming-soon shell; place saving is still increment 3.
+- Store merges metadata without replacing itinerary data. Metadata epochs protect writes from delayed list/detail reads; itinerary versions protect newer cached plans. Repeated matching writes coalesce, opposing writes serialize and late responses do not resurrect deleted trips.
+- The remote PATCH applies its owner predicate in the SQL UPDATE, changes only supplied booleans and the update timestamp, and returns narrow metadata. It preserves itinerary versions and valid adjustment proposals.
+- Models define the new columns for fresh databases. `backend/scripts/sql/001_trip_collection_metadata.sql` is an explicit, one-time legacy upgrade; review the target schema with the account database owner before applying it. Startup never runs it automatically. The upgrade was exercised only in a disposable test database.
+- October 29 validation: frontend typecheck/lint and all 96 tests in 9 Jest suites passed with `--runInBand --watchman=false`; iOS and Android JavaScript exports passed. Backend regression: all 96 tests passed against isolated PostgreSQL 14. Tests include strict payloads, owner filtering, concurrent itinerary/metadata writes, independent partial metadata updates, transaction rollback and legacy upgrade preservation.
+- Backend tests used new loopback-only development/test databases, separate from any shared database. The TS parity fixture was regenerated with the added default flags; scheduler output still matches.
+
+### Native acceptance on October 29
+
+| Check | Evidence | Remaining limit |
+| --- | --- | --- |
+| iOS local mode | iPhone 18 Pro / iOS 27, Expo Go 57.0.9: icon tabs, Profile count, populated and empty favorites, card save without navigation, detail removal while staying on detail, consistent return state | Exact Figma pixel comparison and accessibility/font-scale review still pending |
+| Local restart | Closed Expo Go through the iOS app switcher, relaunched, and observed the saved heart restored | Not a two-installation or authenticated-account test |
+| Real remote mode | Separate Metro session and actual FastAPI HTTP/RemoteApi calls against isolated PostgreSQL; simulator PATCH returned 200 and database row stayed at itinerary version 1 | Uses the existing development identity transport, not Clerk |
+| Remote failure/retry | Stopped the backend; save showed retry guidance and retained the committed heart. Restarted backend and Expo Go; saved state restored and retry succeeded | Automated screen/state failure cases use Jest mocks; no production outage test |
+| Android | Pixel_10 emulator launched and SDK-compatible Expo Go installed; Android JavaScript export passed | UI control could not bind the emulator window, so native interaction, restart and visual acceptance are pending |
+| Generation/maps/adjustments | Backend scheduler/adjustment regression and frontend suites passed; metadata preserved valid proposals | Native map tiles/markers/routes and full generation flow in both modes on both platforms still need the release checklist |
+
+The original corrected local design artifact still needs Figma re-import verification. Native screens were visually reviewed against the recorded design specification; this does not claim a completed pixel comparison. No new frontend dependency or native build configuration was added.
+
+The owner predicate is tested with the existing `X-User-Id` development dependency. It is not verified account privacy. Clerk token verification, stable account/guest scoping, account switching and cross-installation acceptance remain increment 6 handoffs.
+
+Next session: finish the outstanding Android/native checks, then agree on saved-place reference identity (`provider`, `kind`, `externalId`) and begin increment 3 as a separate slice. Journal and photo work has not started. Do not open a PR yet.

@@ -7,7 +7,7 @@ from app.contracts.travel import Day, Trip
 from app.core.exceptions import NotFound, UpstreamError
 from app.db.session import get_sessionmaker
 from app.features.trips import repository
-from app.features.trips.schemas import DayRoute, RouteLeg, TripSummary
+from app.features.trips.schemas import DayRoute, RouteLeg, TripMetadataPatch, TripMetadataResult, TripSummary
 from app.integrations.routing.protocol import TravelRouter
 
 
@@ -29,6 +29,13 @@ class TripService:
         if row is None:
             raise NotFound("Trip not found")
         await repository.delete_trip(self.session, row)
+
+    async def update_metadata(self, user_id: str, trip_id: str, patch: TripMetadataPatch) -> TripMetadataResult:
+        row = await repository.update_metadata(self.session, user_id, trip_id, patch.model_dump(exclude_unset=True))
+        if row is None:
+            raise NotFound("Trip not found")
+        await self.session.commit()
+        return TripMetadataResult(id=row.id, is_favorite=row.is_favorite, visited=row.visited)
 
     async def find_by_idempotency(self, user_id: str, key: str) -> Trip | None:
         row = await repository.find_trip_by_idempotency(self.session, user_id, key)

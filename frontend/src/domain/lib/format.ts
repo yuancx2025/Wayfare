@@ -32,3 +32,5 @@ export const fmtDuration = (min: number) => {
   return m ? `${h}h ${m}m` : `${h}h`;
 };
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+export const fmtDistance = (m: number) =>
+  m < 1000 ? `${Math.round(m / 10) * 10} m` : m < 100000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m / 1000).toLocaleString("en-US")} km`;

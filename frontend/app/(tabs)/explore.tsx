@@ -11,6 +11,7 @@ import { useDebounced } from "@/lib/useDebounced";
 import { useStore } from "@/state/store";
 import { Button, EmptyState, Spinner } from "@/components/ui";
 import { Icon } from "@/components/Icon";
+import { NearbySection } from "@/components/NearbySection";
 import { colors, font, radius, space } from "@/theme";
 
 export default function Explore() {
@@ -61,6 +62,9 @@ export default function Explore() {
               </Pressable>
             ) : null}
           </View>
+          <View style={q ? styles.hidden : undefined}>
+            <NearbySection />
+          </View>
           {destinations.isPending ? (
             <Spinner label="Finding destinations" />
           ) : destinations.isError ? (
@@ -99,6 +103,7 @@ export default function Explore() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
+  hidden: { display: "none" },
   header: { paddingHorizontal: space[5], marginBottom: space[4] },
   eyebrow: { color: colors.muted, fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1, textTransform: "uppercase" },
   title: { fontFamily: font.display, fontSize: 32, color: colors.ink },

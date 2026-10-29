@@ -101,6 +101,14 @@ class GooglePlaceProvider:
         hint = cats[0] if len(cats) == 1 else None
         return [p for g in raw if (p := normalize.to_place(g, hint))]
 
+    async def around(self, center: tuple[float, float], categories: list[Category], radius_m: float) -> list[Place]:
+        types = sorted({t for c in categories for t in normalize.NEARBY_TYPES[c]})
+        lat, lng = center
+        # Not cached: the shared cache would keep the user's position (as part of the key) for hours.
+        raw = await self._g.nearby_search(lat, lng, radius_m, types, rank_preference="DISTANCE")
+        hint = categories[0] if len(categories) == 1 else None
+        return [p for g in raw if (p := normalize.to_place(g, hint))]
+
     async def _details_raw(self, place_id: str) -> dict:
         return await self._cached(cache_key("details", place_id), lambda: self._g.details(place_id, DETAIL_FIELDS))
 

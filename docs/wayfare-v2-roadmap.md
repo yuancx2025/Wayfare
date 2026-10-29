@@ -20,7 +20,7 @@ Build a personal travel hub, secure its data, add collections and native feature
 | [1 — Profile and History](sprints/sprint-1-profile-and-history.md) | October 19–25 | Editable profile, separate preferences, organized trip history | Edit a profile, restart, and reopen a past itinerary |
 | [2 — Authentication](sprints/sprint-2-authentication-and-private-accounts.md) | October 26–November 1 | Verified email accounts, private cloud data, local guest mode | One account across two app installations; another account denied access |
 | [3 — Collections and Memories](sprints/sprint-3-collections-and-travel-memories.md) | November 2–8 | Favorite trips, saved places, journal text, one local photo per trip | Save a place, favorite a trip, and reopen a journal after restart |
-| [4 — Location and Discovery](sprints/sprint-4-geolocation-and-nearby-discovery.md) | November 9–15 | Foreground location and nearby places | Simulate a location, discover nearby places, and handle denied permission |
+| [4 — Location and Discovery](sprints/sprint-4-geolocation-and-nearby-discovery.md) | November 9–15 | Foreground location and nearby places. **Started early; iOS verified, Android and Save Place pending** | Simulate a location, discover nearby places, and handle denied permission |
 | [5 — Insights and Release](sprints/sprint-5-insights-integration-and-release.md) | November 16–22 | Deterministic insights, integrated app, release artifacts | Complete the main journey on iOS Simulator and Android emulator |
 
 The linked documents contain each sprint's implementation scope, public interfaces, ownership, weekly sequence, acceptance criteria, and deferred work.

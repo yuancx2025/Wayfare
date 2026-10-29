@@ -105,6 +105,7 @@ export function createRemoteApi(base: string): Api {
     autocomplete: (q, session) => request(`/places/autocomplete?${new URLSearchParams({ q, session })}`),
     resolveDestination: (placeId) => request("/destinations/resolve", json("POST", { placeId })),
     listDestinations: (q) => request(`/destinations?${new URLSearchParams({ q })}`),
+    nearbyPlaces: (req) => request("/places/nearby/search", json("POST", req)),
     async placeDetails(placeId, visit) {
       const qs = visit ? `?${new URLSearchParams({ date: visit.date, startMin: String(visit.startMin), durationMin: String(visit.durationMin) })}` : "";
       try {

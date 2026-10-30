@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { recentPast } from "@/domain/logic/tripHistory";
 import { useToday } from "@/lib/useToday";
 import { useStore } from "@/state/store";
-import { Button, EmptyState, Spinner } from "@/components/ui";
+import { Button, EmptyState } from "@/components/ui";
+import { RemoteSpinner } from "@/components/RemoteSpinner";
 import { Icon, type IconName } from "@/components/Icon";
 import { TripHistoryRow } from "@/components/trip";
 import { AccountCard } from "@/components/auth/AccountCard";
@@ -18,7 +19,7 @@ export default function ProfileOverview() {
   const past = recentPast(summaries, today);
 
   if (!hydrated) {
-    return <View style={styles.loading}><Spinner label="Loading your profile" /></View>;
+    return <View style={styles.loading}><RemoteSpinner label="Loading your profile" /></View>;
   }
   if (loadError || !me) {
     return (

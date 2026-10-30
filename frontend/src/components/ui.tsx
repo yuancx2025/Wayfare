@@ -286,5 +286,5 @@ const styles = StyleSheet.create({
   toast: { position: "absolute", alignSelf: "center", zIndex: 60, flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 999, backgroundColor: colors.ink },
   toastText: { color: colors.white, fontFamily: font.bodySemi, fontSize: 14 },
   spinner: { padding: space[5], alignItems: "center", gap: space[2] },
-  spinnerText: { color: colors.muted, fontFamily: font.body, fontSize: 14, textAlign: "center" },
+  spinnerText: { alignSelf: "stretch", color: colors.muted, fontFamily: font.body, fontSize: 14, lineHeight: 20, textAlign: "center" },
 });

@@ -3,7 +3,8 @@ import { useRouter } from "expo-router";
 import { groupTrips } from "@/domain/logic/tripHistory";
 import { useToday } from "@/lib/useToday";
 import { errorMessage, useStore } from "@/state/store";
-import { Button, EmptyState, SectionHeading, Spinner, TopBar } from "@/components/ui";
+import { Button, EmptyState, SectionHeading, TopBar } from "@/components/ui";
+import { RemoteSpinner } from "@/components/RemoteSpinner";
 import { TripHistoryRow } from "@/components/trip";
 import { colors, space } from "@/theme";
 
@@ -26,7 +27,7 @@ export default function TripHistory() {
     <View style={styles.screen}>
       <TopBar title="Trip history" onBack={() => router.back()} />
       {!hydrated ? (
-        <View style={styles.fill}><Spinner label="Loading your trips" /></View>
+        <View style={styles.fill}><RemoteSpinner label="Loading your trips" /></View>
       ) : loadError ? (
         <View style={styles.fill}>
           <EmptyState

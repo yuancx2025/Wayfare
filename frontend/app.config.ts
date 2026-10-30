@@ -36,6 +36,9 @@ const config: ExpoConfig = {
     "@react-native-community/datetimepicker",
     "expo-splash-screen",
     ["react-native-maps", { androidGoogleMapsApiKey }],
+    "@clerk/expo",
+    "expo-secure-store",
+    "expo-web-browser",
   ],
 };
 

@@ -41,7 +41,7 @@ Inside a feature, `service.py`, `schemas.py` and `dependencies.py` are public. E
 
 | Feature     | Tables         | Public interface                                                                |
 | ----------- | -------------- | ------------------------------------------------------------------------------- |
-| profiles    | `users`        | `UserIdDep` (X-User-Id identity), `ProfileService`                              |
+| profiles    | `users`        | `UserIdDep` (Clerk session identity), `ProfileService`                              |
 | trips       | `trips`        | `TripService`, `TripDep` (current user's trip or 404)                           |
 | discovery   | `destinations` | `DestinationService` (`resolve_for_draft`, `get_for_trip`, ...), `PlaceService` |
 | planning    | none           | `PlanningService`                                                               |

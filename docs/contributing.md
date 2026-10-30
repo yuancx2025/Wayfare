@@ -23,8 +23,8 @@ Example: a new "More museums" adjustment touches `features/adjustments/proposals
 The API is PostgreSQL-only. SQLAlchemy models are the schema. `create_all()` creates missing tables and does not
 change columns or constraints that already exist.
 
-The API trusts the client's `X-User-Id` header and has no authentication. Run it only on your machine or a private
-network until Sprint 2 adds verified accounts. Do not deploy it publicly.
+The API accepts only Clerk session tokens (`Authorization: Bearer`), verified locally with `CLERK_JWT_KEY`, and
+scopes every trip to the signed-in account. Guests never call it; their trips stay on the device.
 
 ### Neon
 

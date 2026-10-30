@@ -3,7 +3,7 @@
 import asyncio
 import json
 
-from tests.conftest import FixedRouter
+from tests.conftest import FixedRouter, add_demo_trip, auth_headers
 
 DRAFT = {
     "destination": "Chicago, Illinois", "destinationId": "chicago", "startDate": "2030-06-10", "endDate": "2030-06-12", "travelers": 1,
@@ -30,36 +30,37 @@ async def test_health_profile_and_preferences(make_client):
     client = await make_client()
     assert (await client.get("/health")).json() == {"status": "ok", "google": False, "llm": False, "agent": False}
     me = (await client.get("/me")).json()
-    assert me["name"] == "Traveler" and me["initials"] == "T" and me["stats"] == {"trips": 1, "daysPlanned": 5, "countries": 1}
-    demo = (await client.get("/me", headers={"X-User-Id": "demo-user"})).json()
-    assert demo["name"] == "Alex Rivera" and demo["initials"] == "AR"
+    assert me["id"].startswith("u-") and me["name"] == "Traveler" and me["initials"] == "T"
+    assert me["stats"] == {"trips": 0, "daysPlanned": 0, "countries": 0}, "accounts start without a sample trip"
+    named = (await client.get("/me", headers=auth_headers("user_named", name="Ada", email="ada@example.com"))).json()
+    assert named["name"] == "Ada" and named["initials"] == "A" and named["id"] != me["id"]
 
     prefs = (await client.get("/me/preferences")).json()
     assert prefs["pace"] == "balanced"
     prefs["pace"] = "relaxed"
     assert (await client.put("/me/preferences", json=prefs)).json()["pace"] == "relaxed"
     assert (await client.get("/me/preferences")).json()["pace"] == "relaxed"
-    assert (await client.get("/me", headers={"X-User-Id": "bad id!"})).status_code == 400
+    assert (await client.get("/me", headers={"Authorization": "Bearer nope"})).status_code == 401
 
 
 async def test_new_user_first_requests_can_race(make_client):
     client = await make_client()
-    headers = {"X-User-Id": "fresh-install-1"}
+    headers = auth_headers("user_fresh_install")
     responses = await asyncio.gather(*[client.get(path, headers=headers) for path in ("/trips", "/me/preferences", "/me", "/trips")])
     assert [r.status_code for r in responses] == [200] * 4
-    assert len((await client.get("/trips", headers=headers)).json()) == 1
+    assert (await client.get("/trips", headers=headers)).json() == []
 
 
 async def test_trips_are_scoped_to_user_and_deletable(make_client):
     client = await make_client()
-    [seed] = (await client.get("/trips")).json()
+    seed = await add_demo_trip(client)
     assert seed["destinationId"] == "nyc" and seed["dayCount"] == 5 and seed["stopCount"] > 0
     trip = (await client.get(f"/trips/{seed['id']}")).json()
     assert set(trip) >= {"id", "days", "prefs", "adjusted", "createdAt", "version"}
     assert "walkCapMin" not in trip["days"][0], "null fields are omitted like optional TS fields"
     assert "legIn" not in trip["days"][0]["activities"][0]
 
-    assert (await client.get(f"/trips/{seed['id']}", headers={"X-User-Id": "someone-else"})).status_code == 404
+    assert (await client.get(f"/trips/{seed['id']}", headers=auth_headers("user_someone_else"))).status_code == 404
     assert (await client.delete(f"/trips/{seed['id']}")).status_code == 204
     assert (await client.get("/trips")).json() == []
 
@@ -76,7 +77,7 @@ async def test_generate_streams_steps_then_saves_trip(make_client):
 
     _, replay = await generate(client, key="idem-1")
     assert [e for e, _ in replay] == ["done"] and replay[0][1]["trip"]["id"] == trip["id"]
-    assert len((await client.get("/trips")).json()) == 2  # seed + one generated
+    assert len((await client.get("/trips")).json()) == 1
 
 
 async def test_generate_rejects_bad_drafts(make_client):
@@ -114,7 +115,7 @@ async def test_places_and_destinations(make_client):
 
 async def test_day_route_polylines(make_client):
     client = await make_client(router=FixedRouter())
-    [seed] = (await client.get("/trips")).json()
+    seed = await add_demo_trip(client)
     route = (await client.get(f"/trips/{seed['id']}/days/0/route")).json()
     assert route["source"] == "google" and route["legs"] and all(leg["polyline"] == "encoded~poly" for leg in route["legs"])
     assert (await client.get(f"/trips/{seed['id']}/days/9/route")).status_code == 404
@@ -122,7 +123,7 @@ async def test_day_route_polylines(make_client):
 
 async def test_adjust_preview_then_apply(make_client):
     client = await make_client()
-    [seed] = (await client.get("/trips")).json()
+    seed = await add_demo_trip(client)
     tid = seed["id"]
     before = (await client.get(f"/trips/{tid}")).json()
 
@@ -142,7 +143,7 @@ async def test_adjust_preview_then_apply(make_client):
 
 async def test_replace_flow_uses_alternatives(make_client):
     client = await make_client()
-    [seed] = (await client.get("/trips")).json()
+    seed = await add_demo_trip(client)
     trip = (await client.get(f"/trips/{seed['id']}")).json()
     target = trip["days"][0]["activities"][0]
     alts = (await client.get(f"/trips/{seed['id']}/days/0/activities/{target['id']}/alternatives")).json()
@@ -209,9 +210,7 @@ async def test_patch_profile_persists_and_stays_scoped_to_the_user(make_client):
     me = (await again.get("/me")).json()
     assert me["name"] == "Kept" and me["home"] == "Boston" and me["initials"] == "K"
 
-    demo = (await again.get("/me", headers={"X-User-Id": "demo-user"})).json()
-    assert demo["name"] == "Alex Rivera" and demo["home"] == "Brooklyn, NY"
-    other = (await again.get("/me", headers={"X-User-Id": "other-user"})).json()
+    other = (await again.get("/me", headers=auth_headers("user_other"))).json()
     assert other["name"] == "Traveler" and other["home"] == ""
 
 
@@ -222,7 +221,7 @@ async def test_expired_postgres_proposal_is_rejected_without_mutating_trip(make_
     from app.features.adjustments.models import ProposalRow
 
     client = await make_client()
-    [seed] = (await client.get("/trips")).json()
+    seed = await add_demo_trip(client)
     before = (await client.get(f"/trips/{seed['id']}")).json()
     preview = (await client.post(f"/trips/{seed['id']}/days/0/proposals", json={"kind": "relaxed"})).json()
     async with get_sessionmaker()() as session:

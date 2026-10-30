@@ -3,7 +3,7 @@
 from langchain_core.messages import AIMessage
 
 from app.integrations.places.catalog_data import catalog_places
-from tests.conftest import add_demo_trip, fake_llm
+from tests.conftest import fake_llm
 
 
 def call(name: str, args: dict, i: int) -> AIMessage:
@@ -12,7 +12,7 @@ def call(name: str, args: dict, i: int) -> AIMessage:
 
 async def test_agent_edits_working_copy_and_returns_a_preview(make_client):
     probe = await make_client()
-    seed = await add_demo_trip(probe)
+    [seed] = (await probe.get("/trips")).json()
     trip = (await probe.get(f"/trips/{seed['id']}")).json()
     day = trip["days"][1]
     target = next(a for a in day["activities"] if a["category"] != "food")
@@ -45,7 +45,7 @@ async def test_agent_edits_working_copy_and_returns_a_preview(make_client):
 
 async def test_agent_rejects_invented_place_ids(make_client):
     probe = await make_client()
-    seed = await add_demo_trip(probe)
+    [seed] = (await probe.get("/trips")).json()
     trip = (await probe.get(f"/trips/{seed['id']}")).json()
     target = trip["days"][0]["activities"][0]
     script = iter([

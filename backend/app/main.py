@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.bootstrap.providers import build_services
-from app.bootstrap.seed import seed_catalog
+from app.bootstrap.seed import seed_catalog, seed_new_user
 from app.contracts.system import Capabilities
 from app.core.config import get_settings
 from app.core.exceptions import AppError
@@ -40,6 +40,7 @@ def create_app(services: Services | None = None) -> FastAPI:
         await dispose_engine()
 
     app = FastAPI(title="Wayfare API", version="0.1.0", lifespan=lifespan)
+    app.state.seed_new_user = seed_new_user
     app.add_middleware(
         CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"],
         expose_headers=["Location"],

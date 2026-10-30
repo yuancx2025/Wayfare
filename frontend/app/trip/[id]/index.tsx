@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStore, useTrip } from "@/state/store";
-import { useApi } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useTripSession } from "@/state/tripSession";
 import { fmtDay, fmtRange, plural } from "@/domain/lib/format";
 import { useToday } from "@/lib/useToday";
@@ -21,7 +21,6 @@ import { one } from "@/lib/params";
 export default function Overview() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = one(raw) ?? "";
-  const api = useApi();
   const { deleteTrip, showToast } = useStore();
   const session = useTripSession();
   const router = useRouter();

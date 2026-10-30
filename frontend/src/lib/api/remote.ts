@@ -1,14 +1,27 @@
 import { fetch, type FetchRequestInit } from "expo/fetch";
+import { randomUUID } from "expo-crypto";
 import type { Api, GenerateOptions } from "./types";
 import { ApiError } from "./types";
 import { readEvents } from "./sse";
 import type { Trip, TripDraft } from "@/domain/types";
 import { GenerationError } from "@/domain/logic/generate";
+import { storage } from "@/lib/storage";
 
-/** Clerk's `useAuth().getToken`: the current session JWT, or null when signed out. */
-export type GetToken = (options?: { skipCache?: boolean }) => Promise<string | null>;
+const USER_KEY = "wayfare.userId";
 
-export const SESSION_ENDED = "Your session ended. Sign in again.";
+let userIdPromise: Promise<string> | null = null;
+
+/** One anonymous id per install, sent as `X-User-Id`. */
+function userId(): Promise<string> {
+  userIdPromise ??= (async () => {
+    const existing = await storage.getItem(USER_KEY);
+    if (existing) return existing;
+    const id = `u-${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+    await storage.setItem(USER_KEY, id);
+    return id;
+  })();
+  return userIdPromise;
+}
 
 function cleanMessage(msg: unknown): string {
   return String(msg ?? "").replace(/^Value error, /, "");
@@ -39,29 +52,15 @@ async function readError(res: { status: number; json(): Promise<any> }): Promise
   return { message: `Request failed (${res.status})` };
 }
 
-/**
- * Every request carries the Clerk session token. A 401 is retried once with a freshly minted token; a second 401
- * means the session itself is gone, so `onSessionEnded` runs and the call fails.
- */
-export function createRemoteApi(base: string, getToken: GetToken, onSessionEnded?: () => void): Api {
+export function createRemoteApi(base: string): Api {
   const root = base.replace(/\/$/, "");
-
-  async function send(path: string, init: FetchRequestInit, extra?: Record<string, string>) {
-    const attempt = async (skipCache: boolean) => {
-      const token = await getToken(skipCache ? { skipCache } : undefined);
-      return fetch(`${root}${path}`, { ...init, headers: { ...extra, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-    };
-    let res = await attempt(false);
-    if (res.status === 401) res = await attempt(true);
-    if (res.status === 401) {
-      onSessionEnded?.();
-      throw new ApiError(401, SESSION_ENDED);
-    }
-    return res;
-  }
+  const headers = async (extra?: Record<string, string>) => ({ "X-User-Id": await userId(), ...extra });
 
   async function request<T>(path: string, init: FetchRequestInit = {}): Promise<T> {
-    const res = await send(path, init, init.body ? { "Content-Type": "application/json" } : undefined);
+    const res = await fetch(`${root}${path}`, {
+      ...init,
+      headers: await headers(init.body ? { "Content-Type": "application/json" } : undefined),
+    });
     if (!res.ok) {
       const parsed = await readError(res);
       throw new ApiError(res.status, parsed.message, parsed.fieldErrors);
@@ -84,10 +83,15 @@ export function createRemoteApi(base: string, getToken: GetToken, onSessionEnded
 
     async generateTrip(draft: TripDraft, { onStep, signal, idempotencyKey }: GenerateOptions): Promise<Trip> {
       // expo/fetch exposes the response body as a stream on native, which React Native's global fetch does not.
-      const res = await send("/trips/generate", { method: "POST", body: JSON.stringify(draft), signal }, {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+      const res = await fetch(`${root}/trips/generate`, {
+        method: "POST",
+        body: JSON.stringify(draft),
+        signal,
+        headers: await headers({
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+        }),
       });
       if (!res.ok || !res.body) throw new GenerationError((await readError(res)).message);
       for await (const { event, data } of readEvents(res.body)) {

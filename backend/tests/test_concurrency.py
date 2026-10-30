@@ -8,7 +8,6 @@ from app.db.session import get_sessionmaker
 from app.features.adjustments import repository as adjustments_repository
 from app.features.adjustments.models import ProposalRow
 from app.features.trips import repository as trips_repository
-from tests.conftest import add_demo_trip, auth_headers
 
 
 def hold_writes_until_both_arrive(monkeypatch) -> None:
@@ -37,7 +36,7 @@ async def preview(client, tid: str, day: int) -> dict:
 
 async def test_concurrent_proposals_allow_only_one_apply(make_client, monkeypatch):
     client = await make_client()
-    seed = await add_demo_trip(client)
+    [seed] = (await client.get("/trips")).json()
     tid = seed["id"]
     before = (await client.get(f"/trips/{tid}")).json()
     proposals = [await preview(client, tid, 0), await preview(client, tid, 1)]
@@ -58,7 +57,7 @@ async def test_concurrent_proposals_allow_only_one_apply(make_client, monkeypatc
 
 async def test_applying_one_proposal_twice_at_once_writes_once(make_client, monkeypatch):
     client = await make_client()
-    seed = await add_demo_trip(client)
+    [seed] = (await client.get("/trips")).json()
     tid = seed["id"]
     before = (await client.get(f"/trips/{tid}")).json()
     pid = (await preview(client, tid, 0))["proposalId"]
@@ -73,7 +72,7 @@ async def test_applying_one_proposal_twice_at_once_writes_once(make_client, monk
 
 async def test_failed_proposal_delete_rolls_back_the_day_write(make_client, monkeypatch):
     client = await make_client()
-    seed = await add_demo_trip(client)
+    [seed] = (await client.get("/trips")).json()
     tid = seed["id"]
     before = (await client.get(f"/trips/{tid}")).json()
     pid = (await preview(client, tid, 0))["proposalId"]
@@ -96,12 +95,12 @@ async def test_failed_proposal_delete_rolls_back_the_day_write(make_client, monk
 
 async def test_another_user_cannot_apply_a_proposal(make_client):
     client = await make_client()
-    seed = await add_demo_trip(client)
+    [seed] = (await client.get("/trips")).json()
     tid = seed["id"]
     before = (await client.get(f"/trips/{tid}")).json()
     pid = (await preview(client, tid, 0))["proposalId"]
 
-    response = await client.post(f"/trips/{tid}/proposals/{pid}/apply", headers=auth_headers("user_someone_else"))
+    response = await client.post(f"/trips/{tid}/proposals/{pid}/apply", headers={"X-User-Id": "someone-else"})
     assert response.status_code == 404
     assert (await client.get(f"/trips/{tid}")).json() == before
     async with get_sessionmaker()() as session:

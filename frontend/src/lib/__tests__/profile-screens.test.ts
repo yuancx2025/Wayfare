@@ -16,7 +16,10 @@ jest.mock("@/state/store", () => ({
   useStore: () => mockStore,
   errorMessage: (error: unknown) => error instanceof Error ? error.message : "Something went wrong",
 }));
-jest.mock("@/lib/api", () => jest.requireActual("@/lib/api/types"));
+jest.mock("@/lib/api", () => ({
+  ...jest.requireActual<typeof import("@/lib/api/types")>("@/lib/api/types"),
+  useApi: () => ({ mode: "local" }),
+}));
 jest.mock("@/components/Icon", () => ({ Icon: () => null }));
 jest.mock("@/components/PreferencesForm", () => {
   const React = jest.requireActual<typeof import("react")>("react");

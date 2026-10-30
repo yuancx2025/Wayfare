@@ -8,13 +8,14 @@ import type { Me, ProfilePatch } from "@/domain/types";
 import { ApiError } from "@/lib/api";
 import { goBackToProfile } from "@/lib/back";
 import { errorMessage, useStore } from "@/state/store";
-import { Button, ErrorLine, FieldInput, FormField, Spinner, TopBar } from "@/components/ui";
+import { Button, ErrorLine, FieldInput, FormField, TopBar } from "@/components/ui";
+import { RemoteSpinner } from "@/components/RemoteSpinner";
 import { colors, font, space } from "@/theme";
 
 export default function EditProfile() {
   const { me, hydrated, loadError, refresh } = useStore();
   if (!hydrated) {
-    return <View style={styles.loading}><Spinner label="Loading your profile" /></View>;
+    return <View style={styles.loading}><RemoteSpinner label="Loading your profile" /></View>;
   }
   if (loadError || !me) {
     return (

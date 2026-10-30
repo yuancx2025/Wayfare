@@ -34,6 +34,10 @@ dev machine's address, so the same value works there. Interactive docs are at ht
 
 See [../docs/contributing.md](../docs/contributing.md) for the Neon workflow. New to the codebase? Follow [../docs/backend-study-guide.md](../docs/backend-study-guide.md) (five staged walkthroughs with checkpoints).
 
+## Deploy
+
+`render.yaml` at the repo root describes a free Render web service. In the Render dashboard, create the service from that blueprint and set `DATABASE_URL`, `CLERK_ISSUER`, `CLERK_JWT_KEY`, and `CLERK_SECRET_KEY`. Point the app's `EXPO_PUBLIC_API_URL` at the service URL. A free instance sleeps when idle; the app keeps its loading spinner and, after a few seconds, says it is waking the server. `/health` stays public, so Render can check it without a session token.
+
 ## Tests
 
 ```bash

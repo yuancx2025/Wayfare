@@ -113,6 +113,8 @@ function RootStack({ mode }: { mode: AuthMode }) {
       <Stack.Protected guard={mode !== "account"}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+      {/* Google sends the browser here. It stays available while signed out, which is when the redirect arrives. */}
+      <Stack.Screen name="sso-callback" />
     </Stack>
   );
 }

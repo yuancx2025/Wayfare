@@ -5,7 +5,7 @@ export type IconName =
   | "arrow" | "back" | "calendar" | "car" | "check" | "chevron" | "clock" | "compass" | "edit" | "heart" | "home"
   | "map" | "minus" | "more" | "pin" | "plane" | "plus" | "search" | "spark" | "star" | "user" | "users" | "wallet"
   | "x" | "walk" | "train" | "sliders" | "trash" | "utensils" | "refresh" | "leaf" | "swap" | "alert" | "eye" | "eyeOff"
-  | "mail" | "logout";
+  | "mail" | "logout" | "google";
 
 type IonName = ComponentProps<typeof Ionicons>["name"];
 
@@ -47,6 +47,7 @@ const MAP: Record<IconName, IonName> = {
   eyeOff: "eye-off-outline",
   mail: "mail-outline",
   logout: "log-out-outline",
+  google: "logo-google",
 };
 
 export function Icon({ name, size = 20, color = "#15221e" }: { name: IconName; size?: number; color?: string }) {

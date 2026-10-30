@@ -16,11 +16,6 @@ const COPY: Record<CodePurpose, { section: string; title: string; intro: (email:
     title: "Check your inbox.",
     intro: (email) => `We sent a 6-digit code to ${email}.`,
   },
-  "new-device": {
-    section: "New device check",
-    title: "Confirm it's you.",
-    intro: (email) => `This is a new device for your account, so we sent a 6-digit code to ${email}.`,
-  },
   reset: {
     section: "Reset your password",
     title: "Check your inbox.",
@@ -28,7 +23,7 @@ const COPY: Record<CodePurpose, { section: string; title: string; intro: (email:
   },
 };
 
-const isPurpose = (value: unknown): value is CodePurpose => value === "signup" || value === "new-device" || value === "reset";
+const isPurpose = (value: unknown): value is CodePurpose => value === "signup" || value === "reset";
 
 export default function VerifyScreen() {
   const router = useRouter();

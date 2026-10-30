@@ -6,15 +6,16 @@ type SignIn = ReturnType<typeof useSignIn>["signIn"];
 /**
  * Why the code screen is open:
  * - signup: confirm the email of a new account.
- * - new-device: Clerk's Device Trust asks for a code when an account signs in on a new device.
  * - reset: confirm a password reset.
+ *
+ * Ordinary sign-in does not use a code. That requires Device Trust to be turned off in the Clerk
+ * Dashboard (User & authentication, then Password). A correct password then finishes the sign-in.
  */
-export type CodePurpose = "signup" | "new-device" | "reset";
+export type CodePurpose = "signup" | "reset";
 
 /** The next step after a successful call; errors are returned instead of thrown. */
 export type AuthStep =
   | { kind: "signed-in" }
-  | { kind: "enter-code" }
   | { kind: "new-password" }
   | { kind: "error"; error: AuthFormError };
 
@@ -34,19 +35,7 @@ export async function continueSignIn(signIn: SignIn): Promise<AuthStep> {
     const { error } = await signIn.finalize();
     return error ? fail(error) : { kind: "signed-in" };
   }
-
-  const canUseEmailCode = signIn.supportedSecondFactors.some((factor) => factor.strategy === "email_code");
-  if (signIn.status === "needs_client_trust" || (signIn.status === "needs_second_factor" && canUseEmailCode)) {
-    const { error } = await signIn.mfa.sendEmailCode();
-    return error ? fail(error) : { kind: "enter-code" };
-  }
-
-  if (signIn.status === "needs_second_factor") {
-    return {
-      kind: "error",
-      error: { field: "form", message: "This account uses two-step verification, which Wayfare doesn't support yet." },
-    };
-  }
+  // With Device Trust and two-step verification off, a password sign-in is "complete" or it failed.
   return UNFINISHED;
 }
 
@@ -64,11 +53,6 @@ export function useEmailCode(purpose: CodePurpose) {
       return finalizeError ? fail(finalizeError) : { kind: "signed-in" };
     }
 
-    if (purpose === "new-device") {
-      const { error } = await signIn.mfa.verifyEmailCode({ code });
-      return error ? fail(error) : continueSignIn(signIn);
-    }
-
     // A correct reset code moves the attempt to "needs_new_password".
     const { error } = await signIn.resetPasswordEmailCode.verifyCode({ code });
     if (error) return fail(error);
@@ -80,9 +64,7 @@ export function useEmailCode(purpose: CodePurpose) {
     const { error } =
       purpose === "signup"
         ? await signUp.verifications.sendEmailCode()
-        : purpose === "new-device"
-          ? await signIn.mfa.sendEmailCode()
-          : await signIn.resetPasswordEmailCode.sendCode();
+        : await signIn.resetPasswordEmailCode.sendCode();
     return error ? describeAuthError(error) : null;
   };
 

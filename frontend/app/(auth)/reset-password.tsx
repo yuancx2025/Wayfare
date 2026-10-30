@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useRouter } from "expo-router";
 import { useSignIn } from "@clerk/expo";
 import { continueSignIn } from "@/auth/emailAuth";
 import { describeAuthError, messageFor, type AuthFormError } from "@/auth/errors";
@@ -9,7 +8,6 @@ import { PasswordInput } from "@/components/auth/AuthField";
 import { Button, ErrorLine } from "@/components/ui";
 
 export default function ResetPasswordScreen() {
-  const router = useRouter();
   const { signIn } = useSignIn();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<AuthFormError | null>(null);
@@ -26,12 +24,9 @@ export default function ResetPasswordScreen() {
       const { error: submitError } = await signIn.resetPasswordEmailCode.submitPassword({ password, signOutOfOtherSessions: true });
       if (submitError) return setError(describeAuthError(submitError));
 
-      // A successful reset signs the user in, unless Clerk wants a new-device code first.
+      // A successful reset signs the user in.
       const step = await continueSignIn(signIn);
       if (step.kind === "error") return setError(step.error);
-      if (step.kind === "enter-code") {
-        router.push({ pathname: "/verify", params: { purpose: "new-device", email: signIn.identifier ?? "" } });
-      }
     } finally {
       setBusy(false);
     }

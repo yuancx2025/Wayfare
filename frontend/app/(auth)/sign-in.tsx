@@ -38,9 +38,6 @@ export default function SignInScreen() {
 
       const step = await continueSignIn(signIn);
       if (step.kind === "error") return setError(step.error);
-      if (step.kind === "enter-code") {
-        router.push({ pathname: "/verify", params: { purpose: "new-device", email: email.trim() } });
-      }
       // "signed-in": the route guards move the user into the app.
     } finally {
       setBusy(false);

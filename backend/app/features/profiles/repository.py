@@ -1,34 +1,35 @@
-from sqlalchemy import select
+from collections.abc import Awaitable, Callable
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts.travel import Preferences
-from app.core.auth import VerifiedIdentity
-from app.core.ids import new_id
+from app.core.config import get_settings
 from app.features.profiles.models import User
 from app.features.profiles.schemas import DEFAULT_PREFS
 
+DEMO_PROFILE = {"name": "Alex Rivera", "home": "Brooklyn, NY", "traveling_since": 2019}
 
-async def _by_clerk_id(session: AsyncSession, clerk_user_id: str) -> User | None:
-    return (await session.execute(select(User).where(User.clerk_user_id == clerk_user_id))).scalar_one_or_none()
+NewUserHook = Callable[[AsyncSession, str], Awaitable[None]]
 
 
-async def get_or_create_by_clerk(session: AsyncSession, identity: VerifiedIdentity) -> User:
-    """New accounts start with no trips."""
-    user = await _by_clerk_id(session, identity.clerk_user_id)
+async def get_or_create_user(session: AsyncSession, user_id: str, on_created: NewUserHook | None = None) -> User:
+    """`on_created` runs inside the same transaction, after the user row is flushed and before the commit."""
+    user = await session.get(User, user_id)
     if user:
         return user
-    user = User(
-        id=new_id("u"), clerk_user_id=identity.clerk_user_id, name=(identity.name or "").strip()[:120] or "Traveler",
-        email=identity.email, home="", traveling_since=None, default_prefs=DEFAULT_PREFS.dump(),
-    )
+    profile = DEMO_PROFILE if user_id == get_settings().default_user_id else {"name": "Traveler", "home": "", "traveling_since": None}
+    user = User(id=user_id, default_prefs=DEFAULT_PREFS.dump(), **profile)
     session.add(user)
     try:
+        await session.flush()
+        if on_created:
+            await on_created(session, user_id)
         await session.commit()
     except IntegrityError:
         # A new client fires several requests at once; another one created this user first.
         await session.rollback()
-        existing = await _by_clerk_id(session, identity.clerk_user_id)
+        existing = await session.get(User, user_id, populate_existing=True)
         if existing is None:
             raise
         return existing

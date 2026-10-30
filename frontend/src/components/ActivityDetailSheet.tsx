@@ -3,13 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import type { Activity } from "@/domain/types";
 import { fmtDuration, fmtTime } from "@/domain/lib/format";
 import { CATEGORY_LABEL, LEG_LABEL } from "@/domain/logic/labels";
-import { useApi } from "@/lib/api";
+import { api } from "@/lib/api";
 import { BottomSheet, Button } from "./ui";
 import { Icon, type IconName } from "./Icon";
 import { colors, font, radius, touch } from "@/theme";
 
 function usePlaceDetails(activity: Activity | null, date?: string) {
-  const api = useApi();
   return useQuery({
     queryKey: ["place", activity?.placeId, date, activity?.startMin, activity?.durationMin],
     queryFn: () => api.placeDetails(activity!.placeId, date ? { date, startMin: activity!.startMin, durationMin: activity!.durationMin } : undefined),

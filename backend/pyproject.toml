@@ -3,7 +3,6 @@ name = "backend"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "clerk-backend-api>=7.0.0",
     "fastapi>=0.142.2",
     "httpx>=0.28.1",
     "langchain>=1.4.3",

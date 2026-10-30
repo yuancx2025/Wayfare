@@ -21,5 +21,3 @@ export function resolveApiUrl(raw: string | undefined, platform: string = Platfo
 }
 
 export const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL);
-
-export const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() ?? "";

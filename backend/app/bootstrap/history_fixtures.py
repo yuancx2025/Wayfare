@@ -1,9 +1,9 @@
 """Trips with past, ongoing, and today-boundary dates for the history screens.
 
 Generation rejects a start date in the past, so this writes through the trips repository.
-Pass the Clerk user id (Dashboard > Users) of the account that should own them:
 
-    uv run python -m app.bootstrap.history_fixtures user_2abc...
+    uv run python -m app.bootstrap.history_fixtures
+    uv run python -m app.bootstrap.history_fixtures demo-user
 """
 
 import asyncio
@@ -14,9 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bootstrap.seed import DEMO_TRIP_PREFS
 from app.contracts.travel import Trip
-from app.core.auth import VerifiedIdentity
+from app.core.config import get_settings
 from app.domain.scheduler import add_days, build_trip_heuristic
-from app.features.profiles.repository import get_or_create_by_clerk
+from app.features.profiles.repository import get_or_create_user
 from app.features.trips.repository import list_trip_rows, stage_trip
 from app.integrations.places.catalog_data import load_catalog
 
@@ -41,10 +41,9 @@ def history_trips(today: str | None = None) -> list[Trip]:
     return trips
 
 
-async def stage_history_fixtures(session: AsyncSession, clerk_user_id: str) -> list[Trip]:
+async def stage_history_fixtures(session: AsyncSession, user_id: str) -> list[Trip]:
     """Replaces fixture rows for this user so the today boundaries stay current."""
-    user = await get_or_create_by_clerk(session, VerifiedIdentity(clerk_user_id=clerk_user_id, email=None, name=None))
-    user_id = user.id
+    await get_or_create_user(session, user_id)
     trips = history_trips()
     existing = {row.id: row for row in await list_trip_rows(session, user_id)}
     for trip in trips:
@@ -61,13 +60,11 @@ async def stage_history_fixtures(session: AsyncSession, clerk_user_id: str) -> l
 async def _main() -> None:
     from app.db.session import dispose_engine, get_sessionmaker
 
-    if len(sys.argv) != 2 or not sys.argv[1].startswith("user_"):
-        raise SystemExit("Usage: python -m app.bootstrap.history_fixtures <clerk user id, e.g. user_2abc...>")
-    clerk_user_id = sys.argv[1]
+    user_id = sys.argv[1] if len(sys.argv) > 1 else get_settings().default_user_id
     async with get_sessionmaker()() as session:
-        trips = await stage_history_fixtures(session, clerk_user_id)
+        trips = await stage_history_fixtures(session, user_id)
     await dispose_engine()
-    print(f"Staged {len(trips)} history fixtures for {clerk_user_id}")
+    print(f"Staged {len(trips)} history fixtures for {user_id}")
 
 
 if __name__ == "__main__":

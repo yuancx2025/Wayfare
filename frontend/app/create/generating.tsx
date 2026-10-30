@@ -6,13 +6,12 @@ import { randomUUID } from "expo-crypto";
 import { useStore } from "@/state/store";
 import { daysBetween, plural } from "@/domain/lib/format";
 import { interestLabel, paceLabel, transportLabel } from "@/domain/logic/labels";
-import { useApi } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { colors, font, space } from "@/theme";
 
 export default function Generating() {
-  const api = useApi();
   const { draft, putTrip, updateDraft } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -34,7 +33,7 @@ export default function Generating() {
   ];
 
   useEffect(() => {
-    // Leaving the screen (Cancel, back, sign-out or an account switch remounting the app) aborts the request.
+    // Leaving the screen (Cancel or back) aborts the request.
     const ctrl = new AbortController();
     api.generateTrip(draft, {
       onStep: (i) => setStep(Math.min(i, messages.length - 1)),

@@ -15,7 +15,6 @@ from app.features.profiles.models import User
 from app.features.trips.models import TripRow
 from app.db.registry import Base
 from app.integrations.cache import PlaceCache, PlaceCacheRow
-from tests.conftest import auth_headers
 
 
 def test_database_url_is_required(monkeypatch):
@@ -76,16 +75,16 @@ async def test_init_without_seed_and_api_restart_preserve_a_saved_trip(empty_dat
     async with first.router.lifespan_context(first):
         async with get_sessionmaker()() as session:
             assert (await session.execute(select(DestinationRow))).scalars().all()
-            session.add(User(id="u-restart", clerk_user_id="user_restart", name="Restart check", default_prefs={}))
+            session.add(User(id="restart-user", name="Restart check", default_prefs={}))
             await session.flush()
             trip = demo_trip()
-            stage_trip(session, "u-restart", trip)
+            stage_trip(session, "restart-user", trip)
             await session.commit()
 
     second = await started_app()
     async with second.router.lifespan_context(second):
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=second), base_url="http://test") as client:
-            response = await client.get(f"/trips/{trip.id}", headers=auth_headers("user_restart"))
+            response = await client.get(f"/trips/{trip.id}", headers={"X-User-Id": "restart-user"})
         assert response.status_code == 200
         assert response.json() == trip.dump()
 
@@ -121,7 +120,7 @@ async def test_jsonb_and_timestamptz_survive_a_new_connection(fresh_database):
     assert columns["created_at"]["type"].timezone is True
 
     async with get_sessionmaker()() as session:
-        session.add(User(id="u1", clerk_user_id="user_ada", name="Ada", default_prefs={"pace": "balanced", "interests": ["food"]}))
+        session.add(User(id="u1", name="Ada", default_prefs={"pace": "balanced", "interests": ["food"]}))
         await session.commit()
     await dispose_engine()
 
@@ -134,7 +133,7 @@ async def test_jsonb_and_timestamptz_survive_a_new_connection(fresh_database):
 
 async def test_deleting_a_trip_removes_its_proposals(fresh_database):
     async with get_sessionmaker()() as session:
-        session.add(User(id="u1", clerk_user_id="user_ada", name="Ada", default_prefs={}))
+        session.add(User(id="u1", name="Ada", default_prefs={}))
         await session.flush()
         session.add(TripRow(
             id="t1", user_id="u1", destination_id="nyc", destination="New York", country="USA", image="",

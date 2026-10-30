@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     database_url: str
-    seed_demo_trip: bool = True
 
     # Server-side key (IP-restricted). Without it the API falls back to the bundled catalog + distance estimates.
     google_maps_api_key: str | None = None
@@ -25,7 +24,6 @@ class Settings(BaseSettings):
     curate_max_retries: int = 2
     place_cache_ttl_s: int = 6 * 3600
     proposal_ttl_s: int = 30 * 60
-    default_user_id: str = "demo-user"
 
     # Clerk session verification. CLERK_JWT_KEY (the PEM public key) verifies tokens locally without a network
     # call; CLERK_SECRET_KEY is the fallback and fetches Clerk's signing keys instead.

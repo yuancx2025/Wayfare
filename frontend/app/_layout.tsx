@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { StyleSheet } from "react-native";
 import { Stack, ThemeProvider, DefaultTheme } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -10,6 +10,7 @@ import { useFonts, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fo
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthSessionProvider, useAuthSession, type AuthMode } from "@/auth/session";
+import { ApiProvider } from "@/lib/api";
 import { StoreProvider, useStore } from "@/state/store";
 import { TripSessionProvider } from "@/state/tripSession";
 import { Toast } from "@/components/ui";
@@ -21,8 +22,6 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 if (!CLERK_PUBLISHABLE_KEY) {
   throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to frontend/.env (see .env.example), then restart Expo.");
 }
-
-const queryClient = new QueryClient();
 
 const navTheme = {
   ...DefaultTheme,
@@ -42,7 +41,9 @@ export default function RootLayout() {
     // The token cache keeps the Clerk session in SecureStore so it survives app restarts.
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
       <AuthSessionProvider>
-        <AppShell />
+        <ApiProvider>
+          <AppShell />
+        </ApiProvider>
       </AuthSessionProvider>
     </ClerkProvider>
   );
@@ -57,7 +58,7 @@ function AppShell() {
     DMSans_600SemiBold,
     DMSans_700Bold,
   });
-  const { mode } = useAuthSession();
+  const { mode, userId } = useAuthSession();
   const ready = (fontsLoaded || !!fontError) && mode !== "loading";
 
   useEffect(() => {
@@ -70,18 +71,31 @@ function AppShell() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StoreProvider>
-            <TripSessionProvider>
-              <ThemeProvider value={navTheme}>
-                <RootStack mode={mode} />
-                <ToastHost />
-              </ThemeProvider>
-            </TripSessionProvider>
-          </StoreProvider>
-        </QueryClientProvider>
+        <ThemeProvider value={navTheme}>
+          {/* Signed-out screens only need on-device data, so they share the guest scope. */}
+          <IdentityScope key={mode === "account" ? `account:${userId}` : "guest"}>
+            <RootStack mode={mode} />
+            <ToastHost />
+          </IdentityScope>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/**
+ * Holds one identity's data. A new key (sign-in, sign-out, account switch) unmounts the previous query cache,
+ * trip list and open screens, which aborts in-flight generation. The client is created here, not at module scope,
+ * so it does not outlive the key.
+ */
+function IdentityScope({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+  return (
+    <QueryClientProvider client={queryClient}>
+      <StoreProvider>
+        <TripSessionProvider>{children}</TripSessionProvider>
+      </StoreProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -14,7 +14,7 @@ import { colors, font } from "@/theme";
 export default function SignInScreen() {
   const router = useRouter();
   const { signIn } = useSignIn();
-  const { mode, continueAsGuest } = useAuthSession();
+  const { mode, continueAsGuest, notice } = useAuthSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<AuthFormError | null>(null);
@@ -93,7 +93,8 @@ export default function SignInScreen() {
         Forgot password?
       </TextLink>
       <Button onPress={onSignIn} disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
-      <ErrorLine message={messageFor(error, "form")} />
+      {/* Until the user tries again, explain why they were signed out (e.g. "Your session ended."). */}
+      <ErrorLine message={error ? messageFor(error, "form") : notice} />
     </AuthScreen>
   );
 }

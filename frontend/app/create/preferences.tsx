@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useStore } from "@/state/store";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
 import { daysBetween, fmtRange, plural } from "@/domain/lib/format";
 import { prefsEqual, prefsSentence } from "@/domain/logic/labels";
 import PreferencesForm from "@/components/PreferencesForm";
@@ -10,6 +10,7 @@ import { Icon } from "@/components/Icon";
 import { colors, font, radius, space, touch } from "@/theme";
 
 export default function Preferences() {
+  const api = useApi();
   const { draft, updateDraft, defaultPrefs } = useStore();
   const router = useRouter();
   const place = draft.destination.split(",")[0].trim();

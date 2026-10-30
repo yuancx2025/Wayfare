@@ -54,8 +54,10 @@ node backend/scripts/export_ts_fixtures.mjs
 
 ## API
 
-All routes except `/health` and photo redirects read the user from an `X-User-Id` header. The app generates
-one per install, and without the header requests run as `demo-user`. JSON is camelCase to match `frontend/src/domain/types.ts`.
+All routes except `/health` and photo redirects require `Authorization: Bearer <Clerk session token>` and answer
+401 without a valid one. The token's `sub` maps to an internal user id (`u-…`) created on the first request; a new
+account starts with no trips. Another account's trip is a 404. Set `CLERK_ISSUER` and `CLERK_JWT_KEY` (see
+`.env.example`). JSON is camelCase to match `frontend/src/domain/types.ts`.
 
 | Method | Path | Screen |
 | --- | --- | --- |
@@ -93,7 +95,7 @@ app/
     routing/           TravelRouter protocol; Google Routes and estimate routers; resolve_legs
     llm/               init_chat_model setup
   features/
-    profiles/          /me, preferences, X-User-Id identity (UserIdDep)
+    profiles/          /me, preferences, Clerk user to internal id (UserIdDep)
     trips/             /trips list/get/delete, day routes; TripService is the public trip API
     discovery/         /destinations and /places; DestinationService, PlaceService, LLM blurbs
     planning/          POST /trips/generate (SSE), PlanningService, LangGraph pipeline, LLM curation

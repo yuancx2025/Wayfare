@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { AdjustKind, Place, Proposal, ProposalRequest, Trip } from "@/domain/types";
 import { fmtTime } from "@/domain/lib/format";
 import { CATEGORY_LABEL } from "@/domain/logic/labels";
-import { api, ApiError } from "@/lib/api";
+import { ApiError, useApi } from "@/lib/api";
 import { useStore } from "@/state/store";
 import { BottomSheet, Button, ErrorLine, Spinner } from "./ui";
 import { Icon, type IconName } from "./Icon";
@@ -36,6 +36,7 @@ const keyOf = (req: ProposalRequest) => JSON.stringify(req);
 export default function AdjustDaySheet({ open, trip, dayIndex, onClose, onApplied }: {
   open: boolean; trip: Trip; dayIndex: number; onClose: () => void; onApplied: (trip: Trip, newId?: string) => void;
 }) {
+  const api = useApi();
   const { capabilities, loadTrip } = useStore();
   const [step, setStep] = useState<Step>({ name: "menu" });
   const [proposals, setProposals] = useState<Record<string, Proposal>>({});

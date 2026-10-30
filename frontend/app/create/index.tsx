@@ -10,7 +10,7 @@ import { useStore } from "@/state/store";
 import { createTripSchema, type CreateTripValues } from "@/domain/schemas";
 import type { DestinationCard, Suggestion, TripDraft } from "@/domain/types";
 import { daysBetween, fmtShort, parseISO, plural, todayISO, toISO } from "@/domain/lib/format";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
 import { useDebounced } from "@/lib/useDebounced";
 import { Button, FieldInput, FormField, TopBar } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -21,6 +21,7 @@ const formValues = (d: TripDraft): CreateTripValues => ({
 });
 
 export default function CreateTrip() {
+  const api = useApi();
   const { draft, draftNonce, updateDraft, showToast } = useStore();
   const router = useRouter();
   const form = useForm<CreateTripValues>({

@@ -5,8 +5,7 @@ import { useStore, errorMessage } from "@/state/store";
 import { prefsEqual } from "@/domain/logic/labels";
 import type { Preferences } from "@/domain/types";
 import PreferencesForm from "@/components/PreferencesForm";
-import { Button, ErrorLine, TopBar } from "@/components/ui";
-import { RemoteSpinner } from "@/components/RemoteSpinner";
+import { Button, ErrorLine, Spinner, TopBar } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { colors, font, space } from "@/theme";
 
@@ -18,7 +17,7 @@ export default function ProfilePreferences() {
       <View style={styles.screen}>
         <TopBar title="Travel preferences" onBack={goBackToProfile} />
         <View style={styles.status}>
-          {!hydrated ? <RemoteSpinner label="Loading your preferences" /> : (
+          {!hydrated ? <Spinner label="Loading your preferences" /> : (
             <>
               <ErrorLine message={loadError} />
               <Button icon="refresh" onPress={() => { void refresh(); }}>Try again</Button>

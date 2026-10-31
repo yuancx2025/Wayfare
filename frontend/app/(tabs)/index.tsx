@@ -4,8 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { groupTrips } from "@/domain/logic/tripHistory";
 import { useToday } from "@/lib/useToday";
 import { useStore } from "@/state/store";
-import { Button, EmptyState, SectionHeading } from "@/components/ui";
-import { RemoteSpinner } from "@/components/RemoteSpinner";
+import { Button, EmptyState, SectionHeading, Spinner } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { TripCard } from "@/components/trip";
 import { colors, font, radius, space, touch } from "@/theme";
@@ -61,7 +60,7 @@ export default function Trips() {
             <View style={styles.planArrow}><Icon name="plus" color={colors.white} /></View>
           </Pressable>
           {!hydrated ? (
-            <RemoteSpinner label="Loading your trips" />
+            <Spinner label="Loading your trips" />
           ) : loadError ? (
             <EmptyState
               icon="alert"

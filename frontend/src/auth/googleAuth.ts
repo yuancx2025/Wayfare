@@ -1,11 +1,16 @@
+import * as AuthSession from "expo-auth-session";
 import { useSSO } from "@clerk/expo/experimental";
 import { describeAuthError, type AuthFormError } from "./errors";
 
+type StartSSOFlow = ReturnType<typeof useSSO>["startSSOFlow"];
+
 /**
- * Native redirect Clerk sends the browser back to. It has to be listed under the instance's allowed
- * redirect URLs, and it matches the scheme in app.config.ts. Dev builds use this; Expo Go does not.
+ * Where Clerk sends the browser back to: travelcompanion://sso-callback in a dev build, <origin>/sso-callback on web.
+ * Both have to be listed under the instance's allowed redirect URLs. Expo Go is not supported.
+ * Built on each press, because on web it depends on the page's current origin.
  */
-export const GOOGLE_REDIRECT_URL = "travelcompanion://sso-callback";
+export const googleRedirectUrl = () =>
+  AuthSession.makeRedirectUri({ scheme: "travelcompanion", path: "sso-callback" });
 
 export type GoogleStep =
   | { kind: "signed-in" }
@@ -28,15 +33,29 @@ export function interpretGoogleSignIn(result: {
   return UNFINISHED;
 }
 
+let pending: Promise<GoogleStep> | null = null;
+
+/** The Google sign-in still in progress, if any. The callback screen waits for it before leaving. */
+export const pendingGoogleSignIn = () => pending;
+
 /** Opens Google in a browser sheet. A completed session is activated inside `startSSOFlow`. */
-export function useGoogleSignIn() {
-  const { startSSOFlow } = useSSO();
-  return async (): Promise<GoogleStep> => {
+export function signInWithGoogle(startSSOFlow: StartSSOFlow): Promise<GoogleStep> {
+  const flow = (async (): Promise<GoogleStep> => {
     try {
-      const result = await startSSOFlow({ strategy: "oauth_google", redirectUrl: GOOGLE_REDIRECT_URL });
+      const result = await startSSOFlow({ strategy: "oauth_google", redirectUrl: googleRedirectUrl() });
       return interpretGoogleSignIn(result);
     } catch (error) {
       return { kind: "error", error: describeAuthError(error) };
     }
-  };
+  })();
+  pending = flow;
+  void flow.finally(() => {
+    if (pending === flow) pending = null;
+  });
+  return flow;
+}
+
+export function useGoogleSignIn() {
+  const { startSSOFlow } = useSSO();
+  return () => signInWithGoogle(startSSOFlow);
 }

@@ -13,6 +13,8 @@ import { AuthSessionProvider, useAuthSession, type AuthMode } from "@/auth/sessi
 import { ApiProvider } from "@/lib/api";
 import { StoreProvider, useStore } from "@/state/store";
 import { TripSessionProvider } from "@/state/tripSession";
+import { LocationProvider } from "@/state/location";
+import { LocationPermissionProvider } from "@/state/locationPermission";
 import { Toast } from "@/components/ui";
 import { CLERK_PUBLISHABLE_KEY } from "@/config";
 import { colors } from "@/theme";
@@ -85,7 +87,7 @@ function AppShell() {
 
 /**
  * Holds one identity's data. A new key (sign-in, sign-out, account switch) unmounts the previous query cache,
- * trip list and open screens, which aborts in-flight generation. The client is created here, not at module scope,
+ * trip list, location fix and open screens, which aborts in-flight generation. The client is created here, not at module scope,
  * so it does not outlive the key.
  */
 function IdentityScope({ children }: { children: ReactNode }) {
@@ -93,7 +95,11 @@ function IdentityScope({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
-        <TripSessionProvider>{children}</TripSessionProvider>
+        <TripSessionProvider>
+          <LocationPermissionProvider>
+            <LocationProvider>{children}</LocationProvider>
+          </LocationPermissionProvider>
+        </TripSessionProvider>
       </StoreProvider>
     </QueryClientProvider>
   );

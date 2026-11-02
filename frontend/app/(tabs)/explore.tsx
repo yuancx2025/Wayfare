@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { interestLabel } from "@/domain/logic/labels";
 import type { DestinationCard } from "@/domain/types";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
 import { useDebounced } from "@/lib/useDebounced";
 import { useStore } from "@/state/store";
 import { Button, EmptyState, Spinner } from "@/components/ui";
@@ -15,6 +15,7 @@ import { NearbySection } from "@/components/NearbySection";
 import { colors, font, radius, space } from "@/theme";
 
 export default function Explore() {
+  const api = useApi();
   const { startDraft } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();

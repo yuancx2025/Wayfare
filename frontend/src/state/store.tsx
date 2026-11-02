@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type ReactNode } from "react";
 import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripSummary } from "@/domain/types";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
-import { api, ApiError } from "@/lib/api";
+import { ApiError, useApi } from "@/lib/api";
 import { summarize } from "@/lib/api/local";
 
 interface State {
@@ -94,8 +94,10 @@ const StoreContext = createContext<Store | null>(null);
 
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong");
 
+/** One identity's trips and profile. app/_layout.tsx remounts it when the identity changes. */
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, {
+  const api = useApi();
+  const [state, dispatchNow] = useReducer(reducer, {
     hydrated: false,
     loadError: null,
     summaries: [],
@@ -110,6 +112,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef(new Map<string, Promise<Trip>>());
 
+  // A response that arrives after sign-out or an account switch belongs to the previous identity: drop it.
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
+  const dispatch = useCallback((action: Action) => {
+    if (alive.current) dispatchNow(action);
+  }, []);
+
   const refresh = useCallback(async () => {
     try {
       const [summaries, defaultPrefs, me, capabilities] = await Promise.all([
@@ -119,7 +131,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       dispatch({ type: "loadFailed", message: errorMessage(e) });
     }
-  }, []);
+  }, [api, dispatch]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -130,7 +142,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     api.getMe().then((me) => {
       if (seen === meEpoch.current) dispatch({ type: "setMe", me });
     }).catch(() => undefined);
-  }, []);
+  }, [api, dispatch]);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -146,7 +158,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .finally(() => pending.current.delete(id));
     pending.current.set(id, p);
     return p;
-  }, []);
+  }, [api, dispatch]);
 
   const value = useMemo<Store>(() => ({
     ...state,
@@ -185,7 +197,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         refreshMe();
       }
       : undefined,
-  }), [state, toast, showToast, refresh, loadTrip, refreshMe]);
+  }), [api, dispatch, state, toast, showToast, refresh, loadTrip, refreshMe]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

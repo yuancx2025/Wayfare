@@ -19,7 +19,7 @@ class MapBoundary extends Component<{ children: ReactNode; fallback: ReactNode }
 }
 
 export default function TripMap(props: TripMapProps) {
-  const { activities, route, selectedId, onSelect, height = 220, fill = false, interactive = true, label = (i: number) => String(i + 1), showOrder = true } = props;
+  const { activities, route, selectedId, onSelect, height = 220, fill = false, interactive = true, label = (i: number) => String(i + 1), showOrder = true, userPosition, caption } = props;
   const mapRef = useRef<MapView>(null);
   const [mapReady, setMapReady] = useState(false);
   const [tracking, setTracking] = useState(true);
@@ -37,12 +37,13 @@ export default function TripMap(props: TripMapProps) {
   }, [selectedId, activities, mapReady]);
 
   useEffect(() => {
-    if (!mapReady || !activities.length) return;
+    const points = [...activities, ...(userPosition ? [userPosition] : [])];
+    if (!mapReady || !points.length) return;
     mapRef.current?.fitToCoordinates(
-      activities.map((a) => ({ latitude: a.lat, longitude: a.lng })),
+      points.map((a) => ({ latitude: a.lat, longitude: a.lng })),
       { edgePadding: { top: 48, right: 40, bottom: interactive ? 72 : 36, left: 40 }, animated: false },
     );
-  }, [mapReady, activities, interactive, selectedId]);
+  }, [mapReady, activities, interactive, selectedId, userPosition]);
 
   return (
     <MapBoundary fallback={<TripMapFallback {...props} />}>
@@ -83,11 +84,16 @@ export default function TripMap(props: TripMapProps) {
               </Marker>
             );
           })}
+          {userPosition ? (
+            <Marker coordinate={{ latitude: userPosition.lat, longitude: userPosition.lng }} tracksViewChanges={tracking} anchor={{ x: 0.5, y: 0.5 }}>
+              <View style={styles.you} accessibilityLabel="Your location" />
+            </Marker>
+          ) : null}
         </MapView>
         <Text style={styles.disclaimer}>
-          {legs.length
+          {caption ?? (legs.length
             ? "Routes from Google · colored by walk, transit or drive"
-            : showOrder ? "Illustrative map · dashed line shows visit order, not directions" : "Illustrative map · numbers show the day of each stop"}
+            : showOrder ? "Illustrative map · dashed line shows visit order, not directions" : "Illustrative map · numbers show the day of each stop")}
         </Text>
       </View>
     </MapBoundary>
@@ -100,5 +106,6 @@ const styles = StyleSheet.create({
   marker: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.forest, borderWidth: 3, borderColor: colors.white, alignItems: "center", justifyContent: "center" },
   markerOn: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.coral },
   markerText: { color: colors.white, fontFamily: font.bodyBold, fontSize: 12 },
+  you: { width: 18, height: 18, borderRadius: 9, backgroundColor: "#2f6f9f", borderWidth: 3, borderColor: colors.white },
   disclaimer: { position: "absolute", left: 8, bottom: 8, backgroundColor: "rgba(255,254,250,0.9)", color: colors.muted, borderRadius: 999, overflow: "hidden", paddingVertical: 4, paddingHorizontal: 8, fontFamily: font.bodySemi, fontSize: 11 },
 });

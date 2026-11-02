@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from app.contracts.travel import PlaceDetails, Suggestion
 from app.core.routing import ApiRouter
 from app.features.discovery.dependencies import PlaceServiceDep
+from app.features.discovery.schemas import NearbyRequest, NearbyResults
 from app.features.profiles.dependencies import UserIdDep
 
 router = ApiRouter(prefix="/places", tags=["places"])
@@ -15,6 +16,12 @@ router = ApiRouter(prefix="/places", tags=["places"])
 @router.get("/autocomplete", response_model=list[Suggestion])
 async def autocomplete(places: PlaceServiceDep, _: UserIdDep, q: str = "", session: str | None = None) -> list[Suggestion]:
     return await places.autocomplete(q, session)
+
+
+@router.post("/nearby/search", response_model=NearbyResults)
+async def nearby_search(body: NearbyRequest, places: PlaceServiceDep, _: UserIdDep) -> NearbyResults:
+    """Places closest to the caller's position. Coordinates are not stored or logged."""
+    return await places.nearby(body)
 
 
 @router.get("/{place_id}", response_model=PlaceDetails)

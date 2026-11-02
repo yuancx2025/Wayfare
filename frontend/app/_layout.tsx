@@ -13,6 +13,8 @@ import { AuthSessionProvider, useAuthSession, type AuthMode } from "@/auth/sessi
 import { ApiProvider } from "@/lib/api";
 import { StoreProvider, useStore } from "@/state/store";
 import { TripSessionProvider } from "@/state/tripSession";
+import { LocationProvider } from "@/state/location";
+import { LocationPermissionProvider } from "@/state/locationPermission";
 import { Toast } from "@/components/ui";
 import { CLERK_PUBLISHABLE_KEY } from "@/config";
 import { colors } from "@/theme";
@@ -71,6 +73,20 @@ function AppShell() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <StoreProvider>
+            <TripSessionProvider>
+              <LocationPermissionProvider>
+                <LocationProvider>
+                  <ThemeProvider value={navTheme}>
+                    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }} />
+                    <ToastHost />
+                  </ThemeProvider>
+                </LocationProvider>
+              </LocationPermissionProvider>
+            </TripSessionProvider>
+          </StoreProvider>
+        </QueryClientProvider>
         <ThemeProvider value={navTheme}>
           {/* Signed-out screens only need on-device data, so they share the guest scope. */}
           <IdentityScope key={mode === "account" ? `account:${userId}` : "guest"}>

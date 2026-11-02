@@ -4,6 +4,7 @@ import json
 
 import httpx
 import pytest
+from sqlalchemy import text
 
 from app.integrations.cache import PlaceCache
 from app.db.session import get_sessionmaker
@@ -124,3 +125,20 @@ async def test_route_matrix_diagonal_feeds_leg_table(cache):
     leg = table.leg(day.activities[0], day.activities[1], "transit", None)
     assert (leg.minutes, leg.km, leg.source) == (13, 3.1, "google")
     assert table.leg(day.activities[1], day.activities[2], "transit", None).source == "estimate"
+
+
+async def test_around_ranks_by_distance_and_keeps_planner_ranking(cache):
+    rec = Recorder({("POST", "places:searchNearby"): {"places": [CAFE, MUSEUM]}})
+    provider = GooglePlaceProvider(GooglePlacesClient("k", httpx.AsyncClient(transport=httpx.MockTransport(rec))), cache)
+    places = await provider.around((41.88, -87.63), ["food"], 1500)
+    assert {p.id: p.category for p in places} == {"ChIJcafe": "food", "ChIJmuseum": "museums"}
+    body = json.loads(rec.calls[0].content)
+    assert body["rankPreference"] == "DISTANCE" and body["includedTypes"] == sorted(normalize.NEARBY_TYPES["food"])
+    assert body["locationRestriction"]["circle"]["radius"] == 1500
+    await provider.around((41.88, -87.63), ["food"], 1500)
+    assert len(rec.calls) == 2, "the user's position never goes into the shared cache"
+    async with get_sessionmaker()() as session:
+        keys = (await session.execute(text("SELECT key FROM place_cache"))).scalars().all()
+    assert not [k for k in keys if k.startswith("around")]
+    await provider.nearby(DEST, (41.88, -87.63), ["museums"], 1500)
+    assert json.loads(rec.calls[-1].content)["rankPreference"] == "POPULARITY", "planner searches keep popularity ranking"

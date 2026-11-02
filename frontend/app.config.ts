@@ -39,6 +39,10 @@ const config: ExpoConfig = {
     "@clerk/expo",
     "expo-secure-store",
     "expo-web-browser",
+    [
+      "expo-location",
+      { locationWhenInUsePermission: "Wayfare uses your location only when you ask, to show places near you." },
+    ],
   ],
 };
 

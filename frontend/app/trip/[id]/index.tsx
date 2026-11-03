@@ -16,6 +16,7 @@ import TripMap from "@/components/TripMap";
 import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
 import { colors, font, radius, space, touch } from "@/theme";
 import { goBack } from "@/lib/back";
+import { addTestEvent } from "@/lib/calendarSpike";
 import { one } from "@/lib/params";
 
 export default function Overview() {
@@ -111,6 +112,11 @@ export default function Overview() {
         <Pressable style={styles.menuRow} onPress={() => { setMenu(false); session.bind(id, 0); router.push(`/trip/${id}/map`); }}>
           <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>View map</Text>
         </Pressable>
+        {__DEV__ && (
+          <Pressable style={styles.menuRow} onPress={() => { setMenu(false); addTestEvent().then(showToast, (e) => showToast(e instanceof Error ? e.message : String(e))); }}>
+            <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>Calendar test (temporary)</Text>
+          </Pressable>
+        )}
         <Pressable style={styles.menuRow} onPress={() => { void remove(); }}>
           <Icon name="trash" color={colors.coralInk} /><Text style={[styles.menuText, { color: colors.coralInk }]}>Delete trip</Text>
         </Pressable>

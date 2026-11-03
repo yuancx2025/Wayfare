@@ -40,6 +40,7 @@ const config: ExpoConfig = {
       "expo-location",
       { locationWhenInUsePermission: "Wayfare uses your location only when you ask, to show places near you." },
     ],
+    ["expo-calendar", { calendarPermission: "Wayfare adds your trip's activities to your calendar when you ask." }],
     "@clerk/expo",
     "expo-secure-store",
     "expo-web-browser",

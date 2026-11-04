@@ -4,8 +4,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTrip } from "@/state/store";
 import { useDayRoute } from "@/lib/useDayRoute";
+import { useCurrentLocation } from "@/state/location";
 import { useTripSession } from "@/state/tripSession";
-import { fmtDay, fmtDuration, fmtTime } from "@/domain/lib/format";
+import { fmtDay, fmtDistance, fmtDuration, fmtTime } from "@/domain/lib/format";
+import { distanceKm } from "@/domain/logic/generate";
 import { CATEGORY_LABEL } from "@/domain/logic/labels";
 import { Button, TopBar } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -15,6 +17,8 @@ import ActivityDetailSheet from "@/components/ActivityDetailSheet";
 import { goBack } from "@/lib/back";
 import { one } from "@/lib/params";
 import { colors, font, space, touch } from "@/theme";
+
+const FAR_KM = 50;
 
 export default function MapScreen() {
   const params = useLocalSearchParams<{ id: string; day?: string; activity?: string }>();
@@ -28,6 +32,9 @@ export default function MapScreen() {
   const stripRef = useRef<ScrollView>(null);
   const chipX = useRef<Record<string, number>>({});
   const { trip, loading, error } = useTrip(id || undefined);
+  const loc = useCurrentLocation();
+  const here = loc.status === "ready" ? loc.position : null;
+  const problem = loc.problem;
 
   useEffect(() => {
     if (session.tripId !== id) session.bind(id, Number.isFinite(routeDay) ? routeDay : 0);
@@ -50,6 +57,9 @@ export default function MapScreen() {
 
   const day = trip.days[dayIndex];
   const acts = day.activities;
+  // Far from today's stops (another city), the map would zoom out to fit both; show a note instead.
+  const nearestKm = here && acts.length ? Math.min(...acts.map((a) => distanceKm(here, a))) : null;
+  const farAway = nearestKm != null && nearestKm > FAR_KM;
   const idx = acts.findIndex((a) => a.id === activityId);
   const sel = idx >= 0 ? acts[idx] : undefined;
   const selectDay = (i: number) => {
@@ -71,8 +81,31 @@ export default function MapScreen() {
           route={route}
           selectedId={activityId}
           onSelect={(next) => select(next === activityId ? undefined : next)}
+          userPosition={farAway ? null : here}
           fill
         />
+        <View style={styles.locate}>
+          <Pressable
+            style={styles.locateButton}
+            onPress={() => { void loc.locate(); }}
+            disabled={loc.status === "locating"}
+            accessibilityRole="button"
+            accessibilityLabel={here ? "Refresh my location" : "Show my location"}
+          >
+            <Icon name="pin" size={16} color={colors.forest} />
+            <Text style={styles.locateText}>
+              {loc.status === "locating" ? "Locating…" : here ? "Refresh" : "My location"}
+            </Text>
+          </Pressable>
+          {farAway && nearestKm != null ? (
+            <Text style={styles.locateNote}>{`You're ${fmtDistance(nearestKm * 1000)} from this day's stops`}</Text>
+          ) : null}
+          {problem ? (
+            <Pressable onPress={problem.settings ? loc.openSettings : undefined} disabled={!problem.settings} accessibilityRole={problem.settings ? "button" : undefined}>
+              <Text style={styles.locateNote}>{problem.settings ? `${problem.title} · Open Settings` : problem.title}</Text>
+            </Pressable>
+          ) : null}
+        </View>
         {!sel ? <Text style={styles.hint}>Tap a numbered stop to see details</Text> : null}
       </View>
       <ScrollView
@@ -102,6 +135,7 @@ export default function MapScreen() {
             <Text style={styles.sheetNum}>{idx + 1}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.sheetMeta}>{fmtTime(sel.startMin)} · {fmtDuration(sel.durationMin)} · {CATEGORY_LABEL[sel.category]}</Text>
+              {here && !farAway ? <Text style={styles.sheetMeta}>{fmtDistance(Math.round(distanceKm(here, sel) * 1000))} from you · straight line</Text> : null}
               <Text style={styles.sheetName}>{sel.name}</Text>
             </View>
             <Pressable style={styles.icon} onPress={() => select(undefined)} accessibilityLabel="Clear selection">
@@ -133,6 +167,10 @@ const styles = StyleSheet.create({
   chipNum: { width: 24, height: 24, borderRadius: 12, overflow: "hidden", backgroundColor: colors.forest, color: colors.white, textAlign: "center", lineHeight: 24, fontFamily: font.bodyBold, fontSize: 12 },
   chipNumOn: { backgroundColor: colors.coral },
   chipName: { fontFamily: font.bodySemi, fontSize: 14, color: colors.ink, flexShrink: 1 },
+  locate: { position: "absolute", top: space[3] + 10, right: space[4] + 10, alignItems: "flex-end", gap: 6 },
+  locateButton: { minHeight: touch, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line },
+  locateText: { fontFamily: font.bodySemi, fontSize: 14, color: colors.forest },
+  locateNote: { backgroundColor: "rgba(21,34,30,0.82)", color: colors.white, borderRadius: 999, overflow: "hidden", paddingVertical: 6, paddingHorizontal: 12, fontFamily: font.body, fontSize: 12 },
   hint: { position: "absolute", alignSelf: "center", bottom: 12, backgroundColor: "rgba(21,34,30,0.82)", color: colors.white, borderRadius: 999, overflow: "hidden", paddingVertical: 8, paddingHorizontal: 14, fontFamily: font.body, fontSize: 13 },
   sheet: { position: "absolute", left: 0, right: 0, bottom: 0, backgroundColor: colors.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, padding: space[4], gap: space[3], shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 16, elevation: 8 },
   sheetTop: { flexDirection: "row", alignItems: "center", gap: space[3] },

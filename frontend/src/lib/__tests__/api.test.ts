@@ -141,9 +141,10 @@ describe("local api", () => {
     expect(await createLocalApi().listTrips()).toHaveLength(list.length);
   });
 
-  test("drops stored trips that don't match the model", async () => {
+  test("unreadable stored trips surface an error without erasing the records", async () => {
     await AsyncStorage.setItem("wayfare.trips.v2", JSON.stringify([{ id: 1 }]));
-    expect(await createLocalApi().listTrips()).toEqual([]);
+    await expect(createLocalApi().listTrips()).rejects.toThrow("Stored trips could not be read");
+    expect(await AsyncStorage.getItem("wayfare.trips.v2")).toBe(JSON.stringify([{ id: 1 }]));
   });
 
   test("profile edits survive a new local api and leave other keys alone", async () => {

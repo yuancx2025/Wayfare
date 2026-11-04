@@ -1,7 +1,7 @@
 import type {
-  Capabilities, DayRoute, DestinationCard, Me, NearbyRequest, NearbyResults, Place, PlaceDetails, Preferences, ProfilePatch, Proposal,
-  ProposalRequest, Suggestion, Trip,
-  TripDraft, TripSummary,
+  Capabilities, DayRoute, DestinationCard, Me, Place, PlaceDetails, Preferences, ProfilePatch, Proposal, ProposalRequest, Suggestion, Trip,
+  SavedPlace, SavedPlaceDetails, SavedPlaceReference, TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary,
+  NearbyRequest, NearbyResults,
 } from "@/domain/types";
 
 export interface GenerateOptions {
@@ -21,6 +21,8 @@ export interface Api {
 
   listTrips(): Promise<TripSummary[]>;
   getTrip(id: string): Promise<Trip>;
+  /** Sets explicit collection values; never replaces or versions the itinerary. */
+  updateTripMetadata(id: string, patch: TripMetadataPatch): Promise<TripMetadataResult>;
   deleteTrip(id: string): Promise<void>;
   generateTrip(draft: TripDraft, opts: GenerateOptions): Promise<Trip>;
   /** Offline only: adds the bundled New York sample trip. */
@@ -35,6 +37,12 @@ export interface Api {
   dayRoute(tripId: string, day: number): Promise<DayRoute | null>;
   /** Places closest to a position, by straight-line distance. Coordinates are used for this request only. */
   nearbyPlaces(req: NearbyRequest): Promise<NearbyResults>;
+
+  listSavedPlaces(): Promise<SavedPlace[]>;
+  /** Idempotent by provider, kind and exact externalId within the current owner/scope. */
+  savePlace(reference: SavedPlaceReference): Promise<SavedPlace>;
+  removeSavedPlace(id: string): Promise<void>;
+  getSavedPlaceDetails(id: string): Promise<SavedPlaceDetails>;
 
   alternatives(tripId: string, day: number, activityId: string): Promise<Place[]>;
   propose(tripId: string, day: number, req: ProposalRequest): Promise<Proposal>;

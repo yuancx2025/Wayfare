@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { SavedPlace, SavedPlaceDetails } from "@/domain/types";
 import { interestLabel } from "@/domain/logic/labels";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
 import { useStore } from "@/state/store";
 import { Button } from "./ui";
 import { Icon } from "./Icon";
@@ -22,6 +22,7 @@ export function CollectionMessage({ title, body, error = false, children }: { ti
 }
 
 export function SavedPlaceRow({ saved, details, onOpen }: { saved: SavedPlace; details: UseQueryResult<SavedPlaceDetails, Error>; onOpen: () => void }) {
+  const api = useApi();
   const name = details.data?.name ?? (saved.kind === "destination" ? "Saved destination" : "Saved place");
   return <View style={styles.row}>
     <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${name}`} style={styles.rowMain}>
@@ -87,6 +88,7 @@ export function CollectionDetailHeader({ title = "Place details", onBack }: { ti
 }
 
 export function DestinationHero({ image, onBack, action }: { image: string; onBack: () => void; action?: ReactNode }) {
+  const api = useApi();
   const insets = useSafeAreaInsets();
   return <View style={{ paddingTop: insets.top }}>
     <Image source={{ uri: api.imageUrl(image) }} contentFit="cover" style={styles.hero} />

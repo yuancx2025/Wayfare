@@ -4,6 +4,8 @@ import asyncio
 from pathlib import Path
 
 import pytest
+
+from tests.conftest import add_demo_trip, auth_headers
 from sqlalchemy import text
 
 from app.db.session import get_engine
@@ -11,8 +13,14 @@ from app.features.trips import repository
 
 
 async def seed_trip(client):
-    [summary] = (await client.get("/trips")).json()
+    summary = await add_demo_trip(client)
     return (await client.get(f"/trips/{summary['id']}")).json()
+
+
+async def test_metadata_requires_a_verified_session(make_client):
+    client = await make_client(sub=None)
+    response = await client.patch("/trips/missing", json={"isFavorite": True}, headers={"X-User-Id": "another-user"})
+    assert response.status_code == 401
 
 
 async def test_favorite_survives_new_app_and_does_not_change_the_itinerary(make_client):
@@ -46,7 +54,7 @@ async def test_metadata_rejects_non_boolean_or_itinerary_input(make_client, patc
 async def test_metadata_owner_predicate_returns_404_for_foreign_and_missing_trips(make_client):
     client = await make_client()
     before = await seed_trip(client)
-    for tid, headers in [(before["id"], {"X-User-Id": "another-user"}), ("missing-trip", {})]:
+    for tid, headers in [(before["id"], auth_headers("user_another")), ("missing-trip", {})]:
         response = await client.patch(f"/trips/{tid}", json={"isFavorite": True}, headers=headers)
         assert response.status_code == 404
     assert (await client.get(f"/trips/{before['id']}")).json() == before

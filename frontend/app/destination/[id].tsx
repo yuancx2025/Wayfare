@@ -1,7 +1,8 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
+import { useCollectionScope } from "@/lib/savedPlaces";
 import { one } from "@/lib/params";
 import { goBackToExplore } from "@/lib/back";
 import { destinationSaveReference } from "@/domain/logic/savedPlaces";
@@ -12,11 +13,13 @@ import { Button, Spinner } from "@/components/ui";
 import { colors } from "@/theme";
 
 export default function DestinationOverview() {
+  const api = useApi();
+  const scope = useCollectionScope();
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = one(raw);
   const router = useRouter();
   const { startDraft } = useStore();
-  const destination = useQuery({ queryKey: ["destination", api.mode, id], queryFn: () => api.resolveDestination(id!), enabled: Boolean(id), retry: false, staleTime: 5 * 60_000 });
+  const destination = useQuery({ queryKey: ["destination", scope, id], queryFn: () => api.resolveDestination(id!), enabled: Boolean(id), retry: false, staleTime: 5 * 60_000 });
   if (!destination.data) return <View style={styles.screen}>
     <CollectionDetailHeader title="Destination details" onBack={goBackToExplore} />
     {destination.isError || !id ? <CollectionMessage error title="Details are taking a break." body="We couldn’t load this destination. Try again in a moment."><Button onPress={() => { void destination.refetch(); }}>Try again</Button></CollectionMessage> : <Spinner label="Loading destination details" />}

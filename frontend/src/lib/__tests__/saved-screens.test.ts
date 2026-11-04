@@ -10,7 +10,7 @@ import DestinationOverview from "../../../app/destination/[id]";
 import { SavePlaceButton } from "@/components/SavePlaceButton";
 import ActivityDetailSheet from "@/components/ActivityDetailSheet";
 import { PlaceDetailsBody } from "@/components/SavedPlaceViews";
-import { api } from "@/lib/api";
+import { type Api } from "@/lib/api";
 import { catalogSavedPlaceDetails } from "@/domain/logic/savedPlaces";
 import { sampleTrip } from "@/lib/api/local";
 import type { SavedPlace, SavedPlaceDetails } from "@/domain/types";
@@ -20,14 +20,19 @@ jest.mock("react-native/Libraries/Components/Pressable/Pressable", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return { default: (props: object) => React.createElement("Pressable", props) };
 });
+jest.mock("@/auth/session", () => ({ useAuthSession: () => ({ mode: "guest", userId: null }) }));
 jest.mock("@/lib/api", () => ({
   ApiError: jest.requireActual<typeof import("@/lib/api/types")>("@/lib/api/types").ApiError,
   api: { mode: "local", imageUrl: (src: string) => src, listSavedPlaces: jest.fn(), savePlace: jest.fn(), removeSavedPlace: jest.fn(), getSavedPlaceDetails: jest.fn(), placeDetails: jest.fn(), listDestinations: jest.fn(), resolveDestination: jest.fn() },
+  useApi: () => jest.requireMock<{ api: unknown }>("@/lib/api").api,
 }));
 jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return { useRouter: () => mockRouter, useLocalSearchParams: () => mockParams, useFocusEffect: (effect: () => void) => React.useEffect(effect, [effect]), router: { canGoBack: () => false, replace: jest.fn() } };
 });
+jest.mock("@/state/location", () => ({ useCurrentLocation: () => ({ status: "idle", permission: "undetermined", position: null, locate: jest.fn() }) }));
+// Nearby owns its own native map/location tests; these exercise collection entry points.
+jest.mock("@/components/NearbySection", () => ({ NearbySection: () => null }));
 jest.mock("@/state/store", () => ({ useStore: () => ({ showToast: mockToast, startDraft: mockStartDraft }) }));
 jest.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 jest.mock("expo-image", () => {
@@ -43,6 +48,7 @@ jest.mock("@/components/ui", () => {
   return Object.fromEntries(["Button", "BottomSheet", "Spinner"].map((name) => [name, (props: { children?: React.ReactNode; footer?: React.ReactNode }) => name === "BottomSheet" ? React.createElement(name, props, props.children, props.footer) : React.createElement(name, props)]));
 });
 
+const api = jest.requireMock<{ api: Api }>("@/lib/api").api;
 const mockApi = jest.mocked(api);
 const mockRouter = { navigate: jest.fn(), push: jest.fn(), replace: jest.fn() };
 const mockToast = jest.fn();

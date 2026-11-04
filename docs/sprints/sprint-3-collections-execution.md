@@ -189,3 +189,49 @@ The owner predicate is tested with the existing `X-User-Id` development dependen
 - No auth code, other developer's feature branch, shared database, native dependency or lockfile was changed. Google provider fixtures and the current development identity transport remain distinct from real provider and Clerk acceptance.
 
 Next session: finish design import/review and outstanding Android/native checks, then move to explicit visited status and journal text as increment 4. Real auth/Nearby integration remains a later handoff. Do not open a PR yet.
+
+
+### November 3: main integration and remaining delivery plan
+
+- Integrate `main@7e23d1b` into this branch. Resolve eight textual conflicts by
+  retaining collection metadata/Saved behavior alongside Clerk request transport,
+  Nearby contracts, both icon sets, and both contract/transport test suites.
+- Migrate collection consumers to `useApi()`, add collection methods to the
+  existing account-without-backend error adapter, and namespace collection queries
+  and mutations by guest or Clerk account. Preserve metadata epochs and the shared
+  Store's existing unmount guard. No guest-to-account data migration is implied.
+- Adapt collection backend fixtures to signed JWTs and explicit demo-trip creation.
+  Verify SQL upgrades 001/002 against the authenticated model in disposable
+  PostgreSQL. No development or shared database is migrated.
+- Leave upstream-owned implementation issues unchanged: root layout provider and
+  navigation integration, Nearby's retired API singleton import, and its missing
+  method in the no-backend account adapter. Frontend typecheck and full native
+  acceptance depend on the owners' follow-up. The root layout and Nearby screen
+  remain byte-for-byte identical to this main revision.
+- Use a draft pull request as the incremental delivery record after its title and
+  body have been reviewed. Keep completed scope, current evidence and outstanding
+  dependencies up to date. A draft is not a claim of release readiness.
+
+Continue in separate reviewable slices:
+
+1. **Integration acceptance:** consume the owners' main fixes, connect the shared
+   Save control to Nearby, verify protected collection routes, then test guest,
+   sign-in, sign-out, expired sessions and account switching on native devices.
+   Use signed test tokens and catalog/provider fixtures for deterministic tests;
+   keep live Clerk and Google acceptance explicitly separate.
+2. **Visited status and journal text:** confirm eligibility, date/time-zone rules,
+   Unicode limits and empty-text behavior. Add owned journal persistence and APIs,
+   then explicit-save UI with read/write failure recovery. Keep itinerary versions
+   and adjustment proposals independent from journal/metadata writes.
+3. **Device-local journal photo:** add one persistent photo per journal in the
+   current guest/account namespace. Cover cancellation, replacement failure and
+   cleanup; do not put local device paths into server payloads.
+4. **Acceptance and release review:** compare against the reviewed design, finish
+   Android and iOS interaction/restart checks, test real providers separately from
+   fixtures, and update the draft PR checklist before requesting final review.
+
+Integration validation: frontend Jest 176 passed in 18 suites; lint passed.
+Frontend typecheck remains blocked only by the preserved upstream root/Nearby
+issues listed above. Backend 144 passed against isolated PostgreSQL 14, including
+test-key JWT verification and legacy collection upgrade tests. Native startup,
+real Clerk sign-in/account switching and live Google checks were not rerun.

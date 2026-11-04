@@ -2,8 +2,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Activity, DayRoute } from "@/domain/types";
 import { colors, font, radius } from "@/theme";
 
+/** Anything the map can pin: itinerary stops or nearby places. */
+export type MapPoint = Pick<Activity, "id" | "name" | "lat" | "lng">;
+
 export interface TripMapProps {
-  activities: Activity[];
+  activities: MapPoint[];
   /** Road/transit geometry from the backend; without it stops are joined in visit order. */
   route?: DayRoute | null;
   selectedId?: string;
@@ -13,13 +16,18 @@ export interface TripMapProps {
   interactive?: boolean;
   label?: (i: number) => string;
   showOrder?: boolean;
+  /** The user's own position, shown only after they ask for it. */
+  userPosition?: { lat: number; lng: number } | null;
+  /** Replaces the default note under the map. */
+  caption?: string;
 }
 
 /** Stop list shown where no native map can render (web, or a build without the maps module). */
-export default function TripMapFallback({ activities, selectedId, onSelect, height = 220, fill = false, interactive = true, label = (i) => String(i + 1) }: TripMapProps) {
+export default function TripMapFallback({ activities, selectedId, onSelect, height = 220, fill = false, interactive = true, label = (i) => String(i + 1), userPosition }: TripMapProps) {
   return (
     <View style={[styles.fallback, fill ? styles.fill : { minHeight: height }]}>
       <Text style={styles.title}>Map unavailable</Text>
+      {userPosition ? <Text style={styles.stop}>You are at {userPosition.lat.toFixed(4)}, {userPosition.lng.toFixed(4)}</Text> : null}
       {activities.map((a, i) => (
         <Pressable
           key={a.id}

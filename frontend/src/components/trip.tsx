@@ -8,7 +8,7 @@ import { CATEGORY_LABEL, budgetLabel, foodLabel, interestLabel, paceLabel, trans
 import { Icon, type IconName } from "./Icon";
 import { Button, EmptyState, Spinner } from "./ui";
 import { FavoriteButton } from "./FavoriteButton";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
 import { colors, font, radius, space } from "@/theme";
 
 export function tripStatus(trip: { startDate: string; endDate: string }, today: string) {
@@ -16,6 +16,7 @@ export function tripStatus(trip: { startDate: string; endDate: string }, today: 
 }
 
 export function TripCard({ trip, today, onPress }: { trip: TripSummary; today: string; onPress: () => void }) {
+  const api = useApi();
   return (
     <View style={styles.card}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${trip.destination} trip`}>
@@ -33,6 +34,7 @@ export function TripCard({ trip, today, onPress }: { trip: TripSummary; today: s
 }
 
 export function TripHistoryRow({ trip, today, onPress }: { trip: TripSummary; today: string; onPress: () => void }) {
+  const api = useApi();
   return (
     <Pressable style={styles.historyRow} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${trip.destination} trip`}>
       <Image source={{ uri: api.imageUrl(trip.image) }} style={styles.historyImage} contentFit="cover" />

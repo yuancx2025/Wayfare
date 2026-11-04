@@ -1,6 +1,7 @@
 import type {
   Capabilities, DayRoute, DestinationCard, Me, Place, PlaceDetails, Preferences, ProfilePatch, Proposal, ProposalRequest, Suggestion, Trip,
   SavedPlace, SavedPlaceDetails, SavedPlaceReference, TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary,
+  NearbyRequest, NearbyResults,
 } from "@/domain/types";
 
 export interface GenerateOptions {
@@ -34,6 +35,8 @@ export interface Api {
   listDestinations(q: string): Promise<DestinationCard[]>;
   placeDetails(placeId: string, visit?: { date: string; startMin: number; durationMin: number }): Promise<PlaceDetails | null>;
   dayRoute(tripId: string, day: number): Promise<DayRoute | null>;
+  /** Places closest to a position, by straight-line distance. Coordinates are used for this request only. */
+  nearbyPlaces(req: NearbyRequest): Promise<NearbyResults>;
 
   listSavedPlaces(): Promise<SavedPlace[]>;
   /** Idempotent by provider, kind and exact externalId within the current owner/scope. */

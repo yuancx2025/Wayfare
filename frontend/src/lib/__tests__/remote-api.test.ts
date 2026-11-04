@@ -1,14 +1,14 @@
 import { beforeEach, expect, jest, test } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetch } from "expo/fetch";
-import { createRemoteApi } from "@/lib/api/remote";
+import { createRemoteApi as createRemote, type GetToken } from "@/lib/api/remote";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import type { SavedPlaceReference, TripDraft, TripMetadataPatch } from "@/domain/types";
 
 jest.mock("expo/fetch", () => ({ fetch: jest.fn() }));
-jest.mock("expo-crypto", () => ({ randomUUID: () => "12345678-1234-1234-1234-123456789abc" }));
 
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
+const createRemoteApi = (base: string) => createRemote(base, async () => "session-jwt");
 const draft: TripDraft = {
   destination: "Chicago", destinationId: "chicago", startDate: "2030-06-10", endDate: "2030-06-10",
   travelers: 1, prefs: DEFAULT_PREFS, simulateFailure: false,
@@ -29,16 +29,39 @@ function events(text: string) {
 
 beforeEach(() => { mockFetch.mockReset(); });
 
-test("requests keep one anonymous identity across API instances", async () => {
+const headersOf = (call: number) => mockFetch.mock.calls[call][1]?.headers as Record<string, string>;
+
+test("requests carry the Clerk session token and no install id", async () => {
   await AsyncStorage.clear();
   mockFetch.mockResolvedValue(response([]));
   await createRemoteApi("http://localhost:8000").listTrips();
-  await createRemoteApi("http://localhost:8000").getMe();
-  const first = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
-  const second = mockFetch.mock.calls[1][1]?.headers as Record<string, string>;
-  expect(first["X-User-Id"]).toMatch(/^u-/);
-  expect(second["X-User-Id"]).toBe(first["X-User-Id"]);
-  expect(await AsyncStorage.getItem("wayfare.userId")).toBe(first["X-User-Id"]);
+  expect(headersOf(0)).toEqual({ Authorization: "Bearer session-jwt" });
+  expect(await AsyncStorage.getAllKeys()).toEqual([]);
+});
+
+test("a 401 is retried once with a freshly minted token", async () => {
+  const getToken = jest.fn<GetToken>(async (options) => (options?.skipCache ? "fresh-jwt" : "stale-jwt"));
+  const onSessionEnded = jest.fn();
+  mockFetch.mockResolvedValueOnce(response({ detail: "Your session is invalid or has expired" }, 401));
+  mockFetch.mockResolvedValueOnce(response([{ id: "trip-1" }]));
+
+  expect(await createRemote("http://localhost:8000", getToken, onSessionEnded).listTrips()).toEqual([{ id: "trip-1", isFavorite: false, visited: false }]);
+  expect(getToken.mock.calls).toEqual([[undefined], [{ skipCache: true }]]);
+  expect([headersOf(0).Authorization, headersOf(1).Authorization]).toEqual(["Bearer stale-jwt", "Bearer fresh-jwt"]);
+  expect(onSessionEnded).not.toHaveBeenCalled();
+});
+
+test("a second 401 ends the session without saving anything locally", async () => {
+  await AsyncStorage.clear();
+  const onSessionEnded = jest.fn();
+  mockFetch.mockResolvedValue(response({ detail: "Sign in required" }, 401));
+  const api = createRemote("http://localhost:8000", async () => null, onSessionEnded);
+
+  await expect(api.savePreferences(DEFAULT_PREFS)).rejects.toMatchObject({ status: 401, message: "Your session ended. Sign in again." });
+  expect(mockFetch).toHaveBeenCalledTimes(2);
+  expect(headersOf(1)).toEqual({ "Content-Type": "application/json" });
+  expect(onSessionEnded).toHaveBeenCalledTimes(1);
+  expect(await AsyncStorage.getAllKeys()).toEqual([]);
 });
 
 test("generation streams progress and passes cancellation and retry identity to the server", async () => {
@@ -55,7 +78,7 @@ test("generation streams progress and passes cancellation and retry identity to 
   expect(onStep).toHaveBeenCalledWith(1);
   expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/trips/generate", expect.objectContaining({
     signal: ctrl.signal,
-    headers: expect.objectContaining({ Accept: "text/event-stream", "Idempotency-Key": "retry-identity" }),
+    headers: expect.objectContaining({ Accept: "text/event-stream", "Idempotency-Key": "retry-identity", Authorization: "Bearer session-jwt" }),
   }));
 });
 
@@ -139,7 +162,7 @@ test.each([401, 404, 405, 500])("metadata errors propagate without a guest-stora
   await AsyncStorage.clear();
   mockFetch.mockResolvedValue(response({ detail: "Metadata unavailable" }, status));
   await expect(createRemoteApi("http://localhost:8000").updateTripMetadata("trip", { isFavorite: true }))
-    .rejects.toMatchObject({ status, message: "Metadata unavailable" });
+    .rejects.toMatchObject({ status, message: status === 401 ? "Your session ended. Sign in again." : "Metadata unavailable" });
   expect(await AsyncStorage.getItem("wayfare.trips.v2")).toBeNull();
 });
 
@@ -160,7 +183,7 @@ test("saved places use the shared identity transport and encoded removal ID", as
   expect(await api.listSavedPlaces()).toEqual([savedPlace]);
   await api.removeSavedPlace("saved/id?");
   expect(mockFetch).toHaveBeenNthCalledWith(1, "http://localhost:8000/me/saved-places", expect.objectContaining({
-    method: "POST", body: JSON.stringify(savedReference), headers: expect.objectContaining({ "X-User-Id": expect.any(String) }),
+    method: "POST", body: JSON.stringify(savedReference), headers: expect.objectContaining({ Authorization: "Bearer session-jwt" }),
   }));
   expect(mockFetch).toHaveBeenLastCalledWith("http://localhost:8000/me/saved-places/saved%2Fid%3F", expect.objectContaining({ method: "DELETE" }));
 });
@@ -195,4 +218,16 @@ test("saved details use the owned encoded route and reject malformed provider id
   expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/me/saved-places/saved%2Fid%3F/details", expect.any(Object));
   mockFetch.mockResolvedValueOnce(response({ ...details, reference: { ...savedReference, provider: "unknown" } }));
   await expect(api.getSavedPlaceDetails("saved-1")).rejects.toThrow();
+});
+
+test("nearby search posts the position and returns the server ranking", async () => {
+  await AsyncStorage.clear();
+  const body = { source: "google", places: [] };
+  mockFetch.mockResolvedValue(response(body));
+  const res = await createRemoteApi("http://localhost:8000").nearbyPlaces({ lat: 41.88, lng: -87.62, radiusM: 2000, category: "food" });
+  const [url, init] = mockFetch.mock.calls[0];
+  expect(String(url)).toBe("http://localhost:8000/places/nearby/search");
+  expect(init?.method).toBe("POST");
+  expect(JSON.parse(init?.body as string)).toEqual({ lat: 41.88, lng: -87.62, radiusM: 2000, category: "food" });
+  expect(res).toEqual(body);
 });

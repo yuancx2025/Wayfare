@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { StoreProvider, useStore } from "@/state/store";
-import { api } from "@/lib/api";
+import { type Api } from "@/lib/api";
 import { sampleTrip, summarize } from "@/lib/api/local";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import type { Trip, TripMetadataResult, TripSummary } from "@/domain/types";
@@ -13,8 +13,10 @@ jest.mock("@/lib/api", () => ({
     listTrips: jest.fn(), getTrip: jest.fn(), getMe: jest.fn(), getPreferences: jest.fn(), capabilities: jest.fn(),
     updateTripMetadata: jest.fn(), deleteTrip: jest.fn(),
   },
+  useApi: () => jest.requireMock<{ api: unknown }>("@/lib/api").api,
 }));
 
+const api = jest.requireMock<{ api: Api }>("@/lib/api").api;
 const mockApi = jest.mocked(api);
 const trip = { ...sampleTrip(), version: 1 };
 let store: ReturnType<typeof useStore>;
@@ -157,4 +159,17 @@ test("a failed collection read is distinct from empty and a retry clears the err
   await act(async () => { await store.refresh(); });
   expect(store.loadError).toBeNull();
   expect(store.summaries).toHaveLength(1);
+});
+
+test("a favorite response from an unmounted account does not update the next account's store", async () => {
+  await mount();
+  const metadata = deferred<TripMetadataResult>();
+  mockApi.updateTripMetadata.mockReturnValueOnce(metadata.promise);
+  let saving!: Promise<void>;
+  await act(async () => { saving = store.setTripFavorite(trip.id, true); });
+  await act(async () => screen.unmount());
+  await mount();
+  await act(async () => { metadata.resolve({ id: trip.id, isFavorite: true, visited: false }); await saving; });
+  expect(store.summaries[0].isFavorite).toBe(false);
+  expect(store.favoritePending).toEqual({});
 });

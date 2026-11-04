@@ -2,6 +2,7 @@ from app.contracts.travel import PlaceDetails
 from app.core.exceptions import UpstreamError
 from app.integrations.places.catalog import CatalogPlaceProvider
 from app.integrations.places.catalog_data import catalog_destinations, catalog_place
+from tests.conftest import auth_headers
 
 PATH = "/me/saved-places"
 
@@ -73,7 +74,7 @@ async def test_detail_lookup_checks_ownership_before_calling_a_provider(make_cli
     google = FakeGoogle()
     client = await make_client(places=google)
     saved = await save(client, "google", "place", "google-point-id")
-    assert (await client.get(f"{PATH}/{saved['id']}/details", headers={"X-User-Id": "other-user"})).status_code == 404
+    assert (await client.get(f"{PATH}/{saved['id']}/details", headers=auth_headers("user_other"))).status_code == 404
     assert (await client.get(f"{PATH}/missing/details")).status_code == 404
     assert google.lookups == []
 

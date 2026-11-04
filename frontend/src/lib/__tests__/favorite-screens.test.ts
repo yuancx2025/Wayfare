@@ -11,7 +11,7 @@ jest.mock("react-native/Libraries/Components/Pressable/Pressable", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return { default: (props: object) => React.createElement("Pressable", props) };
 });
-jest.mock("@/lib/api", () => ({ api: { imageUrl: (src: string) => src } }));
+jest.mock("@/lib/api", () => ({ useApi: () => ({ imageUrl: (src: string) => src }) }));
 jest.mock("@/state/store", () => ({ useStore: () => mockStore }));
 jest.mock("@/lib/useToday", () => ({ useToday: () => "2026-10-29" }));
 jest.mock("expo-router", () => ({ useRouter: () => mockRouter, router: { canGoBack: () => false, replace: jest.fn() } }));

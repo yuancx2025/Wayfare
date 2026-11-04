@@ -1,4 +1,4 @@
-"""Reference persistence over real PostgreSQL; identity transport is still development-only."""
+"""Reference persistence over real PostgreSQL; verified Clerk sessions own every collection."""
 
 import asyncio
 import hashlib
@@ -6,6 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
+from tests.conftest import add_demo_trip, auth_headers
 from sqlalchemy import delete, insert, select, text
 from sqlalchemy.exc import IntegrityError
 
@@ -25,6 +27,18 @@ async def save(client, reference=None, **kwargs):
     return response.json()
 
 
+async def test_saved_places_require_a_verified_session_not_an_identity_header(make_client):
+    client = await make_client(sub=None)
+    forged = {"X-User-Id": "another-user"}
+    responses = [
+        await client.get(PATH, headers=forged),
+        await client.post(PATH, json=REFERENCE, headers=forged),
+        await client.delete(f"{PATH}/missing", headers=forged),
+        await client.get(f"{PATH}/missing/details", headers=forged),
+    ]
+    assert all(response.status_code == 401 for response in responses)
+
+
 async def test_repeat_save_returns_the_existing_record_after_app_restart(make_client):
     client = await make_client()
     assert (await client.get(PATH)).json() == []
@@ -41,7 +55,7 @@ async def test_repeat_save_returns_the_existing_record_after_app_restart(make_cl
 
 async def test_concurrent_saves_use_one_database_record(make_client):
     client = await make_client()
-    await client.get(PATH)  # Create the development user before the concurrency boundary.
+    await client.get(PATH)  # Create the account before the concurrency boundary.
     responses = await asyncio.gather(*(client.post(PATH, json=REFERENCE) for _ in range(8)))
     assert all(response.status_code == 200 for response in responses)
     assert len({response.json()["id"] for response in responses}) == 1
@@ -94,7 +108,7 @@ async def test_invalid_input_cannot_create_a_saved_record(make_client, reference
 async def test_current_identity_owns_list_and_delete_predicates(make_client):
     client = await make_client()
     saved = await save(client)
-    other = {"X-User-Id": "another-user"}
+    other = auth_headers("user_another")
     assert (await client.get(PATH, headers=other)).json() == []
     assert (await client.delete(f"{PATH}/{saved['id']}", headers=other)).status_code == 404
     assert (await client.delete(f"{PATH}/missing")).status_code == 404
@@ -121,11 +135,12 @@ async def test_unavailable_provider_does_not_block_save_list_or_removal(make_cli
 async def test_trip_deletion_preserves_saved_references_and_user_deletion_cascades(make_client):
     client = await make_client()
     saved = await save(client)
-    [trip] = (await client.get("/trips")).json()
+    trip = await add_demo_trip(client)
+    user_id = (await client.get("/me")).json()["id"]
     assert (await client.delete(f"/trips/{trip['id']}")).status_code == 204
     assert (await client.get(PATH)).json() == [saved]
     async with get_sessionmaker()() as session:
-        await session.execute(delete(User).where(User.id == "tester-1"))
+        await session.execute(delete(User).where(User.id == user_id))
         await session.commit()
         assert (await session.execute(select(SavedPlaceRow))).scalars().all() == []
 
@@ -148,6 +163,7 @@ async def test_failed_transaction_does_not_publish_a_saved_reference(make_client
 
 async def test_legacy_upgrade_matches_models_and_preserves_users_and_trips(make_client):
     client = await make_client()
+    await add_demo_trip(client)
     before = (await client.get("/trips")).json()
     script = Path(__file__).parents[1] / "scripts/sql/002_saved_places.sql"
     async with get_engine().begin() as connection:

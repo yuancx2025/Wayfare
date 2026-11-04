@@ -36,6 +36,13 @@ const config: ExpoConfig = {
     "@react-native-community/datetimepicker",
     "expo-splash-screen",
     ["react-native-maps", { androidGoogleMapsApiKey }],
+    [
+      "expo-location",
+      { locationWhenInUsePermission: "Wayfare uses your location only when you ask, to show places near you." },
+    ],
+    "@clerk/expo",
+    "expo-secure-store",
+    "expo-web-browser",
   ],
 };
 

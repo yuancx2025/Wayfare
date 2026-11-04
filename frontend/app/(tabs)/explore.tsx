@@ -6,16 +6,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { interestLabel } from "@/domain/logic/labels";
 import type { DestinationCard } from "@/domain/types";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
 import { useDebounced } from "@/lib/useDebounced";
 import { useStore } from "@/state/store";
 import { Button, EmptyState, Spinner } from "@/components/ui";
 import { Icon } from "@/components/Icon";
+import { NearbySection } from "@/components/NearbySection";
 import { colors, font, radius, space } from "@/theme";
 import { SavePlaceButton } from "@/components/SavePlaceButton";
 import { destinationSaveReference } from "@/domain/logic/savedPlaces";
 
 export default function Explore() {
+  const api = useApi();
   const { startDraft } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -63,6 +65,9 @@ export default function Explore() {
               </Pressable>
             ) : null}
           </View>
+          <View style={q ? styles.hidden : undefined}>
+            <NearbySection />
+          </View>
           {destinations.isPending ? (
             <Spinner label="Finding destinations" />
           ) : destinations.isError ? (
@@ -105,6 +110,7 @@ export default function Explore() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
+  hidden: { display: "none" },
   header: { paddingHorizontal: space[5], marginBottom: space[4] },
   eyebrow: { color: colors.muted, fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 1, textTransform: "uppercase" },
   title: { fontFamily: font.display, fontSize: 32, color: colors.ink },

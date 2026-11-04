@@ -20,3 +20,10 @@ key cascades on account deletion; deleting a trip leaves saved references intact
 The unique key includes owner, provider, kind and a SHA-256 digest of the exact
 external ID. The original ID is retained as text and checked on a deduplication
 hit, so long opaque IDs do not overflow a btree index or silently collide.
+
+Integration with `main@7e23d1b`: Clerk identities map to the existing internal
+`users.id`, so both collection upgrades retain their original foreign keys.
+The upgrade tests run against the Clerk-enabled user model and preserve existing
+users and trips. These scripts do not provision or migrate authentication fields;
+an older pre-Clerk database must first follow the authentication owner's migration
+path. No development or shared database is upgraded as part of a branch merge.

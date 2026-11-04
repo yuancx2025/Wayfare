@@ -16,7 +16,8 @@ import TripMap from "@/components/TripMap";
 import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
 import { colors, font, radius, space, touch } from "@/theme";
 import { goBack } from "@/lib/back";
-import { addTestEvent } from "@/lib/calendarSpike";
+import { calendarNamespace, removeTripFromCalendar, requestCalendarPermission, syncTripToCalendar } from "@/lib/calendar";
+import { useAuthSession } from "@/auth/session";
 import { one } from "@/lib/params";
 
 export default function Overview() {
@@ -30,6 +31,7 @@ export default function Overview() {
   const [menu, setMenu] = useState(false);
   const today = useToday();
   const { trip, loading, error } = useTrip(id || undefined);
+  const auth = useAuthSession();
 
   if (!trip) return <TripPlaceholder loading={loading} error={error} onBack={goBack} />;
 
@@ -41,6 +43,24 @@ export default function Overview() {
       showToast(`${trip.destination} trip deleted`);
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Couldn't delete this trip");
+    }
+  };
+
+  // TEMPORARY (calendar export, increment 3): replaced by the real menu rows and sheet in increment 4.
+  const calendarTest = async (action: "sync" | "remove") => {
+    setMenu(false);
+    const namespace = calendarNamespace(auth.mode, auth.userId);
+    try {
+      if (action === "remove") {
+        showToast(`Removed ${await removeTripFromCalendar(trip.id, namespace)} calendar events`);
+        return;
+      }
+      const permission = await requestCalendarPermission();
+      if (permission !== "granted") return showToast(`Calendar permission: ${permission}`);
+      const r = await syncTripToCalendar(trip, namespace);
+      showToast(`Calendar: ${r.added} added, ${r.updated} updated, ${r.removed} removed, ${r.unchanged} unchanged`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -113,9 +133,14 @@ export default function Overview() {
           <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>View map</Text>
         </Pressable>
         {__DEV__ && (
-          <Pressable style={styles.menuRow} onPress={() => { setMenu(false); addTestEvent().then(showToast, (e) => showToast(e instanceof Error ? e.message : String(e))); }}>
-            <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>Calendar test (temporary)</Text>
-          </Pressable>
+          <>
+            <Pressable style={styles.menuRow} onPress={() => { void calendarTest("sync"); }}>
+              <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>Sync to calendar (temporary)</Text>
+            </Pressable>
+            <Pressable style={styles.menuRow} onPress={() => { void calendarTest("remove"); }}>
+              <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>Remove from calendar (temporary)</Text>
+            </Pressable>
+          </>
         )}
         <Pressable style={styles.menuRow} onPress={() => { void remove(); }}>
           <Icon name="trash" color={colors.coralInk} /><Text style={[styles.menuText, { color: colors.coralInk }]}>Delete trip</Text>

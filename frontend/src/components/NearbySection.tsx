@@ -6,7 +6,7 @@ import { fmtDistance } from "@/domain/lib/format";
 import { interestLabel } from "@/domain/logic/labels";
 import { DEFAULT_NEARBY_RADIUS_M, NEARBY_RADIUS_STEPS } from "@/domain/logic/nearby";
 import type { NearbyCategory } from "@/domain/types";
-import { api } from "@/lib/api";
+import { useApi } from "@/lib/api";
 import { useCurrentLocation } from "@/state/location";
 import { Button, ChipGroup, EmptyState, SectionHeading, Spinner } from "@/components/ui";
 import TripMap from "@/components/TripMap";
@@ -24,6 +24,7 @@ const CATALOG_CITIES = DESTINATIONS.map((d) => d.name).join(", ");
 
 /** "Use my location" plus the closest food and sights. Location is read only when the user asks. */
 export function NearbySection() {
+  const api = useApi();
   const loc = useCurrentLocation();
   const [category, setCategory] = useState<NearbyCategory>("attractions");
   const [open, setOpen] = useState(true);

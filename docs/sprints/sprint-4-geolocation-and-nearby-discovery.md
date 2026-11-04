@@ -14,7 +14,7 @@ This is a planning document. Depends on Sprint 2's authenticated live discovery 
 
 Implemented ahead of schedule on branch `ziqi/sprint-4-location-nearby`, before Sprints 2 and 3. Two parts wait on those sprints:
 
-- **Authentication:** `POST /places/nearby/search` uses today's `X-User-Id` identity. It moves to Clerk sessions with every other private route in Sprint 2.
+- **Authentication:** `POST /places/nearby/search` verifies Clerk Bearer session tokens like the other private routes. Nearby uses the identity-scoped API client: accounts query the backend, while guests use the bundled catalog. Switching identity clears the location fix and query cache.
 - **Save Place:** nearby results cannot be saved until Sprint 3 adds Save Place.
 
 Verified on the iOS Simulator (iPhone 17, Expo Go) with simulated locations, live Google Places, and the hosted Neon dev database. **Not yet verified on the Android emulator.**

@@ -6,7 +6,6 @@ import json
 from app.core.exceptions import UpstreamError
 from app.integrations.places.catalog import CatalogPlaceProvider
 from app.integrations.places.catalog_data import catalog_places
-from tests.conftest import FixedRouter
 from tests.conftest import FixedRouter, add_demo_trip, auth_headers
 
 DRAFT = {

@@ -17,6 +17,7 @@ import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
 import { colors, font, radius, space, touch } from "@/theme";
 import { goBack } from "@/lib/back";
 import { one } from "@/lib/params";
+import { TripVisitAction } from "@/components/TripVisitAction";
 import { FavoriteButton } from "@/components/FavoriteButton";
 
 export default function Overview() {
@@ -65,7 +66,10 @@ export default function Overview() {
             </View>
           </View>
           <View style={styles.heroCopy}>
-            <Text style={styles.status}>{tripStatus(trip, today)}</Text>
+            <View style={styles.statusRow}>
+              <Text style={styles.status}>{tripStatus(trip, today)}</Text>
+              {trip.visited ? <Text style={[styles.status, styles.visitedStatus]}>Visited</Text> : null}
+            </View>
             <Text style={styles.heroTitle}>{trip.destination}</Text>
             <Text style={styles.heroDates}>{fmtRange(trip.startDate, trip.endDate)}</Text>
           </View>
@@ -112,6 +116,7 @@ export default function Overview() {
         <Button trailing="arrow" onPress={() => openDay(0)}>Open Daily Itinerary</Button>
       </View>
       <BottomSheet open={menu} onClose={() => setMenu(false)} title="Trip options">
+        <TripVisitAction trip={trip} onSaved={() => setMenu(false)} />
         <Pressable style={styles.menuRow} onPress={() => { setMenu(false); session.bind(id, 0); router.push(`/trip/${id}/map`); }}>
           <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>View map</Text>
         </Pressable>
@@ -139,6 +144,8 @@ const styles = StyleSheet.create({
   heroActions: { flexDirection: "row", alignItems: "center", gap: space[2] },
   glass: { width: touch, height: touch, borderRadius: touch / 2, backgroundColor: "rgba(15,30,25,0.38)", alignItems: "center", justifyContent: "center" },
   heroCopy: { padding: space[5], paddingBottom: 44 },
+  statusRow: { flexDirection: "row", flexWrap: "wrap", gap: space[2] },
+  visitedStatus: { backgroundColor: colors.mint, color: colors.forest },
   status: { alignSelf: "flex-start", backgroundColor: "rgba(255,254,250,0.92)", color: colors.ink, borderRadius: 999, overflow: "hidden", paddingVertical: 7, paddingHorizontal: 11, fontFamily: font.bodyBold, fontSize: 12 },
   heroTitle: { marginTop: 10, color: colors.white, fontFamily: font.display, fontSize: 36 },
   heroDates: { marginTop: 6, color: "rgba(255,255,255,0.9)", fontFamily: font.body, fontSize: 15 },

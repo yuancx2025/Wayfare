@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type ReactNode } from "react";
-import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripMetadataResult, TripSummary } from "@/domain/types";
+import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary } from "@/domain/types";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import { ApiError, useApi } from "@/lib/api";
 import { summarize } from "@/lib/api/local";
@@ -15,7 +15,7 @@ interface State {
   draftNonce: number;
   me: Me | null;
   capabilities: Capabilities;
-  favoritePending: Record<string, boolean>;
+  tripMetadataPending: Record<string, boolean>;
 }
 
 type Action =
@@ -26,7 +26,7 @@ type Action =
   | { type: "updateDraft"; patch: Partial<TripDraft> }
   | { type: "putTrip"; trip: Trip; isNew?: boolean; preserveMetadata?: boolean }
   | { type: "tripMetadata"; metadata: TripMetadataResult }
-  | { type: "favoritePending"; id: string; pending: boolean }
+  | { type: "tripMetadataPending"; id: string; pending: boolean }
   | { type: "deleteTrip"; id: string }
   | { type: "saveDefaultPrefs"; prefs: Preferences }
   | { type: "setMe"; me: Me };
@@ -91,11 +91,11 @@ function reducer(state: State, action: Action): State {
         trips: state.trips[id] ? { ...state.trips, [id]: { ...state.trips[id], isFavorite, visited } } : state.trips,
       };
     }
-    case "favoritePending": {
-      const favoritePending = { ...state.favoritePending };
-      if (action.pending) favoritePending[action.id] = true;
-      else delete favoritePending[action.id];
-      return { ...state, favoritePending };
+    case "tripMetadataPending": {
+      const tripMetadataPending = { ...state.tripMetadataPending };
+      if (action.pending) tripMetadataPending[action.id] = true;
+      else delete tripMetadataPending[action.id];
+      return { ...state, tripMetadataPending };
     }
     case "deleteTrip": {
       const { [action.id]: _gone, ...trips } = state.trips;
@@ -117,6 +117,7 @@ interface Store extends State {
   saveDefaultPrefs: (prefs: Preferences) => Promise<void>;
   saveProfile: (patch: ProfilePatch) => Promise<void>;
   setTripFavorite: (id: string, isFavorite: boolean) => Promise<void>;
+  setTripVisited: (id: string, visited: boolean) => Promise<void>;
   /** Offline only; undefined when the backend is configured. */
   loadSample?: () => Promise<void>;
   /** Offline only: past, ongoing, and today-boundary trips for history. */
@@ -145,12 +146,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     draftNonce: 0,
     me: null,
     capabilities: NO_CAPABILITIES,
-    favoritePending: {},
+    tripMetadataPending: {},
   });
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef(new Map<string, Promise<Trip>>());
-  const pendingFavorites = useRef(new Map<string, { value: boolean; promise: Promise<void> }>());
+  const pendingMetadata = useRef(new Map<string, { patch: TripMetadataPatch; promise: Promise<void> }>());
   const metadataEpoch = useRef(new Map<string, number>());
   const removedTrips = useRef(new Set<string>());
   const refreshEpoch = useRef(0);
@@ -168,7 +169,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     const mine = ++refreshEpoch.current;
     const epochs = new Map(metadataEpoch.current);
-    const preserveMetadataIds = new Set(pendingFavorites.current.keys());
+    const preserveMetadataIds = new Set(pendingMetadata.current.keys());
     dispatch({ type: "refreshStarted" });
     try {
       const [summaries, defaultPrefs, me, capabilities] = await Promise.all([
@@ -205,7 +206,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const inflight = pending.current.get(id);
     if (inflight) return inflight;
     const epoch = metadataEpoch.current.get(id);
-    const wasPending = pendingFavorites.current.has(id);
+    const wasPending = pendingMetadata.current.has(id);
     const p = api.getTrip(id)
       .then((trip) => {
         if (removedTrips.current.has(id)) throw new ApiError(404, "Trip not found");
@@ -217,23 +218,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return p;
   }, [api, dispatch]);
 
-  const setTripFavorite = useCallback(function setFavorite(id: string, isFavorite: boolean): Promise<void> {
-    const active = pendingFavorites.current.get(id);
-    if (active) {
-      return active.value === isFavorite ? active.promise : active.promise.catch(() => undefined).then(() => setFavorite(id, isFavorite));
-    }
+  // Serialize every metadata intent per trip, including different fields. The map
+  // holds the tail so a later intent cannot jump ahead of an already queued write.
+  const writeTripMetadata = useCallback((id: string, patch: TripMetadataPatch): Promise<void> => {
+    if (!alive.current) return Promise.reject(new Error("Account scope ended"));
     if (removedTrips.current.has(id)) return Promise.reject(new ApiError(404, "Trip not found"));
+    const previous = pendingMetadata.current.get(id);
+    if (previous && previous.patch.isFavorite === patch.isFavorite && previous.patch.visited === patch.visited) return previous.promise;
     metadataEpoch.current.set(id, (metadataEpoch.current.get(id) ?? 0) + 1);
-    dispatch({ type: "favoritePending", id, pending: true });
-    const promise = api.updateTripMetadata(id, { isFavorite }).then((metadata) => {
+    dispatch({ type: "tripMetadataPending", id, pending: true });
+    const run = async () => {
+      if (previous) await previous.promise.catch(() => undefined);
+      if (!alive.current) throw new Error("Account scope ended");
+      if (removedTrips.current.has(id)) throw new ApiError(404, "Trip not found");
+      const metadata = await api.updateTripMetadata(id, patch);
       if (!removedTrips.current.has(id)) dispatch({ type: "tripMetadata", metadata });
-    }).finally(() => {
-      pendingFavorites.current.delete(id);
-      dispatch({ type: "favoritePending", id, pending: false });
+    };
+    const promise = run().finally(() => {
+      if (pendingMetadata.current.get(id)?.promise === promise) {
+        pendingMetadata.current.delete(id);
+        dispatch({ type: "tripMetadataPending", id, pending: false });
+      }
     });
-    pendingFavorites.current.set(id, { value: isFavorite, promise });
+    pendingMetadata.current.set(id, { patch, promise });
     return promise;
   }, [api, dispatch]);
+  const setTripFavorite = useCallback((id: string, isFavorite: boolean) => writeTripMetadata(id, { isFavorite }), [writeTripMetadata]);
+  const setTripVisited = useCallback((id: string, visited: boolean) => writeTripMetadata(id, { visited }), [writeTripMetadata]);
 
   const value = useMemo<Store>(() => ({
     ...state,
@@ -242,6 +253,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     refresh,
     loadTrip,
     setTripFavorite,
+    setTripVisited,
     startDraft: (destination, destinationId) => dispatch({ type: "startDraft", destination, destinationId }),
     updateDraft: (patch) => dispatch({ type: "updateDraft", patch }),
     putTrip: (trip, opts) => {
@@ -283,7 +295,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         refreshMe();
       }
       : undefined,
-  }), [api, dispatch, state, toast, showToast, refresh, loadTrip, refreshMe, setTripFavorite]);
+  }), [api, dispatch, state, toast, showToast, refresh, loadTrip, refreshMe, setTripFavorite, setTripVisited]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

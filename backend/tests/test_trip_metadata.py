@@ -40,6 +40,20 @@ async def test_favorite_survives_new_app_and_does_not_change_the_itinerary(make_
     assert (await restarted.get(f"/trips/{tid}")).json() == before
 
 
+async def test_marking_and_clearing_visited_preserves_favorites_dates_and_itinerary(make_client):
+    client = await make_client()
+    before = await seed_trip(client)
+    tid = before["id"]
+    assert (await client.patch(f"/trips/{tid}", json={"isFavorite": True})).status_code == 200
+    for visited in [True, False]:
+        response = await client.patch(f"/trips/{tid}", json={"visited": visited})
+        assert response.json() == {"id": tid, "isFavorite": True, "visited": visited}
+        restarted = await make_client()
+        assert (await restarted.get(f"/trips/{tid}")).json() == {**before, "isFavorite": True, "visited": visited}
+        [summary] = (await restarted.get("/trips")).json()
+        assert summary["visited"] is visited and summary["isFavorite"] is True
+
+
 @pytest.mark.parametrize("patch", [
     {}, {"isFavorite": None}, {"visited": None}, {"isFavorite": 1}, {"visited": "false"},
     {"version": 3}, {"days": []}, {"isFavorite": True, "unknown": True},

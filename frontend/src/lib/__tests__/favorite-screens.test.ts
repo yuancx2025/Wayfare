@@ -32,7 +32,7 @@ jest.mock("@/components/ui", () => {
 const mockRouter = { navigate: jest.fn(), push: jest.fn() };
 const trip = sampleTrip();
 const saved = { ...summarize(trip), isFavorite: true };
-let mockStore: Pick<ReturnType<typeof useStore>, "summaries" | "hydrated" | "refreshing" | "loadError" | "refresh" | "favoritePending" | "setTripFavorite" | "showToast">;
+let mockStore: Pick<ReturnType<typeof useStore>, "summaries" | "hydrated" | "refreshing" | "loadError" | "refresh" | "tripMetadataPending" | "setTripFavorite" | "showToast">;
 let screen: ReactTestRenderer;
 const buttons = () => screen.root.findAll((node) => String(node.type) === "Button");
 const pressables = () => screen.root.findAll((node) => typeof node.type === "string" && node.props.accessibilityRole === "button" && Boolean(node.props.onPress));
@@ -43,7 +43,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockStore = {
     summaries: [saved, { ...saved, id: "not-saved", isFavorite: false }], hydrated: true, refreshing: false, loadError: null,
-    refresh: jest.fn<() => Promise<void>>().mockResolvedValue(undefined), favoritePending: {},
+    refresh: jest.fn<() => Promise<void>>().mockResolvedValue(undefined), tripMetadataPending: {},
     setTripFavorite: jest.fn<(id: string, value: boolean) => Promise<void>>().mockResolvedValue(undefined), showToast: jest.fn(),
   };
 });
@@ -81,7 +81,7 @@ test("removing the last favorite reveals the empty state and a route back to Tri
 });
 
 test("the action disables across views while saving and keeps its committed state", async () => {
-  mockStore.favoritePending[trip.id] = true;
+  mockStore.tripMetadataPending[trip.id] = true;
   await mount(React.createElement(FavoriteButton, { trip }));
   const button = pressables()[0];
   expect(button.props.disabled).toBe(true);

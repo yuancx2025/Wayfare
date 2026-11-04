@@ -66,7 +66,8 @@ Two local-storage issues must be covered when introducing new fields: entire-lis
 | 2. Favorite trip journey | Add card/detail controls and Profile favorites; add the owned remote PATCH using the agreed schema | All trip views agree; restart persists; metadata does not invalidate an adjustment preview |
 | 3A. Saved-place persistence | Add explicit reference identity, local/remote adapters, owned endpoints and database uniqueness | Concurrent saves deduplicate; failures reject; references stay removable without provider lookup |
 | 3B. Saved-place journey | Complete Figma frames, shared save control, Saved list/details/remove and provider resolution | Native flow matches the reviewed design; unavailable entries stay removable; Nearby integration example works |
-| 4. Visited status and journal text | Add explicit visited controls, eligibility rules, editor, owned endpoints, cascade and failure handling | Past is not visited; draft survives failed save; deleted trip removes its journal but preserves saved places |
+| 4A. Explicit visited status | Reuse metadata persistence; add mark/unmark controls and serialize mixed metadata writes | Dates remain independent; both flags persist; delayed reads and account changes cannot corrupt state |
+| 4B. Journal text | Settle eligibility and text rules; add editor, owned endpoints, cascade and failure handling | Draft survives failed save; deleted trip removes its journal but preserves saved places |
 | 5. Device-local photo | Use Expo ImagePicker/FileSystem, namespace association, replace/remove, and missing-file handling | Real gallery selection and restart on both simulators; no local URI enters cloud requests |
 | 6. Account/provider integration | Connect the auth owner's final shared API/scope/reset contracts and Nearby entry point | A/B isolation, late-response protection, cloud text across two installations, photos explicitly device-local |
 | 7. Release checks and review preparation | Fix regressions, run required checks, and record limitations | Original generation/maps/adjustments still work; actual evidence distinguishes mocks and real services |
@@ -256,3 +257,41 @@ backend business calls, actual GPS searches and Android acceptance remain open.
 
 The Clerk development publishable key is configured only in ignored local `.env`.
 No authentication bypass, shared database change or credential commit is included.
+
+
+### Increment 4A: explicit visited status (November 3)
+
+- Add Mark as visited / Remove visited status to the existing Trip options sheet.
+  Reuse its layout, typography, palette and icons instead of creating a new screen.
+  Show a separate Visited indicator in trip details and the trip card. Date-based
+  grouping and labels are unchanged; a past trip is never implicitly visited.
+- Reuse `PATCH /trips/{id}`, both adapters, existing boolean columns and strict
+  local persistence. No new endpoint, migration, dependency or mock service is
+  required. Confirmed persistence controls the UI; failures keep the sheet open
+  and permit retry.
+- Replace the favorite-only pending state with `tripMetadataPending` and one
+  per-trip metadata queue. Mixed favorite/visited intents run in order, matching
+  tail intents coalesce, failures do not block later writes, and queued requests
+  never start after their identity scope unmounts. Existing metadata epochs and
+  itinerary version checks continue protecting against stale reads.
+- Validation: frontend typecheck/lint passed; all 191 tests in 20 suites passed.
+  Coverage adds mixed-field and three-intent ordering, failures, stale reads,
+  account unmount, explicit mark/unmark UI and local restart persistence. The
+  backend suite passed all 145 tests against disposable PostgreSQL 14, including
+  visited round trips after app recreation with favorites/dates/itinerary intact.
+- Actual iOS guest checks: mark a future sample trip visited, confirm both the
+  original date label and Visited indicator, reload JavaScript, reopen the trip
+  and confirm persistence, then remove the status. The sample was restored to its
+  original unvisited state; its favorite and itinerary were preserved.
+- Frontend unit tests mock native rendering/storage; backend identity uses signed
+  test JWTs through the verifier. The iOS guest check uses actual AsyncStorage.
+  Real account lifecycle, remote native acceptance, Android and live provider
+  acceptance remain open. No shared or development database was changed.
+- Keep this increment local per the current instruction: do not push commits or
+  update the online draft PR until requested. The local PR preview may track the
+  new completed scope without publishing it.
+
+Next increment is 4B, journal text: first agree on date/time-zone eligibility,
+Unicode counting, empty-text behavior and continued editing after clearing visited.
+Then implement one owned text journal with explicit save and recoverable failures,
+reusing the existing identity/API boundaries. Device-local photos remain increment 5.

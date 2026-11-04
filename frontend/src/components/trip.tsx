@@ -25,7 +25,7 @@ export function TripCard({ trip, today, onPress }: { trip: TripSummary; today: s
         <View style={styles.cardCopy}>
           <Text style={styles.cardTitle}>{trip.destination}, {trip.country}</Text>
           <Text style={styles.cardMeta}>{fmtRange(trip.startDate, trip.endDate)} · {plural(trip.dayCount, "day")}</Text>
-          <Text style={styles.cardFoot}>{plural(trip.travelers, "traveler")} · {trip.stopCount} stops planned{trip.adjusted ? " · Adjusted" : ""}</Text>
+          <Text style={styles.cardFoot}>{plural(trip.travelers, "traveler")} · {trip.stopCount} stops planned{trip.adjusted ? " · Adjusted" : ""}{trip.visited ? " · Visited" : ""}</Text>
         </View>
       </Pressable>
       <View style={styles.favoriteAction}><FavoriteButton trip={trip} /></View>

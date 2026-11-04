@@ -54,6 +54,15 @@ test("explicit favorite values survive restart and leave all itinerary data unch
   expect(await createLocalApi().getTrip(sample.id)).toEqual(sample);
 });
 
+test("marking and clearing visited persists without changing favorites, dates or itinerary versions", async () => {
+  const sample = { ...sampleTrip(), version: 7, isFavorite: true };
+  await AsyncStorage.setItem(TRIPS_KEY, JSON.stringify([sample]));
+  await createLocalApi().updateTripMetadata(sample.id, { visited: true });
+  expect(await createLocalApi().getTrip(sample.id)).toEqual({ ...sample, visited: true });
+  await createLocalApi().updateTripMetadata(sample.id, { visited: false });
+  expect(await createLocalApi().getTrip(sample.id)).toEqual(sample);
+});
+
 test.each([{}, { isFavorite: undefined }, { isFavorite: null }, { isFavorite: "true" }, { version: 9 }, { isFavorite: true, visited: undefined }])(
   "invalid metadata patches cannot change stored trips: %j", async (patch) => {
     const api = createLocalApi();

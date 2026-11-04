@@ -6,9 +6,9 @@ import { colors } from "@/theme";
 
 /** Shared card/detail action. Only confirmed persistence changes the heart. */
 export function FavoriteButton({ trip }: { trip: { id: string; destination: string; isFavorite: boolean } }) {
-  const { favoritePending, setTripFavorite, showToast } = useStore();
+  const { tripMetadataPending, setTripFavorite, showToast } = useStore();
   const active = useRef(false);
-  const busy = Boolean(favoritePending[trip.id]);
+  const busy = Boolean(tripMetadataPending[trip.id]);
   const save = async () => {
     if (busy || active.current) return;
     active.current = true;
@@ -27,7 +27,7 @@ export function FavoriteButton({ trip }: { trip: { id: string; destination: stri
       onPress={() => { void save(); }}
       disabled={busy}
       accessibilityRole="button"
-      accessibilityLabel={busy ? `Saving ${trip.destination} favorite` : `${trip.isFavorite ? "Remove" : "Add"} ${trip.destination} ${trip.isFavorite ? "from" : "to"} favorites`}
+      accessibilityLabel={busy ? `Saving ${trip.destination} trip changes` : `${trip.isFavorite ? "Remove" : "Add"} ${trip.destination} ${trip.isFavorite ? "from" : "to"} favorites`}
       accessibilityHint="Find favorite trips in Profile"
       accessibilityState={{ selected: trip.isFavorite, disabled: busy, busy }}
       style={({ pressed }) => [styles.button, trip.isFavorite && styles.saved, pressed && !busy && styles.pressed]}

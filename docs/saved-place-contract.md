@@ -134,17 +134,19 @@ available and omits the save action.
 - Collection list, detail and mutation keys now include `guest` or the Clerk
   account ID, and consumers use `useApi()`. Tests cover separate account caches,
   late writes, and favorite responses after a Store remount. Full session lifecycle
-  acceptance remains pending the authentication owner's root-provider integration.
+  acceptance remains pending real account testing. The authorized startup fix
+  now places location and collection screens inside one identity-keyed provider tree.
 - Upgrades 001/002 have been checked against the Clerk-enabled model in a disposable
   database. They retain internal `users.id` ownership. They do not add missing
   Clerk fields to a pre-auth database; no shared database was changed.
 - Backend collection tests now use signed JWTs through the real verifier. Missing
   sessions and forged identity headers are rejected; foreign records return 404.
   Test-key verification is not live Clerk acceptance.
-- Upstream follow-ups remain outside this branch: the undefined root `queryClient`
-  and duplicate provider/navigation trees, the retired API singleton import in
-  Nearby, and missing `nearbyPlaces` in the no-backend account adapter. Do not
-  treat the passing collection suites as full application startup acceptance.
+- The subsequently authorized startup fix removes the duplicate root tree, protects
+  collection routes, migrates Nearby to `useApi()` and completes its no-backend
+  adapter. Typecheck/lint and 179 frontend tests pass. iOS guest startup and
+  Explore/Saved/detail navigation have been verified; real account lifecycle
+  acceptance and the Nearby Save entry point remain open.
 - Finish Android/native acceptance and live provider checks before release.
 
 Increment 3B adds the screens and shared action. No journal/photo work or live Google acceptance is claimed by these increments.

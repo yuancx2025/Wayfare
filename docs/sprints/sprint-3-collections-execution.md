@@ -235,3 +235,24 @@ Frontend typecheck remains blocked only by the preserved upstream root/Nearby
 issues listed above. Backend 144 passed against isolated PostgreSQL 14, including
 test-key JWT verification and legacy collection upgrade tests. Native startup,
 real Clerk sign-in/account switching and live Google checks were not rerun.
+
+
+### November 3: authorized startup integration fix
+
+After the merge-only checkpoint, startup fixes were explicitly authorized. Remove
+the duplicate provider/navigation tree; keep one identity-keyed QueryClient, Store
+and trip session, with both location providers available inside that tree. Protect
+the destination and saved-place detail routes with the same account/guest guard.
+Migrate Nearby to `useApi()` and complete its no-backend account error adapter.
+These changes supersede the upstream startup blockers recorded above.
+
+Validation: frontend typecheck and lint passed; 179 tests passed in 19 suites. New
+root-layout regression tests cover one navigation/data tree, location context,
+protected collection routes and account cache replacement. On iPhone 18 Pro in
+Device Hub, actual startup reached sign-in; Continue as guest opened Trips, then
+Explore/Nearby, Saved and a saved-place detail page without runtime errors. The
+previous guest collection was retained. Real account sign-in, session expiry,
+backend business calls, actual GPS searches and Android acceptance remain open.
+
+The Clerk development publishable key is configured only in ignored local `.env`.
+No authentication bypass, shared database change or credential commit is included.

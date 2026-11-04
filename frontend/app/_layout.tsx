@@ -73,20 +73,6 @@ function AppShell() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StoreProvider>
-            <TripSessionProvider>
-              <LocationPermissionProvider>
-                <LocationProvider>
-                  <ThemeProvider value={navTheme}>
-                    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }} />
-                    <ToastHost />
-                  </ThemeProvider>
-                </LocationProvider>
-              </LocationPermissionProvider>
-            </TripSessionProvider>
-          </StoreProvider>
-        </QueryClientProvider>
         <ThemeProvider value={navTheme}>
           {/* Signed-out screens only need on-device data, so they share the guest scope. */}
           <IdentityScope key={mode === "account" ? `account:${userId}` : "guest"}>
@@ -109,7 +95,11 @@ function IdentityScope({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
-        <TripSessionProvider>{children}</TripSessionProvider>
+        <TripSessionProvider>
+          <LocationPermissionProvider>
+            <LocationProvider>{children}</LocationProvider>
+          </LocationPermissionProvider>
+        </TripSessionProvider>
       </StoreProvider>
     </QueryClientProvider>
   );
@@ -124,6 +114,8 @@ function RootStack({ mode }: { mode: AuthMode }) {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="create" />
         <Stack.Screen name="trip/[id]" />
+        <Stack.Screen name="destination/[id]" />
+        <Stack.Screen name="saved-place/[id]" />
       </Stack.Protected>
       {/* Guests can still open sign-in from Profile; signed-in users never see these screens. */}
       <Stack.Protected guard={mode !== "account"}>

@@ -73,20 +73,6 @@ function AppShell() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StoreProvider>
-            <TripSessionProvider>
-              <LocationPermissionProvider>
-                <LocationProvider>
-                  <ThemeProvider value={navTheme}>
-                    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }} />
-                    <ToastHost />
-                  </ThemeProvider>
-                </LocationProvider>
-              </LocationPermissionProvider>
-            </TripSessionProvider>
-          </StoreProvider>
-        </QueryClientProvider>
         <ThemeProvider value={navTheme}>
           {/* Signed-out screens only need on-device data, so they share the guest scope. */}
           <IdentityScope key={mode === "account" ? `account:${userId}` : "guest"}>
@@ -101,7 +87,7 @@ function AppShell() {
 
 /**
  * Holds one identity's data. A new key (sign-in, sign-out, account switch) unmounts the previous query cache,
- * trip list and open screens, which aborts in-flight generation. The client is created here, not at module scope,
+ * trip list, location fix and open screens, which aborts in-flight generation. The client is created here, not at module scope,
  * so it does not outlive the key.
  */
 function IdentityScope({ children }: { children: ReactNode }) {
@@ -109,7 +95,11 @@ function IdentityScope({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
-        <TripSessionProvider>{children}</TripSessionProvider>
+        <TripSessionProvider>
+          <LocationPermissionProvider>
+            <LocationProvider>{children}</LocationProvider>
+          </LocationPermissionProvider>
+        </TripSessionProvider>
       </StoreProvider>
     </QueryClientProvider>
   );

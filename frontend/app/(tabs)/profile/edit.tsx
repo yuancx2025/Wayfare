@@ -9,6 +9,8 @@ import { ApiError } from "@/lib/api";
 import { goBackToProfile } from "@/lib/back";
 import { errorMessage, useStore } from "@/state/store";
 import { Button, ErrorLine, FieldInput, FormField, Spinner, TopBar } from "@/components/ui";
+import { Avatar } from "@/components/profile/Avatar";
+import { AvatarEditor } from "@/components/profile/AvatarEditor";
 import { colors, font, space } from "@/theme";
 
 export default function EditProfile() {
@@ -31,8 +33,9 @@ export default function EditProfile() {
 }
 
 function EditProfileForm({ me }: { me: Me }) {
-  const { saveProfile } = useStore();
+  const { saveProfile, avatar } = useStore();
   const [formError, setFormError] = useState<string | null>(null);
+  const [editingAvatar, setEditingAvatar] = useState(false);
   // Captured once so a later setMe cannot replace text the user is already editing.
   const [seeded] = useState<ProfileValues>(() => ({ name: me.name, home: me.home }));
   const { control, handleSubmit, setError, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<ProfileValues>({
@@ -80,8 +83,9 @@ function EditProfileForm({ me }: { me: Me }) {
       <TopBar title="Edit profile" onBack={goBackToProfile} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.preview}>
-          <View style={styles.avatar}><Text style={styles.avatarText}>{preview}</Text></View>
-          <Text style={styles.previewText}>Your initials update with your name.</Text>
+          <Avatar avatar={avatar} initials={preview} />
+          <Button variant="ghost" icon="image" full={false} onPress={() => setEditingAvatar(true)}>Change avatar</Button>
+          {avatar?.kind === "initials" ? <Text style={styles.previewText}>Your initials update with your name.</Text> : null}
         </View>
         <Controller
           control={control}
@@ -130,6 +134,7 @@ function EditProfileForm({ me }: { me: Me }) {
         />
         <ErrorLine message={formError} />
       </ScrollView>
+      <AvatarEditor open={editingAvatar} onClose={() => setEditingAvatar(false)} initials={preview} />
       <View style={styles.footer}>
         <Button icon="check" disabled={!isDirty || isSubmitting} onPress={() => { void submit(); }}>
           {isSubmitting ? "Saving…" : "Save profile"}
@@ -144,8 +149,6 @@ const styles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: colors.paper, justifyContent: "center", padding: space[5], gap: space[4] },
   content: { padding: space[5], paddingBottom: space[6], gap: space[4] },
   preview: { alignItems: "center", gap: space[3], marginBottom: space[2] },
-  avatar: { width: 64, height: 64, borderRadius: 22, backgroundColor: colors.forest, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: colors.sand, fontFamily: font.display, fontSize: 20 },
   previewText: { color: colors.muted, fontFamily: font.body, fontSize: 13 },
   hint: { marginTop: 6, marginHorizontal: 4, color: colors.muted, fontFamily: font.body, fontSize: 13 },
   footer: { padding: space[4], borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.paper },

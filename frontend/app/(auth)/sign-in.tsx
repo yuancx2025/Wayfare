@@ -8,6 +8,7 @@ import { describeAuthError, messageFor, type AuthFormError } from "@/auth/errors
 import { checkEmail, checkPassword } from "@/auth/validation";
 import { AuthScreen, TextLink } from "@/components/auth/AuthScreen";
 import { AuthField, PasswordInput } from "@/components/auth/AuthField";
+import { GoogleSignIn } from "@/components/auth/ProviderButton";
 import { Button, ErrorLine } from "@/components/ui";
 import { colors, font } from "@/theme";
 
@@ -19,6 +20,7 @@ export default function SignInScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<AuthFormError | null>(null);
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const [leavingAsGuest, setLeavingAsGuest] = useState(false);
 
   // Navigate only after guest mode is active; until then the app screens are still protected.
@@ -61,7 +63,7 @@ export default function SignInScreen() {
       footer={
         <>
           <TextLink onPress={() => router.push("/sign-up")}>Create account</TextLink>
-          <Button variant="ghost" onPress={onGuest} disabled={busy}>Continue as guest</Button>
+          <Button variant="ghost" onPress={onGuest} disabled={busy || googleBusy}>Continue as guest</Button>
           <Text style={styles.caption}>Trips stay on this device.</Text>
         </>
       }
@@ -92,7 +94,8 @@ export default function SignInScreen() {
       <TextLink align="right" onPress={() => router.push({ pathname: "/forgot-password", params: { email: email.trim() } })}>
         Forgot password?
       </TextLink>
-      <Button onPress={onSignIn} disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
+      <Button onPress={onSignIn} disabled={busy || googleBusy}>{busy ? "Signing in…" : "Sign in"}</Button>
+      <GoogleSignIn disabled={busy} onBusy={setGoogleBusy} onError={setError} />
       {/* Until the user tries again, explain why they were signed out (e.g. "Your session ended."). */}
       <ErrorLine message={error ? messageFor(error, "form") : notice} />
     </AuthScreen>

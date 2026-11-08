@@ -18,6 +18,7 @@ async def test_requests_without_a_valid_session_are_rejected(make_client):
     other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     rejected = {
         "missing": {},
+        "legacy install id": {"X-User-Id": "spoofed-user"},
         "not bearer": {"Authorization": f"Token {session_token()}"},
         "garbage": {"Authorization": "Bearer not.a.jwt"},
         "expired": {"Authorization": f"Bearer {session_token(expires_in=-120)}"},
@@ -28,6 +29,9 @@ async def test_requests_without_a_valid_session_are_rejected(make_client):
         response = await client.get("/me", headers=headers)
         assert response.status_code == 401, case
         assert response.headers["www-authenticate"] == "Bearer", case
+        nearby = await client.post("/places/nearby/search", json={"lat": 41.88, "lng": -87.62}, headers=headers)
+        assert nearby.status_code == 401, case
+        assert nearby.headers["www-authenticate"] == "Bearer", case
     async with get_sessionmaker()() as session:
         assert await session.scalar(select(func.count()).select_from(User)) == 0
 

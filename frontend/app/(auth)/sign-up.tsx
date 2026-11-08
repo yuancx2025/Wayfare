@@ -5,6 +5,7 @@ import { describeAuthError, messageFor, type AuthFormError } from "@/auth/errors
 import { checkEmail, checkName, checkPassword, MIN_PASSWORD_LENGTH } from "@/auth/validation";
 import { AuthScreen, TextLink } from "@/components/auth/AuthScreen";
 import { AuthField, PasswordInput } from "@/components/auth/AuthField";
+import { GoogleSignIn } from "@/components/auth/ProviderButton";
 import { Button, ErrorLine } from "@/components/ui";
 
 export default function SignUpScreen() {
@@ -15,6 +16,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<AuthFormError | null>(null);
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   const onCreate = async () => {
     const problem = checkName(name) ?? checkEmail(email) ?? checkPassword(password, { isNew: true });
@@ -76,7 +78,8 @@ export default function SignUpScreen() {
         onSubmitEditing={onCreate}
         returnKeyType="go"
       />
-      <Button onPress={onCreate} disabled={busy}>{busy ? "Creating account…" : "Create account"}</Button>
+      <Button onPress={onCreate} disabled={busy || googleBusy}>{busy ? "Creating account…" : "Create account"}</Button>
+      <GoogleSignIn disabled={busy} onBusy={setGoogleBusy} onError={setError} />
       <ErrorLine message={messageFor(error, "form")} />
     </AuthScreen>
   );

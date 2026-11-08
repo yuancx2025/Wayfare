@@ -24,6 +24,14 @@ jest.mock("@/components/PreferencesForm", () => {
     return React.createElement("PreferencesForm", props);
   };
 });
+jest.mock("@/components/profile/Avatar", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  return { Avatar: (props: object) => React.createElement("Avatar", props) };
+});
+jest.mock("@/components/profile/AvatarEditor", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  return { AvatarEditor: (props: object) => React.createElement("AvatarEditor", props) };
+});
 jest.mock("@/components/ui", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return Object.fromEntries(
@@ -34,7 +42,7 @@ jest.mock("@/components/ui", () => {
 });
 
 let mockStore: Pick<ReturnType<typeof useStore>,
-  "hydrated" | "loadError" | "defaultPrefs" | "refresh" | "saveDefaultPrefs" | "saveProfile" | "showToast" | "me"
+  "hydrated" | "loadError" | "defaultPrefs" | "refresh" | "saveDefaultPrefs" | "saveProfile" | "showToast" | "me" | "avatar"
 >;
 let screen: ReactTestRenderer;
 const saveProfile = jest.fn<(patch: ProfilePatch) => Promise<void>>();
@@ -60,7 +68,7 @@ beforeEach(() => {
   mockStore = {
     hydrated: true, loadError: null, defaultPrefs: DEFAULT_PREFS,
     refresh: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-    saveDefaultPrefs, saveProfile, showToast: jest.fn(),
+    saveDefaultPrefs, saveProfile, showToast: jest.fn(), avatar: { kind: "initials" },
     me: {
       id: "demo-user", name: "Alex Rivera", home: "Brooklyn, NY", initials: "AR",
       stats: { trips: 0, daysPlanned: 0, countries: 0 },
@@ -146,6 +154,33 @@ test("validation failure releases the submit lock for a corrected retry", async 
   await act(async () => { hosts("FieldInput")[0].props.onChangeText("Sam Lee"); });
   await act(async () => { hosts("FieldInput")[1].props.onSubmitEditing(); });
   expect(saveProfile).toHaveBeenCalledTimes(1);
+});
+
+const initialsHint = () => screen.root.findAll((node) => node.props.children === "Your initials update with your name.");
+
+test("changing the avatar keeps unsaved name and home edits", async () => {
+  await mount(EditProfile);
+  await act(async () => { hosts("FieldInput")[0].props.onChangeText("Sam Lee"); });
+  await act(async () => { hosts("FieldInput")[1].props.onChangeText("Lisbon"); });
+  expect(hosts("AvatarEditor")[0].props.open).toBe(false);
+  await act(async () => { button("Change avatar").props.onPress(); });
+  expect(hosts("AvatarEditor")[0].props.open).toBe(true);
+  await act(async () => { hosts("AvatarEditor")[0].props.onClose(); });
+  expect(hosts("AvatarEditor")[0].props.open).toBe(false);
+  expect(hosts("FieldInput").map((field) => field.props.value)).toEqual(["Sam Lee", "Lisbon"]);
+  expect(saveProfile).not.toHaveBeenCalled();
+});
+
+test("the avatar preview follows the typed name, and the initials hint shows only for initials", async () => {
+  await mount(EditProfile);
+  await act(async () => { hosts("FieldInput")[0].props.onChangeText("Sam Lee"); });
+  expect(hosts("Avatar")[0].props.initials).toBe("SL");
+  expect(hosts("AvatarEditor")[0].props.initials).toBe("SL");
+  expect(initialsHint().length).toBeGreaterThan(0);
+  await act(async () => { screen.unmount(); });
+  mockStore.avatar = { kind: "preset", presetId: "leaf" };
+  await mount(EditProfile);
+  expect(initialsHint()).toHaveLength(0);
 });
 
 test.each([true, false])("profile back navigation handles existing history: %s", (hasHistory) => {

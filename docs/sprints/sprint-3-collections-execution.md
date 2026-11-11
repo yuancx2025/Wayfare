@@ -295,3 +295,16 @@ Next increment is 4B, journal text: first agree on date/time-zone eligibility,
 Unicode counting, empty-text behavior and continued editing after clearing visited.
 Then implement one owned text journal with explicit save and recoverable failures,
 reusing the existing identity/API boundaries. Device-local photos remain increment 5.
+
+
+### November 11: Profile collection navigation
+
+The local Figma design and app place Saved places directly below Favorite trips
+in Profile. The bottom bar uses Trips, Explore and Profile. The Saved places list
+uses the Profile stack and its detail screens return to that list. Existing
+`/saved` links redirect to `/profile/saved`.
+
+After merging main, all 220 frontend tests and 145 backend tests passed.
+Typecheck and lint passed. The iOS simulator displayed the three tabs and
+retained both existing saved records. The Profile entry, collection list,
+detail screen and both return actions were exercised in guest mode.

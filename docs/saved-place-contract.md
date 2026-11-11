@@ -127,10 +127,11 @@ available and omits the save action.
 ## Remaining work and handoffs
 
 - Review the local `Wayfare-Collections.fig` artifact and complete Figma import
-  verification. Its 12 Saved Places frames and the original Favorite Trips pages
-  remain outside the repository. A cloud upload needs explicit authorization.
-- Complete precise design comparison and Android native acceptance. Four icon
-  tabs are retained; trip favorites remain under Profile.
+  verification. Its Saved Places and Favorite Trips frames share a Collections
+  page so the prototype can link between the Profile entry and the collection.
+- Complete precise design comparison and Android native acceptance. The bottom
+  tabs are Trips, Explore and Profile. Saved places is directly below Favorite
+  trips in Profile. Existing `/saved` links redirect to `/profile/saved`.
 - Collection list, detail and mutation keys now include `guest` or the Clerk
   account ID, and consumers use `useApi()`. Tests cover separate account caches,
   late writes, and favorite responses after a Store remount. Full session lifecycle

@@ -1,15 +1,14 @@
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { goBackToProfile } from "@/lib/back";
 import { useSavedPlaceDetailList, useSavedPlaces } from "@/lib/savedPlaces";
-import { CollectionMessage, SavedPlaceRow, SavedRowsLoading } from "@/components/SavedPlaceViews";
+import { CollectionDetailHeader, CollectionMessage, SavedPlaceRow, SavedRowsLoading } from "@/components/SavedPlaceViews";
 import { Button } from "@/components/ui";
 import { colors, font } from "@/theme";
 
 export default function SavedPlaces() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const collection = useSavedPlaces();
   const items = collection.data ?? [];
   const details = useSavedPlaceDetailList(items);
@@ -17,9 +16,7 @@ export default function SavedPlaces() {
   useFocusEffect(useCallback(() => { void refetch(); }, [refetch]));
   const explore = () => router.navigate("/explore");
   return <View style={styles.screen}>
-    <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-      <Text style={styles.eyebrow}>YOUR COLLECTION</Text><Text style={styles.title}>Saved places</Text>
-    </View>
+    <CollectionDetailHeader title="Saved places" backLabel="Back to Profile" onBack={goBackToProfile} />
     {collection.data === undefined ? collection.isError ? (
       <CollectionMessage error title="Your saved places can wait." body={"We couldn’t load your collection.\nYour saved places haven’t been removed."}>
         <Button onPress={() => { void refetch(); }}>Try again</Button>
@@ -50,9 +47,6 @@ export default function SavedPlaces() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  header: { paddingHorizontal: 24, paddingBottom: 24, gap: 20 },
-  eyebrow: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 0.7, color: colors.muted },
-  title: { fontFamily: font.display, fontSize: 30, color: colors.ink },
   content: { paddingHorizontal: 24, paddingBottom: 32, gap: 16 },
   intro: { gap: 12, paddingBottom: 12 },
   muted: { fontFamily: font.body, fontSize: 14, lineHeight: 21, color: colors.muted },

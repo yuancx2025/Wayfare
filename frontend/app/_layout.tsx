@@ -117,6 +117,7 @@ function RootStack({ mode }: { mode: AuthMode }) {
         <Stack.Screen name="create" />
         <Stack.Screen name="trip/[id]" />
         <Stack.Screen name="destination/[id]" />
+        <Stack.Screen name="saved" />
         <Stack.Screen name="saved-place/[id]" />
       </Stack.Protected>
       {/* Guests can still open sign-in from Profile; signed-in users never see these screens. */}

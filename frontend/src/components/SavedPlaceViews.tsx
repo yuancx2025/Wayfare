@@ -78,10 +78,14 @@ export function PlaceIllustration() {
   return <View style={styles.illustration}><Icon name="bookmark" size={48} color={colors.forest} /></View>;
 }
 
-export function CollectionDetailHeader({ title = "Place details", onBack }: { title?: string; onBack: () => void }) {
+export function CollectionDetailHeader({ title = "Place details", backLabel = "Go back", onBack }: {
+  title?: string;
+  backLabel?: string;
+  onBack: () => void;
+}) {
   const insets = useSafeAreaInsets();
   return <View style={[styles.detailHeader, { paddingTop: insets.top + 8 }]}>
-    <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" style={styles.back}>
+    <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={backLabel} style={styles.back}>
       <Icon name="back" /><Text style={styles.eyebrow}>YOUR COLLECTION</Text>
     </Pressable><Text style={styles.detailTitle}>{title}</Text>
   </View>;

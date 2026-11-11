@@ -3,7 +3,8 @@ import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { Linking, Text } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import SavedPlaces from "../../../app/(tabs)/saved";
+import { router as mockRouter } from "expo-router";
+import SavedPlaces from "../../../app/(tabs)/profile/saved";
 import SavedPlaceOverview from "../../../app/saved-place/[id]";
 import Explore from "../../../app/(tabs)/explore";
 import DestinationOverview from "../../../app/destination/[id]";
@@ -28,7 +29,8 @@ jest.mock("@/lib/api", () => ({
 }));
 jest.mock("expo-router", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  return { useRouter: () => mockRouter, useLocalSearchParams: () => mockParams, useFocusEffect: (effect: () => void) => React.useEffect(effect, [effect]), router: { canGoBack: () => false, replace: jest.fn() } };
+  const router = { navigate: jest.fn(), push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn(), canGoBack: () => false };
+  return { useRouter: () => router, useLocalSearchParams: () => mockParams, useFocusEffect: (effect: () => void) => React.useEffect(effect, [effect]), router };
 });
 jest.mock("@/state/location", () => ({ useCurrentLocation: () => ({ status: "idle", permission: "undetermined", position: null, locate: jest.fn() }) }));
 // Nearby owns its own native map/location tests; these exercise collection entry points.
@@ -50,7 +52,6 @@ jest.mock("@/components/ui", () => {
 
 const api = jest.requireMock<{ api: Api }>("@/lib/api").api;
 const mockApi = jest.mocked(api);
-const mockRouter = { navigate: jest.fn(), push: jest.fn(), replace: jest.fn() };
 const mockToast = jest.fn();
 const mockStartDraft = jest.fn();
 const mockParams = { id: "saved-1" };
@@ -109,6 +110,12 @@ test("row navigation and removal are separate; removing the last item reveals em
   expect(mockToast).toHaveBeenCalledWith("Removed from Saved places");
 });
 
+test("the Saved places header returns a direct visitor to Profile", async () => {
+  await mount(React.createElement(SavedPlaces));
+  await press("Back to Profile");
+  expect(mockRouter.replace).toHaveBeenCalledWith("/profile");
+});
+
 test("a saved row opens its record-specific detail route", async () => {
   await mount(React.createElement(SavedPlaces));
   await press("Open The Met");
@@ -145,7 +152,8 @@ test("unavailable details remain removable and retry can recover the actual prov
   expect(text("Provider details")).toBe(true);
   expect(text("Starts")).toBe(false);
   await press("Remove The Met from Saved");
-  expect(mockRouter.replace).toHaveBeenCalledWith("/saved");
+  expect(mockRouter.dismissTo).toHaveBeenCalledTimes(1);
+  expect(mockRouter.dismissTo).toHaveBeenCalledWith("/profile/saved");
 });
 
 test("activity saving uses the resolved provider place ID, not the activity's map ID", async () => {

@@ -13,8 +13,7 @@ export function goBackToProfile() {
 }
 
 export function goBackToSaved() {
-  if (router.canGoBack()) router.back();
-  else router.replace("/saved");
+  router.dismissTo("/profile/saved");
 }
 
 export function goBackToExplore() {

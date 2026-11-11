@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import type { SavedPlaceReference } from "@/domain/types";
 import { usePlaceSave } from "@/lib/savedPlaces";
@@ -6,14 +6,12 @@ import { useStore } from "@/state/store";
 import { Icon } from "./Icon";
 import { colors, font, radius } from "@/theme";
 
-export function SavePlaceButton({ reference, name, full = false, onRemoved }: {
-  reference: SavedPlaceReference; name: string; full?: boolean; onRemoved?: () => void;
+export function SavePlaceButton({ reference, name, full = false }: {
+  reference: SavedPlaceReference; name: string; full?: boolean;
 }) {
   const { collection, entry, pending, setSaved } = usePlaceSave(reference);
   const { showToast } = useStore();
   const active = useRef(false);
-  const mounted = useRef(false);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const unknown = collection.data === undefined;
   const retry = unknown && collection.isError;
   const busy = pending || (unknown && collection.isPending);
@@ -26,14 +24,13 @@ export function SavePlaceButton({ reference, name, full = false, onRemoved }: {
     try {
       await setSaved(next);
       showToast(next ? "Added to Saved places" : "Removed from Saved places");
-      if (!next && mounted.current) onRemoved?.();
     } catch { showToast("Couldn't update Saved. Try again."); }
     finally { active.current = false; }
   };
   return <Pressable
     accessibilityRole="button"
     accessibilityLabel={retry ? label : `${entry ? "Remove" : "Save"} ${name}${entry ? " from Saved" : " to Saved"}`}
-    accessibilityHint={retry ? "Reload your collection before saving" : "Find saved places in the Saved tab"}
+    accessibilityHint={retry ? "Reload your collection before saving" : "Find Saved places in Profile"}
     accessibilityState={{ selected: Boolean(entry), busy, disabled: busy }}
     disabled={busy}
     onPress={() => { void press(); }}

@@ -1,6 +1,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 import { create, type ReactTestRenderer } from "react-test-renderer";
+import { Text } from "react-native";
 import { router } from "expo-router";
 import ProfileOverview from "../../../app/(tabs)/profile/index";
 import EditProfile from "../../../app/(tabs)/profile/edit";
@@ -8,6 +9,7 @@ import ProfilePreferences from "../../../app/(tabs)/profile/preferences";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import type { Preferences, ProfilePatch } from "@/domain/types";
 import { useStore } from "@/state/store";
+import { sampleTrip, summarize } from "@/lib/api/local";
 import { goBackToProfile } from "@/lib/back";
 
 jest.mock("expo-router", () => {
@@ -202,13 +204,24 @@ test.each([true, false])("profile back navigation handles existing history: %s",
   else expect(router.replace).toHaveBeenCalledWith("/profile");
 });
 
-test("Profile lists Saved places directly after Favorite trips and opens the Profile route", async () => {
+test("Profile opens both collection routes and shows Favorite trips without a count", async () => {
+  mockStore.summaries = [{
+    ...summarize(sampleTrip()),
+    startDate: "2026-11-12",
+    endDate: "2026-11-16",
+    isFavorite: true,
+  }];
   await mount(ProfileOverview);
   const rows = hosts("Pressable");
-  const favorite = rows.findIndex((row) => row.props.accessibilityLabel === "Favorite trips, 0");
+  const favorite = rows.findIndex((row) => row.props.accessibilityLabel === "Favorite trips");
   const saved = rows.findIndex((row) => row.props.accessibilityLabel === "Saved places");
   expect(favorite).toBeGreaterThanOrEqual(0);
   expect(saved).toBe(favorite + 1);
+  expect(rows[favorite].findAllByType(Text).map((text) => text.props.children)).toEqual([
+    "Favorite trips", "The plans you want to keep close",
+  ]);
+  await act(async () => rows[favorite].props.onPress());
+  expect(router.push).toHaveBeenLastCalledWith("/profile/favorites");
   await act(async () => rows[saved].props.onPress());
-  expect(router.push).toHaveBeenCalledWith("/profile/saved");
+  expect(router.push).toHaveBeenLastCalledWith("/profile/saved");
 });

@@ -62,7 +62,7 @@ export default function ProfileOverview() {
           <LinkRow icon="edit" title="Edit profile" subtitle="Name and home location" onPress={() => router.push("/profile/edit")} />
           <LinkRow icon="sliders" title="Travel preferences" subtitle="Defaults for your next trip" onPress={() => router.push("/profile/preferences")} />
           <LinkRow icon="calendar" title="Trip history" subtitle="Ongoing, upcoming, and past" onPress={() => router.push("/profile/history")} />
-          <LinkRow icon="heart-outline" title="Favorite trips" subtitle="The plans you want to keep close" count={summaries.filter((trip) => trip.isFavorite).length} onPress={() => router.push("/profile/favorites")} />
+          <LinkRow icon="heart-outline" title="Favorite trips" subtitle="The plans you want to keep close" onPress={() => router.push("/profile/favorites")} />
           <LinkRow icon="bookmark" title="Saved places" subtitle="Destinations and places you saved" onPress={() => router.push("/profile/saved")} />
         </View>
         {past.length > 0 ? (
@@ -99,13 +99,13 @@ function Stat({ n, label }: { n: number; label: string }) {
   );
 }
 
-function LinkRow({ icon, title, subtitle, onPress, count }: { icon: IconName; title: string; subtitle: string; onPress: () => void; count?: number }) {
+function LinkRow({ icon, title, subtitle, onPress }: { icon: IconName; title: string; subtitle: string; onPress: () => void }) {
   return (
     <Pressable
       style={({ pressed }) => [styles.link, pressed && styles.pressed]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={count === undefined ? title : `${title}, ${count}`}
+      accessibilityLabel={title}
       accessibilityHint={subtitle}
     >
       <View style={styles.linkIcon}><Icon name={icon} size={18} color={colors.forest} /></View>
@@ -113,7 +113,6 @@ function LinkRow({ icon, title, subtitle, onPress, count }: { icon: IconName; ti
         <Text style={styles.linkTitle}>{title}</Text>
         <Text style={styles.linkSub}>{subtitle}</Text>
       </View>
-      {count !== undefined ? <Text style={styles.linkCount}>{count}</Text> : null}
       <Icon name="chevron" size={18} color={colors.muted} />
     </Pressable>
   );
@@ -136,7 +135,6 @@ const styles = StyleSheet.create({
   linkIcon: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.mint, alignItems: "center", justifyContent: "center" },
   linkTitle: { fontFamily: font.bodyBold, fontSize: 16, color: colors.ink },
   linkSub: { marginTop: 2, fontFamily: font.body, fontSize: 13, color: colors.muted },
-  linkCount: { minWidth: 24, textAlign: "center", color: colors.forest, fontFamily: font.bodyBold, fontSize: 12 },
   recent: { paddingHorizontal: space[5], marginTop: space[5], gap: space[3] },
   recentHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space[3] },
   recentTitle: { fontFamily: font.displaySemi, fontSize: 18, color: colors.ink },

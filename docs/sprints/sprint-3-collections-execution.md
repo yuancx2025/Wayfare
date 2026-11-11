@@ -300,8 +300,9 @@ reusing the existing identity/API boundaries. Device-local photos remain increme
 ### November 11: Profile collection navigation
 
 The local Figma design and app place Saved places directly below Favorite trips
-in Profile. The bottom bar uses Trips, Explore and Profile. The Saved places list
-uses the Profile stack and its detail screens return to that list. Existing
+in Profile. Both remove the favorite count from the Profile row. The bottom bar
+uses Trips, Explore and Profile. The Saved places list uses the Profile stack and
+its detail screens return to that list. Existing
 `/saved` links redirect to `/profile/saved`.
 
 After merging main, all 220 frontend tests and 145 backend tests passed.

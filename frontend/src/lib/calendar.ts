@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import * as Calendar from "expo-calendar";
 import { tripToCalendarEvents, type CalendarEventDraft, type CalendarTrip } from "@/domain/logic/calendarEvents";
+import { plural } from "@/domain/lib/format";
 import { loadJSON, saveJSONStrict } from "@/lib/storage";
 
 export type CalendarPermission = "undetermined" | "granted" | "denied" | "blocked";
@@ -42,6 +43,23 @@ export async function getCalendarPermission(): Promise<CalendarPermission> {
 /** Shows the system prompt when it still can. */
 export async function requestCalendarPermission(): Promise<CalendarPermission> {
   return toPermission(await Calendar.requestCalendarPermissions());
+}
+
+export interface CalendarProblem { title: string; body: string; settings: boolean }
+
+/** What to tell the user when access is missing; `settings` means only the Settings app can turn it back on. */
+export function calendarProblem(permission: CalendarPermission): CalendarProblem | null {
+  if (permission === "granted" || permission === "undetermined") return null;
+  return permission === "blocked"
+    ? { title: "Calendar access is off", body: "Turn on Calendars for Wayfare in Settings, then try again.", settings: true }
+    : { title: "Calendar access needed", body: "Wayfare needs access to add this trip's activities to your calendar.", settings: false };
+}
+
+export function describeSync(r: SyncResult): string {
+  if (!r.added && !r.updated && !r.removed) return "Your calendar is already up to date";
+  if (!r.updated && !r.removed && !r.unchanged) return `Added ${plural(r.added, "event")} to your calendar`;
+  const parts = [r.added && `${r.added} added`, r.updated && `${r.updated} updated`, r.removed && `${r.removed} removed`].filter(Boolean);
+  return `Calendar updated: ${parts.join(", ")}`;
 }
 
 async function requireAccess() {

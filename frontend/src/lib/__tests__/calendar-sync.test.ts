@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Calendar from "expo-calendar";
 import type { CalendarActivity, CalendarTrip } from "@/domain/logic/calendarEvents";
-import { calendarNamespace, calendarStatus, removeTripFromCalendar, syncTripToCalendar } from "@/lib/calendar";
+import {
+  calendarNamespace, calendarProblem, calendarStatus, describeSync, removeTripFromCalendar, syncTripToCalendar,
+} from "@/lib/calendar";
 
 // An in-memory stand-in for the device calendar, so tests can inspect what ended up "in the Calendar app".
 jest.mock("expo-calendar", () => {
@@ -191,5 +193,30 @@ describe("remove from calendar", () => {
 
   test("removing a trip that was never exported does nothing", async () => {
     expect(await removeTripFromCalendar("trip-1", "guest")).toBe(0);
+  });
+});
+
+describe("messages", () => {
+  const result = (added: number, updated: number, removed: number, unchanged: number) => ({ added, updated, removed, unchanged });
+
+  test("a first export says how many events were added", () => {
+    expect(describeSync(result(25, 0, 0, 0))).toBe("Added 25 events to your calendar");
+    expect(describeSync(result(1, 0, 0, 0))).toBe("Added 1 event to your calendar");
+  });
+
+  test("an update lists only what changed", () => {
+    expect(describeSync(result(1, 2, 0, 20))).toBe("Calendar updated: 1 added, 2 updated");
+    expect(describeSync(result(0, 0, 3, 20))).toBe("Calendar updated: 3 removed");
+  });
+
+  test("an export with no changes says the calendar is up to date", () => {
+    expect(describeSync(result(0, 0, 0, 25))).toBe("Your calendar is already up to date");
+  });
+
+  test("only a blocked permission sends the user to Settings", () => {
+    expect(calendarProblem("granted")).toBeNull();
+    expect(calendarProblem("undetermined")).toBeNull();
+    expect(calendarProblem("denied")).toMatchObject({ settings: false });
+    expect(calendarProblem("blocked")).toMatchObject({ settings: true });
   });
 });

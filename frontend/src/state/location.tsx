@@ -44,7 +44,10 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const latest = useRef(0);
   const mounted = useRef(true);
 
-  useEffect(() => () => { mounted.current = false; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const locate = useCallback(async () => {
     const run = ++latest.current;

@@ -46,6 +46,12 @@ const config: ExpoConfig = {
     ["@clerk/expo", { appleSignIn: false }],
     "expo-secure-store",
     "expo-web-browser",
+    // Only the photo library is used; it needs no runtime prompt. Keep camera and microphone out of the manifest.
+    ["expo-image-picker", {
+      photosPermission: "Wayfare uses your photo library so you can choose a profile picture.",
+      cameraPermission: false,
+      microphonePermission: false,
+    }],
     "./plugins/withSceneLifecycle",
   ],
 };

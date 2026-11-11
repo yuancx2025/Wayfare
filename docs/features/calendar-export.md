@@ -3,9 +3,13 @@
 Prepared on November 2, 2026, against `main@7e23d1b`.
 Working branch: `jay/calendar-export`.
 
-This is a planning document. It describes planned work, not implemented or verified capabilities. It is a
-frontend-only feature outside the five-sprint roadmap; treat it as P1 under the roadmap's delivery rules and merge
-it before November 15, when Sprint 5 stops accepting optional features.
+It is a frontend-only feature outside the five-sprint roadmap; treat it as P1 under the roadmap's delivery rules and
+merge it before November 15, when Sprint 5 stops accepting optional features.
+
+**Status (November 11, 2026):** increments 1–5 are implemented on `jay/calendar-export`. Increment 6 is in progress:
+the automated checks pass, and adding, removing, and the delete prompt were verified on the iOS Simulator; the
+remaining on-device checks in section 5 are not yet done. Section 8 records where the implementation differs from
+this plan.
 
 ## 1. Goal
 
@@ -133,11 +137,11 @@ the last export, for example after applying an adjustment.
 
 All changes are in the "Trip options" sheet in `app/trip/[id]/index.tsx`, plus a small sheet component:
 
-| Status | Menu row | Result |
+| Status | Menu rows | Result |
 | --- | --- | --- |
-| `none` | **Add to calendar** | Confirmation sheet: event count, date range, the time-zone note, *Add* |
-| `synced` | **Update calendar** (disabled hint "Up to date") and **Remove from calendar** | Toast with the count |
-| `stale` | **Update calendar** with a dot | Sync, then toast "Updated N events" |
+| `none` | **Add to calendar** | Confirmation sheet: event count, date range, the time-zone note, *Add N events* |
+| `synced` | "Calendar is up to date" (not pressable) and **Remove from calendar** | Remove asks first, then toasts the count |
+| `stale` | **Update calendar** with the hint "Your itinerary changed since you added it", and **Remove from calendar** | Sheet, then a toast listing what changed |
 
 Permission handling follows the location pattern:
 
@@ -145,12 +149,12 @@ Permission handling follows the location pattern:
 - `denied`: explain why access is needed and offer to ask again.
 - `blocked`: explain, and offer **Open Settings** (`Linking.openSettings()`); recheck on return to the foreground.
 
-When the trip is deleted from the same sheet and it has exported events, ask "Also remove its calendar events?"
-before deleting. Keep the calendar call in the screen, not in `state/store.tsx`, so the store stays free of
+Deleting a trip always asks first. When the trip has exported events, the dialog offers **Keep events** or
+**Delete events too**. Keep the calendar call in the screen, not in `state/store.tsx`, so the store stays free of
 native modules.
 
-Past trips: show the actions only for upcoming and ongoing trips, using the `TripPhase` classification in
-`src/domain/logic/tripHistory.ts` with `useToday()`.
+Past trips: show Add and Update only for upcoming and ongoing trips, using the `TripPhase` classification in
+`src/domain/logic/tripHistory.ts` with `useToday()`. Remove stays available for any exported trip.
 
 ## 4. Increments
 
@@ -175,8 +179,8 @@ Commit and push each increment; open one pull request when increment 6 passes.
 
 Automated, from `frontend/`:
 
-- [ ] `npm run typecheck`, `npm run lint`, and `npm test` pass.
-- [ ] `npx expo export` succeeds for iOS and Android.
+- [x] `npm run typecheck`, `npm run lint`, and `npm test` pass.
+- [x] `npx expo export` succeeds for iOS and Android.
 
 On both the iOS Simulator and the Android emulator:
 
@@ -191,17 +195,45 @@ On both the iOS Simulator and the Android emulator:
 
 ## 6. Demonstration script
 
+Run it on the iOS Simulator, where Apple Calendar shows the "Wayfare" calendar (see section 8 for Android).
+
 1. Open an upcoming trip, choose **Trip options → Add to calendar**, and allow access.
 2. Switch to the Calendar app and show the trip's days filled with Wayfare events.
 3. Back in Wayfare, adjust a day, then choose **Update calendar** and show the changed event.
-4. Repeat on the other platform side by side; on one of them, deny permission first and recover through Settings.
+4. Optionally, reset the permission first, deny it, and recover through **Open Settings**.
 
 ## 7. Risks and coordination
 
 | Risk | Mitigation |
 | --- | --- |
-| The Android emulator image has no calendar app that shows local calendars | Increment 1 checks this first; pick a suitable image and document it |
+| The Android emulator image has no calendar app that shows local calendars | **Confirmed.** Writes succeed, but Google Calendar hides local calendars; see section 8 |
 | Device time zone differs from the destination | Documented limitation; `timeZone` follow-up in section 3.4 |
 | Conflicts in `app.config.ts` and `package.json` with other branches | Small additive edits; rebase on `main` before opening the PR |
 | Native module needs a rebuilt dev client | Note the rebuild in the PR so reviewers run `ios:dev`/`android:dev` |
 | Shared domain types change in the collections branch | This plan only reads `Trip`, `Day`, and `Activity` and adds no fields |
+
+## 8. Implementation notes
+
+What changed from the plan, and what building it showed:
+
+- **Event location** is `name, area, destination` (for example `Senso-ji, Asakusa, Tokyo`), so Maps resolves it.
+- **SDK 57 calendar API.** `expo-calendar` now exports an object-oriented API from its root (`createCalendar`,
+  `calendar.createEvent`, `event.update`, `event.delete`); the function-style API moved to `expo-calendar/legacy`.
+  A missing event or calendar rejects on iOS and resolves to nothing on Android, so `findEvent` treats both as gone.
+- **Export status** is loaded with React Query (`useCalendarExport`) instead of an effect, keyed by the trip, so an
+  adjusted itinerary is compared again. Opening the trip menu refetches it.
+- **Every destructive action asks first:** deleting a trip, and *Remove from calendar*.
+- **Dialogs after the menu.** iOS cannot present a modal while another is still dismissing and fails silently, so
+  menu actions that open a sheet or an `Alert` wait for the menu's `onDismiss` on iOS (Android does not fire it and
+  runs them immediately). `BottomSheet` in `src/components/ui.tsx` gained an optional `onDismiss` prop for this.
+- **Android display.** On the Pixel emulator (Google Play image) the local "Wayfare" calendar and its events are
+  written correctly, but Google Calendar only lists Google-account calendars, so the events are not visible there.
+  **Decision (November 11, 2026):** keep the local calendar and treat this as a known limitation; the calendar is
+  demonstrated on iOS. Follow-up after the course: on Android, write into a writable account calendar (or let the user
+  pick one), which Google Calendar does display.
+- **Build fixes needed to run on Xcode 27** (commit `b95e0b9`): `["@clerk/expo", { appleSignIn: false }]`, because
+  the Sign in with Apple entitlement forces code signing even for Simulator builds, and
+  `frontend/plugins/withSceneLifecycle.js`, because iOS 27 refuses to launch apps without the UIScene life cycle.
+- **Android build notes:** Gradle needs Java 17 (`JAVA_HOME=$(/usr/libexec/java_home -v 17)`); Java 25 fails in the
+  `react-native-worklets` CMake step. Opening a trip needs `GOOGLE_MAPS_ANDROID_KEY` in `frontend/.env`, or the
+  native map crashes the app.

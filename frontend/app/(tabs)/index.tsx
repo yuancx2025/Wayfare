@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { groupTrips } from "@/domain/logic/tripHistory";
 import { useToday } from "@/lib/useToday";
+import { useReminderTaps } from "@/lib/tripReminders";
 import { useStore } from "@/state/store";
 import { Button, EmptyState, SectionHeading, Spinner } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -14,6 +15,7 @@ export default function Trips() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const today = useToday();
+  useReminderTaps();
   const sections = hydrated && !loadError ? groupTrips(summaries, today) : [];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";

@@ -2,11 +2,11 @@ import React, { act } from "react";
 import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { AvatarEditor } from "@/components/profile/AvatarEditor";
-import { pickAvatarPhoto } from "@/lib/avatarStorage";
+import { cameraAccess, pickAvatarPhoto } from "@/lib/avatarStorage";
 import type { AvatarView } from "@/domain/avatar";
 
 jest.mock("@/state/store", () => ({ useStore: () => mockStore }));
-jest.mock("@/lib/avatarStorage", () => ({ pickAvatarPhoto: jest.fn() }));
+jest.mock("@/lib/avatarStorage", () => ({ pickAvatarPhoto: jest.fn(), cameraAccess: jest.fn() }));
 jest.mock("@/components/profile/Avatar", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   return {
@@ -72,6 +72,38 @@ test("a picked photo is previewed and saved, then the sheet closes", async () =>
   await act(async () => { button("Save avatar").props.onPress(); });
   expect(saveAvatar).toHaveBeenCalledWith({ kind: "photo", uri: "cache/prepared.jpg" });
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("a photo from the camera is previewed like a picked one", async () => {
+  jest.mocked(cameraAccess).mockResolvedValueOnce("granted");
+  jest.mocked(pickAvatarPhoto).mockResolvedValueOnce("cache/selfie.jpg");
+  await mount();
+  await act(async () => { button("Take photo").props.onPress(); });
+  expect(pickAvatarPhoto).toHaveBeenCalledWith("camera");
+  expect(preview()).toEqual({ kind: "photo", uri: "cache/selfie.jpg" });
+  expect(button("Save avatar").props.disabled).toBe(false);
+});
+
+test("refused camera access opens nothing and offers Settings only when it is blocked", async () => {
+  await mount();
+  jest.mocked(cameraAccess).mockResolvedValueOnce("denied");
+  await act(async () => { button("Take photo").props.onPress(); });
+  expect(hosts("ErrorLine")[0].props.message).toMatch(/wasn't allowed/);
+  expect(button("Open Settings")).toBeUndefined();
+  jest.mocked(cameraAccess).mockResolvedValueOnce("blocked");
+  await act(async () => { button("Take photo").props.onPress(); });
+  expect(hosts("ErrorLine")[0].props.message).toMatch(/Turn it on in Settings/);
+  expect(button("Open Settings")).toBeDefined();
+  expect(pickAvatarPhoto).not.toHaveBeenCalled();
+  expect(preview()).toEqual({ kind: "initials" });
+});
+
+test("a device without a camera gets a message instead of a crash", async () => {
+  jest.mocked(cameraAccess).mockResolvedValueOnce("granted");
+  jest.mocked(pickAvatarPhoto).mockRejectedValueOnce(new Error("Camera not available on simulator"));
+  await mount();
+  await act(async () => { button("Take photo").props.onPress(); });
+  expect(hosts("ErrorLine")[0].props.message).toMatch(/Couldn't open the camera/);
 });
 
 test("closing discards the draft, and reopening starts from the saved avatar", async () => {

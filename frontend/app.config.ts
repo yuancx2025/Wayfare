@@ -43,10 +43,11 @@ const config: ExpoConfig = {
     "@clerk/expo",
     "expo-secure-store",
     "expo-web-browser",
-    // Only the photo library is used; it needs no runtime prompt. Keep camera and microphone out of the manifest.
+    "expo-notifications",
+    // Photos and the camera are only for the profile picture. Keep the microphone out of the manifest.
     ["expo-image-picker", {
       photosPermission: "Wayfare uses your photo library so you can choose a profile picture.",
-      cameraPermission: false,
+      cameraPermission: "Wayfare uses the camera so you can take a profile picture.",
       microphonePermission: false,
     }],
   ],

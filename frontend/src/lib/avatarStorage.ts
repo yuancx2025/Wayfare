@@ -12,14 +12,28 @@ const MAX_SIDE = 512;
 const metadataKey = (scope: AvatarScope) => `wayfare.avatar.v1:${scope}`;
 const folder = (scope: AvatarScope) => new Directory(Paths.document, "avatars", scope.replace(/[^A-Za-z0-9_-]/g, "_"));
 
-/** Opens the photo library with a square crop. Resolves to a small JPEG in the cache, or null if the user cancels. */
-export async function pickAvatarPhoto(): Promise<string | null> {
-  const result = await ImagePicker.launchImageLibraryAsync({
+export type CameraAccess = "granted" | "denied" | "blocked";
+
+/** Asks for the camera only when the user taps Take photo. "blocked" means only Settings can turn it back on. */
+export async function cameraAccess(): Promise<CameraAccess> {
+  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  return permission.granted ? "granted" : permission.canAskAgain ? "denied" : "blocked";
+}
+
+/**
+ * Opens the photo library, or the front camera, with a square crop. Resolves to a small JPEG in the cache, or null if
+ * the user cancels. Call cameraAccess() before using the camera.
+ */
+export async function pickAvatarPhoto(source: "library" | "camera" = "library"): Promise<string | null> {
+  const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: "images",
     allowsEditing: true,
     aspect: [1, 1], // Android only; iOS always crops to a square.
     quality: 1,
-  });
+  };
+  const result = source === "camera"
+    ? await ImagePicker.launchCameraAsync({ ...options, cameraType: ImagePicker.CameraType.front })
+    : await ImagePicker.launchImageLibraryAsync(options);
   const asset = result.canceled ? undefined : result.assets[0];
   if (!asset) return null;
   const context = ImageManipulator.manipulate(asset.uri);

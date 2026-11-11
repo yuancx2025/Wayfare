@@ -8,10 +8,11 @@ import { Button, EmptyState, Spinner } from "@/components/ui";
 import { Icon, type IconName } from "@/components/Icon";
 import { TripHistoryRow } from "@/components/trip";
 import { AccountCard } from "@/components/auth/AccountCard";
+import { Avatar } from "@/components/profile/Avatar";
 import { colors, font, radius, space, touch } from "@/theme";
 
 export default function ProfileOverview() {
-  const { me, summaries, hydrated, loadError, refresh } = useStore();
+  const { me, summaries, hydrated, loadError, refresh, avatar } = useStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const today = useToday();
@@ -41,7 +42,7 @@ export default function ProfileOverview() {
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + space[5], paddingBottom: space[6] }}>
         <View style={styles.head}>
-          <View style={styles.avatar}><Text style={styles.avatarText}>{me.initials}</Text></View>
+          <Avatar avatar={avatar} initials={me.initials} />
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{me.name}</Text>
             {me.home ? (
@@ -115,8 +116,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   loading: { flex: 1, backgroundColor: colors.paper, justifyContent: "center" },
   head: { flexDirection: "row", alignItems: "center", gap: space[4], paddingHorizontal: space[5], marginBottom: space[5] },
-  avatar: { width: 64, height: 64, borderRadius: 22, backgroundColor: colors.forest, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: colors.sand, fontFamily: font.display, fontSize: 20 },
   name: { fontFamily: font.display, fontSize: 26, color: colors.ink },
   home: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   muted: { flex: 1, color: colors.muted, fontFamily: font.body, fontSize: 14 },

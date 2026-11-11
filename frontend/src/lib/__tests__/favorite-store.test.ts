@@ -34,7 +34,9 @@ function Probe() {
   return null;
 }
 async function mount() {
-  await act(async () => { screen = create(React.createElement(StoreProvider, null, React.createElement(Probe))); });
+  await act(async () => {
+    screen = create(React.createElement(StoreProvider, { scope: "guest" }, React.createElement(Probe)));
+  });
 }
 
 beforeEach(() => {

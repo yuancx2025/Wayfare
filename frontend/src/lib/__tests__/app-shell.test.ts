@@ -78,16 +78,16 @@ test("startup renders one navigation stack and one data scope with location avai
   await render();
   expect(screen!.root.findAll((node) => String(node.type) === "NavigationStack")).toHaveLength(1);
   expect(screen!.root.findAll((node) => String(node.type) === "StoreScope")).toHaveLength(1);
-  expect(routes()).toEqual(["(auth)"]);
+  expect(routes()).toEqual(["(auth)", "sso-callback"]);
 });
 
-test("collection routes are available to guests and removed on sign-out", async () => {
+test("app routes are available to guests and removed on sign-out while SSO remains reachable", async () => {
   mockSession.mode = "guest";
   await render();
-  expect(routes()).toEqual(["(tabs)", "create", "trip/[id]", "destination/[id]", "saved-place/[id]", "(auth)"]);
+  expect(routes()).toEqual(["(tabs)", "create", "trip/[id]", "destination/[id]", "saved-place/[id]", "(auth)", "sso-callback"]);
   mockSession.mode = "signedOut";
   await render();
-  expect(routes()).toEqual(["(auth)"]);
+  expect(routes()).toEqual(["(auth)", "sso-callback"]);
 });
 
 test("switching accounts replaces their query cache and excludes auth screens", async () => {

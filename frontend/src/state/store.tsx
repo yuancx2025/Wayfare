@@ -1,8 +1,10 @@
-import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type PropsWithChildren } from "react";
 import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary } from "@/domain/types";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import { ApiError, useApi } from "@/lib/api";
 import { summarize } from "@/lib/api/local";
+import { loadAvatar, persistAvatar, type AvatarScope } from "@/lib/avatarStorage";
+import { INITIALS_AVATAR, type AvatarView } from "@/domain/avatar";
 
 interface State {
   hydrated: boolean;
@@ -126,6 +128,10 @@ interface Store extends State {
   refresh: () => Promise<void>;
   toast: string | null;
   showToast: (msg: string) => void;
+  /** This identity's on-device avatar; null until it has been read. */
+  avatar: AvatarView | null;
+  /** Saves a draft from the avatar editor. Rejects, keeping the current avatar, if it can't be written. */
+  saveAvatar: (draft: AvatarView) => Promise<void>;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -133,7 +139,7 @@ const StoreContext = createContext<Store | null>(null);
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong");
 
 /** One identity's trips and profile. app/_layout.tsx remounts it when the identity changes. */
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({ scope, children }: PropsWithChildren<{ scope: AvatarScope }>) {
   const api = useApi();
   const [state, dispatchNow] = useReducer(reducer, {
     hydrated: false,
@@ -186,6 +192,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [api, dispatch]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  // Loaded apart from the profile so an avatar problem never blocks the rest of it.
+  const [avatar, setAvatar] = useState<AvatarView | null>(null);
+  const savedAvatar = useRef<AvatarView>(INITIALS_AVATAR);
+  const avatarLoaded = useRef<Promise<unknown>>(Promise.resolve());
+  useEffect(() => {
+    const load = loadAvatar(scope).catch(() => INITIALS_AVATAR).then((loaded) => {
+      savedAvatar.current = loaded;
+      if (alive.current) setAvatar(loaded);
+    });
+    avatarLoaded.current = load;
+  }, [scope]);
+
+  const saveAvatar = useCallback(async (draft: AvatarView) => {
+    await avatarLoaded.current;
+    const saved = await persistAvatar(scope, draft, savedAvatar.current);
+    savedAvatar.current = saved;
+    if (alive.current) setAvatar(saved);
+  }, [scope]);
 
   // A getMe started before the latest profile save must not overwrite that save.
   const meEpoch = useRef(0);
@@ -254,6 +279,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     loadTrip,
     setTripFavorite,
     setTripVisited,
+    avatar,
+    saveAvatar,
     startDraft: (destination, destinationId) => dispatch({ type: "startDraft", destination, destinationId }),
     updateDraft: (patch) => dispatch({ type: "updateDraft", patch }),
     putTrip: (trip, opts) => {
@@ -295,7 +322,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         refreshMe();
       }
       : undefined,
-  }), [api, dispatch, state, toast, showToast, refresh, loadTrip, refreshMe, setTripFavorite, setTripVisited]);
+  }), [api, dispatch, state, toast, showToast, refresh, loadTrip, refreshMe, setTripFavorite, setTripVisited, avatar, saveAvatar]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

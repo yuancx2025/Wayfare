@@ -12,6 +12,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { AuthSessionProvider, useAuthSession, type AuthMode } from "@/auth/session";
 import { ApiProvider } from "@/lib/api";
 import { StoreProvider, useStore } from "@/state/store";
+import type { AvatarScope } from "@/lib/avatarStorage";
 import { TripSessionProvider } from "@/state/tripSession";
 import { LocationProvider } from "@/state/location";
 import { LocationPermissionProvider } from "@/state/locationPermission";
@@ -62,6 +63,8 @@ function AppShell() {
   });
   const { mode, userId } = useAuthSession();
   const ready = (fontsLoaded || !!fontError) && mode !== "loading";
+  // Signed-out screens only need on-device data, so they share the guest scope.
+  const scope: AvatarScope = mode === "account" ? `account:${userId}` : "guest";
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => undefined);
@@ -74,8 +77,7 @@ function AppShell() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider value={navTheme}>
-          {/* Signed-out screens only need on-device data, so they share the guest scope. */}
-          <IdentityScope key={mode === "account" ? `account:${userId}` : "guest"}>
+          <IdentityScope key={scope} scope={scope}>
             <RootStack mode={mode} />
             <ToastHost />
           </IdentityScope>
@@ -87,14 +89,14 @@ function AppShell() {
 
 /**
  * Holds one identity's data. A new key (sign-in, sign-out, account switch) unmounts the previous query cache,
- * trip list and open screens, which aborts in-flight generation. The client is created here, not at module scope,
+ * trip list, location fix and open screens, which aborts in-flight generation. The client is created here, not at module scope,
  * so it does not outlive the key.
  */
-function IdentityScope({ children }: { children: ReactNode }) {
+function IdentityScope({ scope, children }: { scope: AvatarScope; children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
-      <StoreProvider>
+      <StoreProvider scope={scope}>
         <TripSessionProvider>
           <LocationPermissionProvider>
             <LocationProvider>{children}</LocationProvider>
@@ -121,6 +123,8 @@ function RootStack({ mode }: { mode: AuthMode }) {
       <Stack.Protected guard={mode !== "account"}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+      {/* Google sends the browser here. It stays available while signed out, which is when the redirect arrives. */}
+      <Stack.Screen name="sso-callback" />
     </Stack>
   );
 }

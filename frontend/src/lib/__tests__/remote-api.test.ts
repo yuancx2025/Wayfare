@@ -228,6 +228,8 @@ test("nearby search posts the position and returns the server ranking", async ()
   const [url, init] = mockFetch.mock.calls[0];
   expect(String(url)).toBe("http://localhost:8000/places/nearby/search");
   expect(init?.method).toBe("POST");
+  expect(headersOf(0)).toEqual({ "Content-Type": "application/json", Authorization: "Bearer session-jwt" });
   expect(JSON.parse(init?.body as string)).toEqual({ lat: 41.88, lng: -87.62, radiusM: 2000, category: "food" });
   expect(res).toEqual(body);
+  expect(await AsyncStorage.getAllKeys()).toEqual([]);
 });

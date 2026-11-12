@@ -4,7 +4,7 @@ November 11, 2026 · branch `perf/maps-cache` · 60 simulated users against a lo
 
 With the 6-hour cache, 60 simulated users needed **925 Google requests instead of 2,021 (−54%)**. Their list cost fell from **$0.48 to $0.22 per user (−53%)**, and **60%** of cache lookups were hits.
 
-These numbers come from a local stand-in for Google. They measure how often the app repeats a Google request, priced at Google's list rates. They don't measure what real Google returns or bills. A small live run to confirm the billing hasn't been done yet (see [Live check](#live-check-not-run-yet)).
+These numbers come from a local stand-in for Google. They measure how often the app repeats a Google request, priced at Google's list rates. A small run against real Google matched the model: the same request kinds and SKUs, and a second identical trip served entirely from the cache (see [Live check](#live-check)). Google's own billing report hasn't been compared yet.
 
 ## What the cache stores
 
@@ -122,14 +122,31 @@ The run fails unless all of these hold:
 - In each arm, Google requests of each kind equal that kind's cache misses.
 - Both arms make the same cache lookups, apart from Place Details lookups replaced by reused alternatives.
 
-## Live check (not run yet)
+## Live check
 
-`live` mode sends two users planning the same 1-day trip to real Google. The cache is on and the run stops at 60 requests, which is at most $2.40 at list prices. Expected: the second user's searches and route legs make no Google requests.
+On November 11, 2026, `live` mode sent two users planning the same 1-day Chicago trip to real Google, with the cache on and a cap of 60 requests.
 
-Afterwards, compare the counted requests by SKU with Cloud Console's per-method metrics and the billing report by SKU. Things to confirm:
-- the field-mask tiers
+- **Requests:** all 24 Google requests returned 200. The first user made 21. The second made only its 3 autocomplete requests, and all 21 of its cache lookups hit.
+- **Speed:** generating the first trip took 1.58 s, and the identical second trip 39 ms. The first user's day map took 9 ms, because generation had already fetched every leg and its polyline.
+- **Real Google latency per request:** text searches 555–774 ms, route legs 94–673 ms, nearby searches 186–304 ms, place details 103–142 ms. The fake's flat 100 ms understates text searches.
+
+| SKU (as counted) | Requests | List cost |
+| --- | ---: | ---: |
+| Text Search Enterprise + Atmosphere | 5 | $0.200 |
+| Nearby Search Enterprise + Atmosphere | 2 | $0.080 |
+| Place Details Enterprise + Atmosphere | 3 | $0.075 |
+| Compute Routes Essentials (transit) | 6 | $0.030 |
+| Autocomplete Requests | 6 | $0.017 |
+| Place Details Photos | 1 | $0.007 |
+| Place Details Essentials (IDs Only) | 1 | $0.000 |
+| **All** | **24** | **$0.41** |
+
+**Still to do:** compare these counts with Cloud Console's billing report by SKU once it shows November 11, which can take about a day. Confirm:
+- the field-mask tiers above
 - that transit `computeRoutes` bills as Essentials
-- whether autocomplete bills per request or per session
+- whether autocomplete bills per request or as a free session
+
+The run's CSV holds only counts and timings. The database tables holding Google content were dropped when the run ended.
 
 ## Reproduce
 
@@ -143,4 +160,10 @@ DATABASE_URL=postgresql://localhost/wayfare_maps_bench .venv/bin/python -m bench
 
 The 1-hour and 24-hour runs drop `--google-latency-ms 100`. Seed 11 makes request and cache counts repeat exactly; timings vary a little between runs. The per-request CSVs (about 0.9 MB each) aren't committed. The summary below holds each run's totals by request kind and, for the 6-hour run, latency by step.
 
-[Run summary: 1, 6 and 24-hour TTL](raw/2026-11-11-maps-cache-summary.csv) · [Generation baseline](README.md)
+The live check uses the Maps key in `backend/.env`, sends billed requests, and refuses to run without `--confirm-billing`:
+
+```bash
+DATABASE_URL=postgresql://localhost/wayfare_maps_bench .venv/bin/python -m bench.maps_cache live OUT.csv --confirm-billing
+```
+
+[Run summary: 1, 6 and 24-hour TTL](raw/2026-11-11-maps-cache-summary.csv) · [Live check](raw/2026-11-11-maps-cache-live.csv) · [Generation baseline](README.md)

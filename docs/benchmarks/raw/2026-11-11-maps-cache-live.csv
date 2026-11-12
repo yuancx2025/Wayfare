@@ -1,0 +1,116 @@
+run,arm,ttl_h,latency_ms,seed,users,user,visit,sim_min,step,type,status,ms,kind,sku,usd,outcome
+live-2026-11-11,on,6,0,0,2,0,1,0,me,app,200,18.18,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,autocomplete,app,200,243.53,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,autocomplete,app,200,190.0,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,autocomplete,app,200,125.1,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,resolve,cache,,,dest,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,resolve,cache,,,dest,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,resolve,app,200,217.02,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,ts,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,leg,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,leg,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,leg,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,leg,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,leg,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,cache,,,leg,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,app,200,1578.82,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,trip-image,cache,,,photos,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,trip-image,cache,,,photos,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,trip-image,cache,,,photo-uri,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,trip-image,cache,,,photo-uri,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,trip-image,app,302,230.31,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,day-map,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,0,1,0,day-map,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,0,1,0,day-map,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,0,1,0,day-map,app,200,9.2,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,cache,,,details,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,cache,,,details,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,app,200,116.87,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,cache,,,details,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,cache,,,details,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,app,200,156.02,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,alternatives,cache,,,nearby,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,alternatives,cache,,,nearby,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,alternatives,cache,,,alt,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,alternatives,app,200,255.29,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,cache,,,alt,,,hit
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,cache,,,leg,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,cache,,,leg,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,cache,,,leg,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,cache,,,leg,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,app,200,162.3,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-more-food,cache,,,nearby,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-more-food,cache,,,nearby,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-more-food,cache,,,leg,,,miss
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-more-food,cache,,,leg,,,write
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-more-food,app,200,450.71,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,apply,app,200,8.24,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,me,app,200,5.44,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,autocomplete,app,200,160.99,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,autocomplete,app,200,84.54,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,autocomplete,app,200,108.47,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,resolve,app,200,9.34,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,ts,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,ts,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,ts,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,ts,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,ts,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,generate,app,200,38.67,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,trip-image,cache,,,photos,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,trip-image,cache,,,photo-uri,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,trip-image,app,302,6.95,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,day-map,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,day-map,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,day-map,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,day-map,app,200,6.21,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,place-details,cache,,,details,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,place-details,app,200,3.9,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,place-details,cache,,,details,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,place-details,app,200,2.58,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,alternatives,cache,,,nearby,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,alternatives,cache,,,alt,,,write
+live-2026-11-11,on,6,0,0,2,1,1,0,alternatives,app,200,8.29,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,propose-replace,cache,,,alt,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,propose-replace,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,propose-replace,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,propose-replace,app,200,5.99,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,propose-more-food,cache,,,nearby,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,propose-more-food,cache,,,leg,,,hit
+live-2026-11-11,on,6,0,0,2,1,1,0,propose-more-food,app,200,9.12,,,,
+live-2026-11-11,on,6,0,0,2,1,1,0,apply,app,200,4.2,,,,
+live-2026-11-11,on,6,0,0,2,0,1,0,autocomplete,google,200,234.25,autocomplete,Autocomplete Requests,0.00283,
+live-2026-11-11,on,6,0,0,2,0,1,0,autocomplete,google,200,182.67,autocomplete,Autocomplete Requests,0.00283,
+live-2026-11-11,on,6,0,0,2,0,1,0,autocomplete,google,200,115.35,autocomplete,Autocomplete Requests,0.00283,
+live-2026-11-11,on,6,0,0,2,0,1,0,resolve,google,200,183.39,dest,Place Details Enterprise + Atmosphere,0.025,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,681.41,ts,Text Search Enterprise + Atmosphere,0.04,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,673.03,ts,Text Search Enterprise + Atmosphere,0.04,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,697.21,ts,Text Search Enterprise + Atmosphere,0.04,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,774.43,ts,Text Search Enterprise + Atmosphere,0.04,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,555.31,ts,Text Search Enterprise + Atmosphere,0.04,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,673.2,leg,Compute Routes Essentials,0.005,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,346.42,leg,Compute Routes Essentials,0.005,
+live-2026-11-11,on,6,0,0,2,0,1,0,generate,google,200,337.18,leg,Compute Routes Essentials,0.005,
+live-2026-11-11,on,6,0,0,2,0,1,0,trip-image,google,200,73.25,photos,Place Details Essentials (IDs Only),0.0,
+live-2026-11-11,on,6,0,0,2,0,1,0,trip-image,google,200,135.18,photo-uri,Place Details Photos,0.007,
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,google,200,103.25,details,Place Details Enterprise + Atmosphere,0.025,
+live-2026-11-11,on,6,0,0,2,0,1,0,place-details,google,200,141.7,details,Place Details Enterprise + Atmosphere,0.025,
+live-2026-11-11,on,6,0,0,2,0,1,0,alternatives,google,200,185.7,nearby,Nearby Search Enterprise + Atmosphere,0.04,
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,google,200,102.84,leg,Compute Routes Essentials,0.005,
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-replace,google,200,141.08,leg,Compute Routes Essentials,0.005,
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-more-food,google,200,303.98,nearby,Nearby Search Enterprise + Atmosphere,0.04,
+live-2026-11-11,on,6,0,0,2,0,1,0,propose-more-food,google,200,94.38,leg,Compute Routes Essentials,0.005,
+live-2026-11-11,on,6,0,0,2,1,1,0,autocomplete,google,200,157.67,autocomplete,Autocomplete Requests,0.00283,
+live-2026-11-11,on,6,0,0,2,1,1,0,autocomplete,google,200,78.67,autocomplete,Autocomplete Requests,0.00283,
+live-2026-11-11,on,6,0,0,2,1,1,0,autocomplete,google,200,96.03,autocomplete,Autocomplete Requests,0.00283,

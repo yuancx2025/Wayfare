@@ -11,7 +11,6 @@ import json
 import logging
 import os
 import socket
-from collections import Counter
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import date, timedelta
@@ -146,28 +145,27 @@ def draft_for(destination, days, mix, first_day):
 def score_trip(row, trip, draft):
     from app.domain.scheduler import is_open_during
     from app.integrations.places.catalog_data import catalog_places
-    from app.integrations.routing.legs import MATRIX_CHUNK
 
     catalog = {place.id: place for place in catalog_places(draft["destinationId"])}
-    leg_modes = Counter()
+    legs = set()
     for day in trip["days"]:
         slots = {activity.get("slot") for activity in day["activities"]}
         row["missing_lunch_days"] += "lunch" not in slots
         row["missing_dinner_days"] += row["mix"] == "food" and "dinner" not in slots
+        previous = None
         for activity in day["activities"]:
             row["stops"] += 1
             place = catalog.get(activity["placeId"])
             state = is_open_during(place.hours if place else None, day["date"], activity["startMin"], activity["durationMin"])
             row["hours_known"] += state is not None
             row["closed_stops"] += state is False
-            if leg := activity.get("legIn"):
-                leg_modes[leg["mode"]] += 1
+            if (leg := activity.get("legIn")) and previous:
+                legs.add((previous["placeId"], activity["placeId"], leg["mode"]))
                 row["travel_min"] += leg["minutes"]
-    row["matrix_elements_if_uncached"] = sum(
-        min(MATRIX_CHUNK, count - offset) ** 2
-        for count in leg_modes.values() for offset in range(0, count, MATRIX_CHUNK)
-    )
-    row["maps_list_usd_if_uncached"] = round(0.04 * 5 + 0.005 * row["matrix_elements_if_uncached"], 6)
+            previous = activity
+    # One computeRoutes request per distinct leg; its polyline also serves the day map.
+    row["route_requests_if_uncached"] = len(legs)
+    row["maps_list_usd_if_uncached"] = round(0.04 * 5 + 0.005 * row["route_requests_if_uncached"], 6)
 
 
 async def measure(client, runs, scenario, repeat, first_day, label, auth):
@@ -184,7 +182,7 @@ async def measure(client, runs, scenario, repeat, first_day, label, auth):
                          "cached_input_tokens", "model_ms", "quota_wait_ms", "stops", "hours_known", "closed_stops",
                          "missing_lunch_days", "missing_dinner_days", "travel_min"), 0),
         **{f"{name}_ms": 0 for name in ("prepare", *NODES, "save")},
-        "matrix_elements_if_uncached": None, "maps_list_usd_if_uncached": None,
+        "route_requests_if_uncached": None, "maps_list_usd_if_uncached": None,
         "gemini_list_usd": None, "usage_complete": False, "persisted": None,
         "trip_id": None, "delivered_days": None,
     }

@@ -11,11 +11,12 @@ from app.db.session import get_sessionmaker
 from app.integrations.places import normalize
 from app.integrations.places.google_client import GoogleAPIError, GooglePlacesClient
 from app.integrations.routing.google_client import GoogleRoutesClient
-from app.domain.scheduler import is_open_during
+from app.domain.scheduler import LegTable, is_open_during, retime_day
 from app.integrations.places.google import GooglePlaceProvider
 from app.integrations.routing.google import GoogleTravelRouter
 from app.integrations.routing.legs import resolve_legs
 from app.contracts.travel import Activity, Day, Destination, LatLng, Preferences
+from tests.conftest import FixedRouter
 
 MUSEUM = {
     "id": "ChIJmuseum", "displayName": {"text": "Art Institute"}, "types": ["museum", "tourist_attraction"],
@@ -61,6 +62,7 @@ class Recorder:
         self.calls.append(request)
         for (method, suffix), payload in self.routes.items():
             if request.method == method and request.url.path.endswith(suffix):
+                payload = payload(request) if callable(payload) else payload
                 status, body = payload if isinstance(payload, tuple) else (200, payload)
                 return httpx.Response(status, json=body)
         return httpx.Response(404, json={"error": {"message": "not mocked"}})
@@ -108,23 +110,54 @@ def _act(i: int, lat: float, lng: float) -> Activity:
                     start_min=0, duration_min=60, description="", why="")
 
 
-async def test_route_matrix_diagonal_feeds_leg_table(cache):
-    matrix = [
-        {"originIndex": 0, "destinationIndex": 0, "duration": "754s", "distanceMeters": 3120, "condition": "ROUTE_EXISTS"},
-        {"originIndex": 0, "destinationIndex": 1, "duration": "99s", "distanceMeters": 1, "condition": "ROUTE_EXISTS"},
-        {"originIndex": 1, "destinationIndex": 1, "condition": "ROUTE_NOT_FOUND"},
-    ]
-    rec = Recorder({("POST", "computeRouteMatrix"): matrix})
+def _day(*acts: Activity) -> Day:
+    return Day(index=0, date="2030-06-11", theme="", areas="", start_min=540, buffer_min=15, activities=list(acts))
+
+
+async def test_each_leg_is_one_route_request_and_feeds_the_day_map(cache):
+    def route(request):
+        if json.loads(request.content)["destination"]["location"]["latLng"]["latitude"] == 41.90:
+            return {"routes": [{"duration": "754s", "distanceMeters": 3120, "polyline": {"encodedPolyline": "abc"}}]}
+        return {}  # Google found no route
+
+    rec = Recorder({("POST", "computeRoutes"): route})
     router = GoogleTravelRouter(GoogleRoutesClient("k", httpx.AsyncClient(transport=httpx.MockTransport(rec))), cache)
-    day = Day(index=0, date="2030-06-11", theme="", areas="", start_min=540, buffer_min=15,
-              activities=[_act(0, 41.88, -87.63), _act(1, 41.90, -87.63), _act(2, 41.92, -87.63)])
+    day = _day(_act(0, 41.88, -87.63), _act(1, 41.90, -87.63), _act(2, 41.92, -87.63))
     table = await resolve_legs([day], "transit", router)
     assert table.known == {("p0", "p1", "transit"): (13, 3.1)}
-    body = json.loads(rec.calls[0].content)
-    assert body["travelMode"] == "TRANSIT" and len(body["origins"]) == 2
+    assert len(rec.calls) == 2, "one request per leg, not a k x k matrix"
+    for call in rec.calls:
+        assert call.headers["X-Goog-FieldMask"] == "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
+        assert json.loads(call.content)["travelMode"] == "TRANSIT"
     leg = table.leg(day.activities[0], day.activities[1], "transit", None)
     assert (leg.minutes, leg.km, leg.source) == (13, 3.1, "google")
     assert table.leg(day.activities[1], day.activities[2], "transit", None).source == "estimate"
+
+    assert (await resolve_legs([day], "transit", router)).known == table.known
+    assert await router.leg_polyline(day.activities[0], day.activities[1], "transit") == "abc"
+    assert await router.leg_polyline(day.activities[1], day.activities[2], "transit") is None
+    assert len(rec.calls) == 2, "repeat lookups and the day map reuse the cached legs"
+
+
+async def test_failed_legs_stay_estimates_and_are_not_cached(cache):
+    rec = Recorder({("POST", "computeRoutes"): (503, {"error": {"message": "backend error"}})})
+    router = GoogleTravelRouter(GoogleRoutesClient("k", httpx.AsyncClient(transport=httpx.MockTransport(rec))), cache)
+    day = _day(_act(0, 41.88, -87.63), _act(1, 41.90, -87.63), _act(2, 41.92, -87.63))
+    assert (await resolve_legs([day], "transit", router)).known == {}
+    await resolve_legs([day], "transit", router)
+    assert len(rec.calls) == 4
+
+
+async def test_edits_only_look_up_legs_the_saved_day_lacks():
+    known = LegTable({("p0", "p1", "transit"): (5, 0.4), ("p1", "p2", "transit"): (6, 0.5)})
+    saved = retime_day(_day(_act(0, 41.88, -87.63), _act(1, 41.90, -87.63), _act(2, 41.92, -87.63)), PREFS, known)
+    assert LegTable.from_day(saved) == known
+
+    router = FixedRouter(minutes=9)
+    edited = saved.model_copy(update={"activities": [saved.activities[0], saved.activities[2]]})
+    table = await resolve_legs([edited, edited], "transit", router, known=LegTable.from_day(saved))
+    assert router.pairs == [("p0", "p2", "transit")], "kept legs come from the saved day and duplicates are looked up once"
+    assert table.known[("p0", "p1", "transit")] == (5, 0.4) and table.known[("p0", "p2", "transit")] == (9, 1.0)
 
 
 async def test_around_ranks_by_distance_and_keeps_planner_ranking(cache):

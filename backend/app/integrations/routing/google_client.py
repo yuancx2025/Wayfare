@@ -1,21 +1,29 @@
-"""Routes API client: route matrices for leg times and per-leg routes for map polylines."""
+"""Routes API client: one computeRoutes request per leg returns its time, distance and map polyline."""
 
 import math
+from dataclasses import dataclass
 from typing import Protocol
 
 import httpx
 
 from app.contracts.travel import LegMode
-from app.integrations.places.google_client import GoogleAPIError, _raise_for
+from app.integrations.places.google_client import _raise_for
 
-MATRIX_URL = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"
 ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeRoutes"
+ROUTE_FIELDS = "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
 TRAVEL_MODE: dict[str, str] = {"walk": "WALK", "transit": "TRANSIT", "drive": "DRIVE"}
 
 
 class LatLngLike(Protocol):
     lat: float
     lng: float
+
+
+@dataclass(frozen=True)
+class RouteLeg:
+    minutes: int
+    km: float
+    polyline: str | None
 
 
 def _waypoint(p: LatLngLike) -> dict:
@@ -36,37 +44,24 @@ class GoogleRoutesClient:
     def _headers(self, fields: str) -> dict[str, str]:
         return {"X-Goog-Api-Key": self._key, "X-Goog-FieldMask": fields, "Content-Type": "application/json"}
 
-    async def pair_times(self, pairs: list[tuple[LatLngLike, LatLngLike]], mode: LegMode) -> list[tuple[int, float] | None]:
-        """(minutes, km) for each (origin, destination) pair, read off the diagonal of one route matrix."""
-        if not pairs:
-            return []
-        body: dict = {
-            "origins": [{"waypoint": _waypoint(a)} for a, _ in pairs],
-            "destinations": [{"waypoint": _waypoint(b)} for _, b in pairs],
-            "travelMode": TRAVEL_MODE[mode],
-        }
-        resp = await self._http.post(MATRIX_URL, json=body, headers=self._headers("originIndex,destinationIndex,duration,distanceMeters,condition"))
-        _raise_for(resp)
-        out: list[tuple[int, float] | None] = [None] * len(pairs)
-        for el in resp.json():
-            i, j = el.get("originIndex", 0), el.get("destinationIndex", 0)
-            if i != j or el.get("condition") != "ROUTE_EXISTS":
-                continue
-            seconds = parse_duration_s(el.get("duration"))
-            if seconds is None:
-                continue
-            out[i] = (max(1, math.ceil(seconds / 60)), round(el.get("distanceMeters", 0) / 1000, 1))
-        return out
+    async def leg(self, a: LatLngLike, b: LatLngLike, mode: LegMode) -> RouteLeg | None:
+        """Time, distance and overview polyline for one leg, or None when Google finds no route.
 
-    async def leg_polyline(self, a: LatLngLike, b: LatLngLike, mode: LegMode) -> str | None:
+        A route matrix bills origins x destinations, so reading k consecutive legs off its diagonal costs k^2 elements.
+        One request per leg costs k, and the same request carries the polyline the day map needs.
+        """
         body = {"origin": _waypoint(a), "destination": _waypoint(b), "travelMode": TRAVEL_MODE[mode], "polylineQuality": "OVERVIEW"}
-        resp = await self._http.post(ROUTES_URL, json=body, headers=self._headers("routes.polyline.encodedPolyline"))
-        try:
-            _raise_for(resp)
-        except GoogleAPIError:
-            return None
+        resp = await self._http.post(ROUTES_URL, json=body, headers=self._headers(ROUTE_FIELDS))
+        _raise_for(resp)
         routes = resp.json().get("routes") or []
-        return routes[0].get("polyline", {}).get("encodedPolyline") if routes else None
+        seconds = parse_duration_s(routes[0].get("duration")) if routes else None
+        if seconds is None:
+            return None
+        return RouteLeg(
+            minutes=max(1, math.ceil(seconds / 60)),
+            km=round(routes[0].get("distanceMeters", 0) / 1000, 1),
+            polyline=routes[0].get("polyline", {}).get("encodedPolyline"),
+        )
 
     async def aclose(self) -> None:
         await self._http.aclose()

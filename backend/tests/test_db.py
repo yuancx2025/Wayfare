@@ -167,3 +167,7 @@ async def test_cache_expiry_compares_postgres_aware_timestamps(fresh_database):
     cache = PlaceCache(get_sessionmaker(), 60)
     assert await cache.get("fresh") == {"nested": [1, {"ok": True}]}
     assert await cache.get("expired") is None
+    assert await cache.get_many(["fresh", "expired", "absent"]) == {"fresh": {"nested": [1, {"ok": True}]}}
+
+    await cache.set_many({"expired": {"m": 4}, "new": {}})
+    assert await cache.get_many(["expired", "new"]) == {"expired": {"m": 4}, "new": {}}, "set_many upserts and keeps empty payloads"

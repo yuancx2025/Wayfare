@@ -2,8 +2,8 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 
-from sqlalchemy import DateTime, String
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime, String, select
+from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -38,6 +38,27 @@ class PlaceCache:
             if row and row.expires_at > utcnow():
                 return row.payload
             return None
+
+    async def get_many(self, keys: list[str]) -> dict[str, dict | list]:
+        """Unexpired payloads for whichever `keys` are cached, in one query."""
+        if not keys:
+            return {}
+        async with self._sm() as s:
+            rows = await s.scalars(select(PlaceCacheRow).where(PlaceCacheRow.key.in_(keys), PlaceCacheRow.expires_at > utcnow()))
+            return {row.key: row.payload for row in rows}
+
+    async def set_many(self, items: dict[str, dict | list], ttl_s: int | None = None) -> None:
+        """Upserts every entry in one statement."""
+        if not items:
+            return
+        expires = utcnow() + timedelta(seconds=ttl_s or self._ttl)
+        stmt = insert(PlaceCacheRow).values([{"key": k, "payload": v, "expires_at": expires} for k, v in items.items()])
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[PlaceCacheRow.key], set_={"payload": stmt.excluded.payload, "expires_at": stmt.excluded.expires_at},
+        )
+        async with self._sm() as s:
+            await s.execute(stmt)
+            await s.commit()
 
     async def set(self, key: str, payload, ttl_s: int | None = None) -> None:
         async with self._sm() as s:

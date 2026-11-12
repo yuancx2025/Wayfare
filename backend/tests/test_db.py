@@ -171,3 +171,16 @@ async def test_cache_expiry_compares_postgres_aware_timestamps(fresh_database):
 
     await cache.set_many({"expired": {"m": 4}, "new": {}})
     assert await cache.get_many(["expired", "new"]) == {"expired": {"m": 4}, "new": {}}, "set_many upserts and keeps empty payloads"
+
+
+async def test_cache_counts_hits_misses_and_writes_by_key_kind(fresh_database):
+    cache = PlaceCache(get_sessionmaker(), 60)
+    await cache.set("ts:1", [])
+    await cache.set_many({"leg:a": {"m": 3}, "leg:b": {}})
+    assert await cache.get("ts:1") == [], "an empty payload is still a hit"
+    assert await cache.get("ts:2") is None
+    assert await cache.get_many(["leg:a", "leg:b", "leg:c", "leg:a"]) == {"leg:a": {"m": 3}, "leg:b": {}}
+    assert cache.stats_snapshot() == {
+        "leg": {"hit": 2, "miss": 1, "write": 2},
+        "ts": {"hit": 1, "miss": 1, "write": 1},
+    }

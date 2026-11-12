@@ -20,3 +20,6 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+# Per-request benchmark output; the committed summary CSV is regenerated from these (see docs/benchmarks/maps-cache.md).
+docs/benchmarks/raw/*-maps-cache-ttl*.csv

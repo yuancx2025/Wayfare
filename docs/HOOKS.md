@@ -46,6 +46,8 @@ The [API adapter](../frontend/src/lib/api/index.ts) chooses the backend when `EX
 | Custom | `usePlaceDetails` | Fetch details for a scheduled activity |
 | Custom | `useLocationPermission` | Know whether location may be read, checked silently at launch and on return to the app |
 | Custom | `useCurrentLocation` | Take one foreground fix only when the user asks, shared by every screen |
+| Custom | `useTripReminder` | Schedule or cancel one local notification before a trip starts |
+| Custom | `useReminderTaps` | Open the trip when its reminder notification is tapped |
 
 `jest.useFakeTimers()` is a test utility, not a React hook. `createContext`, `Controller`, `keepPreviousData`, `withTiming`, and form methods such as `watch` are also not separate hooks.
 
@@ -207,6 +209,14 @@ It returns `status` for the fix only (`idle`, `locating`, `ready`, `off`, `timeo
 
 The fix has a 15 s timeout, so the spinner always ends. A `useRef` run counter drops results from an older `locate()` call, and an unmount ref avoids setting state after the screen closes. It takes a single fix with `getCurrentPositionAsync` and never watches the position.
 
+### `useTripReminder(trip)` and `useReminderTaps()` — trip-start reminder
+
+**Source:** [src/lib/tripReminders.ts](../frontend/src/lib/tripReminders.ts)
+
+**Why we have it:** One scheduled local notification per trip (identifier `trip-reminder:<id>`), so choosing again replaces it and the screen can read the current choice back from the system instead of keeping its own copy.
+
+`useTripReminder` returns `when` (`eve` for 6:00 PM the day before, `morning` for 8:00 AM on the start date, or `null`; `undefined` while it is being read), `options` with `passed` marked, `busy`, `problem` (`denied`, `blocked`, `passed` or `error`), `choose` and `openSettings`. Notification permission is asked only when a time is chosen. Times are clock times in the device's time zone. `useReminderTaps`, called from the Trips tab, opens the trip when its reminder is tapped, including a tap that launched the app. Deleting a trip from its overview cancels its reminder. Local notifications work in Expo Go; nothing here uses push.
+
 ### `usePlaceDetails(activity, date)` — activity enrichment
 
 **Source:** [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx)
@@ -359,7 +369,7 @@ Paths in this table are relative to `frontend/`.
 | File | Hooks called |
 | --- | --- |
 | [app/_layout.tsx](../frontend/app/_layout.tsx) | `useFonts`, `useEffect`, `useStore` (in `ToastHost`); mounts `LocationPermissionProvider` and `LocationProvider` |
-| [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useToday` |
+| [app/(tabs)/index.tsx](../frontend/app/%28tabs%29/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useToday`, `useReminderTaps` |
 | [app/(tabs)/explore.tsx](../frontend/app/%28tabs%29/explore.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useDebounced`, `useQuery` |
 | [app/(tabs)/profile/index.tsx](../frontend/app/%28tabs%29/profile/index.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useToday` |
 | [app/(tabs)/profile/edit.tsx](../frontend/app/%28tabs%29/profile/edit.tsx) | `useStore`, `useState`, `useRef`, `useForm` |
@@ -377,6 +387,8 @@ Paths in this table are relative to `frontend/`.
 | [src/lib/useDayRoute.ts](../frontend/src/lib/useDayRoute.ts) | `useQuery` |
 | [src/state/locationPermission.tsx](../frontend/src/state/locationPermission.tsx) | `useState`, `useRef`, `useEffect`, `useCallback`, `useMemo`, `useContext` |
 | [src/state/location.tsx](../frontend/src/state/location.tsx) | `useLocationPermission`, `useState`, `useRef`, `useEffect`, `useCallback`, `useMemo`, `useContext` |
+| [src/lib/tripReminders.ts](../frontend/src/lib/tripReminders.ts) | `useState`, `useEffect`, `useRouter`, `useLastNotificationResponse` |
+| [src/components/TripReminder.tsx](../frontend/src/components/TripReminder.tsx) | `useStore`, `useTripReminder`, `useState` |
 | [src/components/NearbySection.tsx](../frontend/src/components/NearbySection.tsx) | `useCurrentLocation`, `useState`, `useQuery` |
 | [src/components/ActivityDetailSheet.tsx](../frontend/src/components/ActivityDetailSheet.tsx) | `useQuery`, `usePlaceDetails`, `useCurrentLocation` |
 | [src/components/AdjustDaySheet.tsx](../frontend/src/components/AdjustDaySheet.tsx) | `useStore`, `useState`, `useRef`, `useEffect` |

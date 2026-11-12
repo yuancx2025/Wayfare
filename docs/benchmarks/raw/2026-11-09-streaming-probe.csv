@@ -1,0 +1,17 @@
+city,days,synthetic_candidates,repeat,mode,outcome,chunks,first_chunk_ms,first_complete_day_ms,full_json_ms,stream_end_ms,day_one_locally_valid,whole_plan_valid,usable_preview,usable_lead_ms,validation_error_count
+nyc,3,False,1,stream,http_503,10,4238.559,4588.338,,4804.443,True,False,False,,
+nyc,3,False,1,blocking,response,1,14217.451,14217.451,14217.451,14217.722,True,True,False,,0
+san-francisco,3,False,1,blocking,response,1,8914.262,8914.262,8914.262,8914.539,False,False,False,,2
+san-francisco,3,False,1,stream,response,16,4082.145,4433.093,5132.472,5231.521,True,True,True,699.38,0
+nyc,7,False,1,stream,http_503,2,10902.291,,,11007.738,False,False,False,,
+nyc,7,False,1,blocking,response,1,3947.769,3947.769,3947.769,3948.045,True,False,False,,4
+san-francisco,7,True,1,blocking,response,1,9355.472,9355.472,9355.472,9356.12,True,False,False,,3
+san-francisco,7,True,1,stream,response,46,7687.716,8022.594,10362.958,10378.724,True,False,False,,2
+nyc,3,False,2,blocking,response,1,12340.81,12340.81,12340.81,12341.188,True,True,False,,0
+nyc,3,False,2,stream,response,20,989.061,1379.482,2229.899,2233.396,True,True,True,850.417,0
+san-francisco,3,False,2,stream,response,18,5177.749,5503.525,6232.936,6243.334,True,True,True,729.411,0
+san-francisco,3,False,2,blocking,response,1,12233.478,12233.478,12233.478,12234.096,True,True,False,,0
+nyc,7,False,2,blocking,response,1,10940.812,10940.812,10940.812,10941.61,True,True,False,,0
+nyc,7,False,2,stream,response,46,3540.905,3976.643,6343.215,6364.849,True,True,True,2366.572,0
+san-francisco,7,True,2,stream,timeout,30,14077.226,15100.976,,20008.073,True,False,False,,
+san-francisco,7,True,2,blocking,response,1,11264.857,11264.857,11264.857,11265.053,True,False,False,,1

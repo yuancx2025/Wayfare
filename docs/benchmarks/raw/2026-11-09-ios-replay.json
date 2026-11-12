@@ -1,0 +1,739 @@
+{
+  "runs": [
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 1,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 134.45508313179016,
+      "doneEventMs": 2445.982667207718,
+      "finalMatches": true,
+      "firstVisibleMs": 2490.793333053589,
+      "finalVisibleMs": 2490.793333053589,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2490.793333053589
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 1,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 45.369333028793335,
+      "doneEventMs": 2362.8852078914642,
+      "finalMatches": true,
+      "firstVisibleMs": 1417.181540966034,
+      "finalVisibleMs": 2383.0000410079956,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Art and Central Park",
+          "ms": 1417.181540966034
+        },
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2383.0000410079956
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 2,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 36.78954195976257,
+      "doneEventMs": 2377.604583978653,
+      "finalMatches": true,
+      "firstVisibleMs": 1416.6635839939117,
+      "finalVisibleMs": 2416.7804589271545,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Art and Central Park",
+          "ms": 1416.6635839939117
+        },
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2416.7804589271545
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 2,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 41.04174995422363,
+      "doneEventMs": 2359.8293340206146,
+      "finalMatches": true,
+      "firstVisibleMs": 2400.0974588394165,
+      "finalVisibleMs": 2400.0974588394165,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2400.0974588394165
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 3,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 35.707499980926514,
+      "doneEventMs": 2354.6241669654846,
+      "finalMatches": true,
+      "firstVisibleMs": 2399.384875059128,
+      "finalVisibleMs": 2399.384875059128,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2399.384875059128
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 3,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 41.354790925979614,
+      "doneEventMs": 2359.4829580783844,
+      "finalMatches": true,
+      "firstVisibleMs": 1432.6591250896454,
+      "finalVisibleMs": 2383.173915863037,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Art and Central Park",
+          "ms": 1432.6591250896454
+        },
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2383.173915863037
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 4,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 37.059333086013794,
+      "doneEventMs": 2360.7087910175323,
+      "finalMatches": true,
+      "firstVisibleMs": 1432.8510410785675,
+      "finalVisibleMs": 2399.0956659317017,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Art and Central Park",
+          "ms": 1432.8510410785675
+        },
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2399.0956659317017
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 4,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 51.260082960128784,
+      "doneEventMs": 2370.3704578876495,
+      "finalMatches": true,
+      "firstVisibleMs": 2400.2166659832,
+      "finalVisibleMs": 2400.2166659832,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2400.2166659832
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 5,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 36.630249977111816,
+      "doneEventMs": 2355.34450006485,
+      "finalMatches": true,
+      "firstVisibleMs": 2399.943834066391,
+      "finalVisibleMs": 2399.943834066391,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2399.943834066391
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 5,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 41.826915979385376,
+      "doneEventMs": 2361.8644580841064,
+      "finalMatches": true,
+      "firstVisibleMs": 1433.0932080745697,
+      "finalVisibleMs": 2399.7610001564026,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Art and Central Park",
+          "ms": 1433.0932080745697
+        },
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 2399.7610001564026
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 1,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 39.731208086013794,
+      "doneEventMs": 2163.180999994278,
+      "finalMatches": true,
+      "firstVisibleMs": 1549.8424580097198,
+      "finalVisibleMs": 2200.439791202545,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Waterfront and design",
+          "ms": 1549.8424580097198
+        },
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2200.439791202545
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 1,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 40.10516715049744,
+      "doneEventMs": 2164.8407921791077,
+      "finalMatches": true,
+      "firstVisibleMs": 2199.858250141144,
+      "finalVisibleMs": 2199.858250141144,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2199.858250141144
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 2,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 35.220458030700684,
+      "doneEventMs": 2159.3363330364227,
+      "finalMatches": true,
+      "firstVisibleMs": 2199.4467079639435,
+      "finalVisibleMs": 2199.4467079639435,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2199.4467079639435
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 2,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 35.76537489891052,
+      "doneEventMs": 2169.160665988922,
+      "finalMatches": true,
+      "firstVisibleMs": 1516.5902910232544,
+      "finalVisibleMs": 2200.6045830249786,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Waterfront and design",
+          "ms": 1516.5902910232544
+        },
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2200.6045830249786
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 3,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 53.94666600227356,
+      "doneEventMs": 2178.0736660957336,
+      "finalMatches": true,
+      "firstVisibleMs": 1532.958125114441,
+      "finalVisibleMs": 2200.517832994461,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Waterfront and design",
+          "ms": 1532.958125114441
+        },
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2200.517832994461
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 3,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 36.89258289337158,
+      "doneEventMs": 2161.833708047867,
+      "finalMatches": true,
+      "firstVisibleMs": 2200.7515420913696,
+      "finalVisibleMs": 2200.7515420913696,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2200.7515420913696
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 4,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 45.23366618156433,
+      "doneEventMs": 2168.914208173752,
+      "finalMatches": true,
+      "firstVisibleMs": 2199.820458173752,
+      "finalVisibleMs": 2199.820458173752,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2199.820458173752
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 4,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 34.82424998283386,
+      "doneEventMs": 2160.153874874115,
+      "finalMatches": true,
+      "firstVisibleMs": 1500.67116689682,
+      "finalVisibleMs": 2183.737583875656,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Waterfront and design",
+          "ms": 1500.67116689682
+        },
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2183.737583875656
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 5,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 39.10516691207886,
+      "doneEventMs": 2162.882457971573,
+      "finalMatches": true,
+      "firstVisibleMs": 1499.600666999817,
+      "finalVisibleMs": 2199.720249891281,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Waterfront and design",
+          "ms": 1499.600666999817
+        },
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2199.720249891281
+        }
+      ]
+    },
+    {
+      "trace": "san-francisco-3-1",
+      "days": 3,
+      "pair": 5,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 36.31266689300537,
+      "doneEventMs": 2160.418749809265,
+      "finalMatches": true,
+      "firstVisibleMs": 2198.957624912262,
+      "finalVisibleMs": 2198.957624912262,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "Waterfront and design",
+          "ms": 2198.957624912262
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 1,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 44.780750036239624,
+      "doneEventMs": 3728.227208137512,
+      "finalMatches": true,
+      "firstVisibleMs": 3767.4496669769287,
+      "finalVisibleMs": 3767.4496669769287,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3767.4496669769287
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 1,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 42.95291709899902,
+      "doneEventMs": 3725.3419580459595,
+      "finalMatches": true,
+      "firstVisibleMs": 2334.1287920475006,
+      "finalVisibleMs": 3750.2415001392365,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "A day in Midtown",
+          "ms": 2334.1287920475006
+        },
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3750.2415001392365
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 2,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 59.04470920562744,
+      "doneEventMs": 3738.5432090759277,
+      "finalMatches": true,
+      "firstVisibleMs": 2332.395625114441,
+      "finalVisibleMs": 3766.098792076111,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "A day in Midtown",
+          "ms": 2332.395625114441
+        },
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3766.098792076111
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 2,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 36.51574993133545,
+      "doneEventMs": 3721.5709578990936,
+      "finalMatches": true,
+      "firstVisibleMs": 3750.162957906723,
+      "finalVisibleMs": 3750.162957906723,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3750.162957906723
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 3,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 49.436540842056274,
+      "doneEventMs": 3739.0705828666687,
+      "finalMatches": true,
+      "firstVisibleMs": 3765.755415916443,
+      "finalVisibleMs": 3765.755415916443,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3765.755415916443
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 3,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 39.49504208564758,
+      "doneEventMs": 3721.556750059128,
+      "finalMatches": true,
+      "firstVisibleMs": 2298.877333879471,
+      "finalVisibleMs": 3749.1393749713898,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "A day in Midtown",
+          "ms": 2298.877333879471
+        },
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3749.1393749713898
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 4,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 41.778542041778564,
+      "doneEventMs": 3724.4580829143524,
+      "finalMatches": true,
+      "firstVisibleMs": 2313.651417016983,
+      "finalVisibleMs": 3746.718624830246,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "A day in Midtown",
+          "ms": 2313.651417016983
+        },
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3746.718624830246
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 4,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 45.20445799827576,
+      "doneEventMs": 3726.6423330307007,
+      "finalMatches": true,
+      "firstVisibleMs": 3766.2512080669403,
+      "finalVisibleMs": 3766.2512080669403,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3766.2512080669403
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 5,
+      "arm": "checklist",
+      "fault": "none",
+      "firstEventMs": 39.41033411026001,
+      "doneEventMs": 3721.958709001541,
+      "finalMatches": true,
+      "firstVisibleMs": 3749.7809171676636,
+      "finalVisibleMs": 3749.7809171676636,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3749.7809171676636
+        }
+      ]
+    },
+    {
+      "trace": "nyc-7-1",
+      "days": 7,
+      "pair": 5,
+      "arm": "preview",
+      "fault": "none",
+      "firstEventMs": 44.400041818618774,
+      "doneEventMs": 3725.156666994095,
+      "finalMatches": true,
+      "firstVisibleMs": 2316.5593338012695,
+      "finalVisibleMs": 3749.9603338241577,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "A day in Midtown",
+          "ms": 2316.5593338012695
+        },
+        {
+          "stage": "final",
+          "title": "A day in Midtown",
+          "ms": 3749.9603338241577
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 0,
+      "arm": "preview",
+      "fault": "retry",
+      "firstEventMs": 38.35112500190735,
+      "doneEventMs": 1357.4096250534058,
+      "finalMatches": true,
+      "firstVisibleMs": 299.914999961853,
+      "finalVisibleMs": 1383.8848330974579,
+      "aborted": false,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Withdrawn preview",
+          "ms": 299.914999961853
+        },
+        {
+          "stage": "cleared",
+          "ms": 683.1264171600342
+        },
+        {
+          "stage": "preview",
+          "title": "Art and Central Park",
+          "ms": 1033.7565829753876
+        },
+        {
+          "stage": "final",
+          "title": "Art and Central Park",
+          "ms": 1383.8848330974579
+        }
+      ]
+    },
+    {
+      "trace": "nyc-3-1",
+      "days": 3,
+      "pair": 0,
+      "arm": "preview",
+      "fault": "cancel",
+      "firstEventMs": 34.19237494468689,
+      "doneEventMs": null,
+      "finalMatches": false,
+      "firstVisibleMs": 283.2445418834686,
+      "finalVisibleMs": null,
+      "aborted": true,
+      "frames": [
+        {
+          "stage": "preview",
+          "title": "Withdrawn preview",
+          "ms": 283.2445418834686
+        },
+        {
+          "stage": "cancelled",
+          "ms": 333.15625
+        }
+      ]
+    }
+  ]
+}

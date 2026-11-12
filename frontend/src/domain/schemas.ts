@@ -75,6 +75,26 @@ const daySchema = z.looseObject({
   activities: z.array(activitySchema),
 });
 
+export const tripMetadataSchema = z.object({
+  isFavorite: z.boolean().default(false),
+  visited: z.boolean().default(false),
+});
+
+/** Omitted fields are unchanged; every supplied field must be an explicit boolean. */
+export const tripMetadataPatchSchema = z.strictObject({
+  isFavorite: z.boolean().optional(),
+  visited: z.boolean().optional(),
+}).refine(
+  (patch) => Object.keys(patch).length > 0 && Object.values(patch).every((value) => typeof value === "boolean"),
+  "Provide at least one explicit metadata value",
+);
+
+export const tripMetadataResultSchema = z.object({
+  id: z.string(),
+  isFavorite: z.boolean(),
+  visited: z.boolean(),
+});
+
 export const tripSchema = z.looseObject({
   id: z.string(),
   destinationId: z.string(),
@@ -89,8 +109,37 @@ export const tripSchema = z.looseObject({
   adjusted: z.boolean(),
   createdAt: z.number(),
   version: z.number().optional(),
+  ...tripMetadataSchema.shape,
 });
 
 export const tripListSchema = z.array(tripSchema);
+
+const savedPlaceReferenceFields = {
+  provider: z.enum(["catalog", "google"]),
+  kind: z.enum(["destination", "place"]),
+  // Keep opaque IDs byte-for-byte. Reject whitespace/control characters rather than trimming.
+  externalId: z.string().min(1).regex(/^[^\x00-\x20\x7f]+$/, "Use the provider's external identifier"),
+};
+
+export const savedPlaceReferenceSchema = z.strictObject(savedPlaceReferenceFields);
+export const savedPlaceSchema = z.looseObject({
+  ...savedPlaceReferenceFields,
+  id: z.string().min(1),
+  createdAt: z.number().int().nonnegative(),
+});
+export const savedPlaceListSchema = z.array(savedPlaceSchema);
+export const savedPlaceDetailsSchema = z.object({
+  reference: savedPlaceReferenceSchema,
+  name: z.string().min(1),
+  subtitle: z.string(),
+  description: z.string(),
+  image: z.string().optional(),
+  rating: z.number().optional(),
+  websiteUri: z.string().optional(),
+  googleMapsUri: z.string().optional(),
+  weekdayDescriptions: z.array(z.string()).optional(),
+  destinationId: z.string().optional(),
+  bestFor: preferencesSchema.shape.interests.optional(),
+});
 
 export type CreateTripValues = z.infer<typeof createTripSchema>;

@@ -84,7 +84,7 @@ test("startup renders one navigation stack and one data scope with location avai
 test("app routes are available to guests and removed on sign-out while SSO remains reachable", async () => {
   mockSession.mode = "guest";
   await render();
-  expect(routes()).toEqual(["(tabs)", "create", "trip/[id]", "(auth)", "sso-callback"]);
+  expect(routes()).toEqual(["(tabs)", "create", "trip/[id]", "destination/[id]", "saved", "saved-place/[id]", "(auth)", "sso-callback"]);
   mockSession.mode = "signedOut";
   await render();
   expect(routes()).toEqual(["(auth)", "sso-callback"]);

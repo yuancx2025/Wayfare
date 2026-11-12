@@ -11,3 +11,12 @@ export function goBackToProfile() {
   if (router.canGoBack()) router.back();
   else router.replace("/profile");
 }
+
+export function goBackToSaved() {
+  router.dismissTo("/profile/saved");
+}
+
+export function goBackToExplore() {
+  if (router.canGoBack()) router.back();
+  else router.replace("/explore");
+}

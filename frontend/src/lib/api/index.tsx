@@ -17,7 +17,8 @@ function missingBackendApi(): Api {
   return {
     mode: "remote",
     capabilities: fail, getMe: fail, updateProfile: fail, getPreferences: fail, savePreferences: fail,
-    listTrips: fail, getTrip: fail, deleteTrip: fail, generateTrip: fail,
+    listTrips: fail, getTrip: fail, updateTripMetadata: fail, deleteTrip: fail, generateTrip: fail,
+    listSavedPlaces: fail, savePlace: fail, removeSavedPlace: fail, getSavedPlaceDetails: fail,
     autocomplete: fail, resolveDestination: fail, listDestinations: fail, placeDetails: fail, dayRoute: fail, nearbyPlaces: fail,
     alternatives: fail, propose: fail, applyProposal: fail,
     imageUrl: (src) => src,

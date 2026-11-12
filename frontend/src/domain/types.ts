@@ -106,7 +106,18 @@ export interface Day {
   activities: Activity[];
 }
 
-export interface Trip {
+/** Collection metadata is independent of itinerary dates, contents, and version. */
+export interface TripMetadata {
+  isFavorite: boolean;
+  visited: boolean;
+}
+
+export type TripMetadataPatch = Partial<TripMetadata>;
+export interface TripMetadataResult extends TripMetadata {
+  id: string;
+}
+
+export interface Trip extends TripMetadata {
   id: string;
   destinationId: string;
   destination: string;
@@ -124,7 +135,7 @@ export interface Trip {
 
 export type TripPhase = "ongoing" | "upcoming" | "past";
 
-export interface TripSummary {
+export interface TripSummary extends TripMetadata {
   id: string;
   destinationId: string;
   destination: string;
@@ -171,6 +182,34 @@ export interface PlaceDetails {
   weekdayDescriptions?: string[];
   openDuringVisit?: boolean;
   source: "catalog" | "google";
+}
+
+/** Provider identity, independent of itinerary activities and destination cache IDs. */
+export interface SavedPlaceReference {
+  provider: "catalog" | "google";
+  kind: "destination" | "place";
+  externalId: string;
+}
+
+/** Presentation is resolved separately; provider responses are not permanent saved records. */
+export interface SavedPlace extends SavedPlaceReference {
+  id: string;
+  createdAt: number;
+}
+
+/** Resolved presentation only; never written into a saved-reference record. */
+export interface SavedPlaceDetails {
+  reference: SavedPlaceReference;
+  name: string;
+  subtitle: string;
+  description: string;
+  image?: string;
+  rating?: number;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  weekdayDescriptions?: string[];
+  destinationId?: string;
+  bestFor?: Interest[];
 }
 
 export interface Me {

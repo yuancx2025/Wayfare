@@ -2,8 +2,11 @@ import { fetch, type FetchRequestInit } from "expo/fetch";
 import type { Api, GenerateOptions } from "./types";
 import { ApiError } from "./types";
 import { readEvents } from "./sse";
-import type { Trip, TripDraft } from "@/domain/types";
+import type { Trip, TripDraft, TripSummary } from "@/domain/types";
 import { GenerationError } from "@/domain/logic/generate";
+import { withTripMetadata } from "@/domain/logic/tripMetadata";
+import { savedPlaceDetailsSchema, savedPlaceListSchema, savedPlaceReferenceSchema, savedPlaceSchema, tripMetadataPatchSchema, tripMetadataResultSchema } from "@/domain/schemas";
+import { savedPlaceKey } from "@/domain/logic/savedPlaces";
 
 /** Clerk's `useAuth().getToken`: the current session JWT, or null when signed out. */
 export type GetToken = (options?: { skipCache?: boolean }) => Promise<string | null>;
@@ -78,9 +81,24 @@ export function createRemoteApi(base: string, getToken: GetToken, onSessionEnded
     getPreferences: () => request("/me/preferences"),
     savePreferences: (prefs) => request("/me/preferences", json("PUT", prefs)),
 
-    listTrips: () => request("/trips"),
-    getTrip: (id) => request(`/trips/${encodeURIComponent(id)}`),
+    listTrips: async () => (await request<TripSummary[]>("/trips")).map(withTripMetadata),
+    getTrip: async (id) => withTripMetadata(await request<Trip>(`/trips/${encodeURIComponent(id)}`)),
+    async updateTripMetadata(id, patch) {
+      const metadata = tripMetadataPatchSchema.parse(patch);
+      const result = tripMetadataResultSchema.parse(await request(`/trips/${encodeURIComponent(id)}`, json("PATCH", metadata)));
+      if (result.id !== id) throw new ApiError(502, "The metadata response belongs to a different trip.");
+      return result;
+    },
     deleteTrip: (id) => request(`/trips/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    listSavedPlaces: async () => savedPlaceListSchema.parse(await request("/me/saved-places")),
+    async savePlace(input) {
+      const reference = savedPlaceReferenceSchema.parse(input);
+      const saved = savedPlaceSchema.parse(await request("/me/saved-places", json("POST", reference)));
+      if (savedPlaceKey(saved) !== savedPlaceKey(reference)) throw new ApiError(502, "The saved place response belongs to a different reference.");
+      return saved;
+    },
+    removeSavedPlace: (id) => request(`/me/saved-places/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    getSavedPlaceDetails: async (id) => savedPlaceDetailsSchema.parse(await request(`/me/saved-places/${encodeURIComponent(id)}/details`)),
 
     async generateTrip(draft: TripDraft, { onStep, signal, idempotencyKey }: GenerateOptions): Promise<Trip> {
       // expo/fetch exposes the response body as a stream on native, which React Native's global fetch does not.
@@ -92,7 +110,7 @@ export function createRemoteApi(base: string, getToken: GetToken, onSessionEnded
       if (!res.ok || !res.body) throw new GenerationError((await readError(res)).message);
       for await (const { event, data } of readEvents(res.body)) {
         if (event === "step") onStep(data.index);
-        else if (event === "done") return data.trip as Trip;
+        else if (event === "done") return withTripMetadata(data.trip as Trip);
         else if (event === "error") throw new GenerationError(data.message);
       }
       throw new GenerationError("The connection closed before your plan was ready.");
@@ -116,8 +134,9 @@ export function createRemoteApi(base: string, getToken: GetToken, onSessionEnded
     alternatives: (tripId, day, activityId) =>
       request(`/trips/${encodeURIComponent(tripId)}/days/${day}/activities/${encodeURIComponent(activityId)}/alternatives`),
     propose: (tripId, day, req) => request(`/trips/${encodeURIComponent(tripId)}/days/${day}/proposals`, json("POST", req)),
-    applyProposal: (tripId, proposalId) =>
-      request(`/trips/${encodeURIComponent(tripId)}/proposals/${encodeURIComponent(proposalId)}/apply`, { method: "POST" }),
+    applyProposal: async (tripId, proposalId) => withTripMetadata(
+      await request<Trip>(`/trips/${encodeURIComponent(tripId)}/proposals/${encodeURIComponent(proposalId)}/apply`, { method: "POST" }),
+    ),
 
     imageUrl: (src) => (src.startsWith("/") ? `${root}${src}` : src),
   };

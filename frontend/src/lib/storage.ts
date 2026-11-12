@@ -9,6 +9,9 @@ export const storage = {
       return null;
     }
   },
+  async getItemStrict(key: string): Promise<string | null> {
+    return AsyncStorage.getItem(key);
+  },
   async setItem(key: string, value: string): Promise<void> {
     try {
       await AsyncStorage.setItem(key, value);
@@ -39,6 +42,12 @@ export async function loadJSON<T>(key: string): Promise<T | null> {
 }
 
 export const saveJSON = (key: string, value: unknown) => storage.setItem(key, JSON.stringify(value));
+
+/** Missing keys return undefined; stored JSON null remains a value to validate. */
+export async function loadJSONStrict<T>(key: string): Promise<T | undefined> {
+  const raw = await storage.getItemStrict(key);
+  return raw === null ? undefined : JSON.parse(raw) as T;
+}
 
 /** Like `saveJSON`, but a failed write rejects instead of being ignored. */
 export const saveJSONStrict = (key: string, value: unknown) => storage.setItemStrict(key, JSON.stringify(value));

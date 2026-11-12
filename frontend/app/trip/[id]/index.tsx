@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -16,7 +16,11 @@ import TripMap from "@/components/TripMap";
 import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
 import { colors, font, radius, space, touch } from "@/theme";
 import { goBack } from "@/lib/back";
+import { useCalendarExport } from "@/lib/useCalendarExport";
+import { CalendarSheet } from "@/components/CalendarSheet";
 import { one } from "@/lib/params";
+
+type MenuFollowUp = "calendar" | "delete" | "removeEvents";
 
 export default function Overview() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
@@ -29,17 +33,77 @@ export default function Overview() {
   const [menu, setMenu] = useState(false);
   const today = useToday();
   const { trip, loading, error } = useTrip(id || undefined);
+  const calendar = useCalendarExport(trip, today);
+  const [calendarSheet, setCalendarSheet] = useState(false);
+  // iOS cannot present a modal while the menu is still sliding away, so the next one waits for onDismiss.
+  const [afterMenu, setAfterMenu] = useState<MenuFollowUp | null>(null);
 
   if (!trip) return <TripPlaceholder loading={loading} error={error} onBack={goBack} />;
 
-  const remove = async () => {
+  const openMenu = () => {
+    setMenu(true);
+    // The itinerary may have changed on another screen since the last check.
+    calendar.refresh();
+  };
+
+  const closeMenuThen = (next: MenuFollowUp) => {
     setMenu(false);
+    if (Platform.OS === "ios") setAfterMenu(next);
+    else runAfterMenu(next);
+  };
+
+  const runAfterMenu = (next: MenuFollowUp | null) => {
+    setAfterMenu(null);
+    if (next === "calendar") setCalendarSheet(true);
+    if (next === "delete") confirmDelete();
+    if (next === "removeEvents") confirmRemoveFromCalendar();
+  };
+
+  const remove = async (withCalendarEvents: boolean) => {
+    let calendarFailed = false;
+    if (withCalendarEvents) {
+      try {
+        await calendar.remove();
+      } catch {
+        calendarFailed = true;
+      }
+    }
     try {
       await deleteTrip(id);
       router.dismissAll();
-      showToast(`${trip.destination} trip deleted`);
+      showToast(calendarFailed ? `${trip.destination} trip deleted; its calendar events couldn't be removed` : `${trip.destination} trip deleted`);
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Couldn't delete this trip");
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!calendar.exported) {
+      Alert.alert("Delete this trip?", `Your ${trip.destination} itinerary will be removed. This can't be undone.`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => { void remove(false); } },
+      ]);
+      return;
+    }
+    Alert.alert("Delete this trip?", "This can't be undone. Its activities are also in your Wayfare calendar.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Keep events", onPress: () => { void remove(false); } },
+      { text: "Delete events too", style: "destructive", onPress: () => { void remove(true); } },
+    ]);
+  };
+
+  const confirmRemoveFromCalendar = () => {
+    Alert.alert("Remove from calendar?", `This trip's events will be deleted from your Wayfare calendar. You can add them again later.`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => { void removeFromCalendar(); } },
+    ]);
+  };
+
+  const removeFromCalendar = async () => {
+    try {
+      showToast(`Removed ${plural(await calendar.remove(), "event")} from your calendar`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Couldn't remove the calendar events");
     }
   };
 
@@ -58,7 +122,7 @@ export default function Overview() {
           <LinearGradient colors={["rgba(0,0,0,0.05)", "rgba(6,24,19,0.84)"]} style={StyleSheet.absoluteFill} />
           <View style={[styles.heroBar, { top: insets.top + space[3] }]}>
             <Pressable style={styles.glass} onPress={goBack} accessibilityLabel="Back to trips"><Icon name="back" color={colors.white} /></Pressable>
-            <Pressable style={styles.glass} onPress={() => setMenu(true)} accessibilityLabel="Trip options"><Icon name="more" color={colors.white} /></Pressable>
+            <Pressable style={styles.glass} onPress={openMenu} accessibilityLabel="Trip options"><Icon name="more" color={colors.white} /></Pressable>
           </View>
           <View style={styles.heroCopy}>
             <Text style={styles.status}>{tripStatus(trip, today)}</Text>
@@ -107,14 +171,39 @@ export default function Overview() {
       <View style={styles.footer}>
         <Button trailing="arrow" onPress={() => openDay(0)}>Open Daily Itinerary</Button>
       </View>
-      <BottomSheet open={menu} onClose={() => setMenu(false)} title="Trip options">
+      <BottomSheet open={menu} onClose={() => setMenu(false)} onDismiss={() => runAfterMenu(afterMenu)} title="Trip options">
         <Pressable style={styles.menuRow} onPress={() => { setMenu(false); session.bind(id, 0); router.push(`/trip/${id}/map`); }}>
           <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>View map</Text>
         </Pressable>
-        <Pressable style={styles.menuRow} onPress={() => { void remove(); }}>
+        {calendar.canExport && calendar.status === "none" && (
+          <Pressable style={styles.menuRow} onPress={() => closeMenuThen("calendar")} accessibilityRole="button">
+            <Icon name="calendar" color={colors.ink} /><Text style={styles.menuText}>Add to calendar</Text>
+          </Pressable>
+        )}
+        {calendar.canExport && calendar.status === "stale" && (
+          <Pressable style={styles.menuRow} onPress={() => closeMenuThen("calendar")} accessibilityRole="button" accessibilityHint="Your itinerary changed since you added it to your calendar">
+            <Icon name="refresh" color={colors.ink} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuText}>Update calendar</Text>
+              <Text style={styles.menuHint}>Your itinerary changed since you added it</Text>
+            </View>
+          </Pressable>
+        )}
+        {calendar.canExport && calendar.status === "synced" && (
+          <View style={styles.menuRow} accessible accessibilityLabel="Calendar is up to date">
+            <Icon name="check" color={colors.forest} /><Text style={[styles.menuText, { color: colors.forest }]}>Calendar is up to date</Text>
+          </View>
+        )}
+        {calendar.supported && calendar.exported && (
+          <Pressable style={styles.menuRow} onPress={() => closeMenuThen("removeEvents")} disabled={calendar.busy} accessibilityRole="button">
+            <Icon name="x" color={colors.ink} /><Text style={styles.menuText}>Remove from calendar</Text>
+          </Pressable>
+        )}
+        <Pressable style={styles.menuRow} onPress={() => closeMenuThen("delete")} accessibilityRole="button">
           <Icon name="trash" color={colors.coralInk} /><Text style={[styles.menuText, { color: colors.coralInk }]}>Delete trip</Text>
         </Pressable>
       </BottomSheet>
+      <CalendarSheet open={calendarSheet} onClose={() => setCalendarSheet(false)} trip={trip} calendar={calendar} onToast={showToast} />
     </View>
   );
 }
@@ -154,4 +243,5 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", left: 0, right: 0, bottom: 0, padding: space[4], borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: "rgba(255,254,250,0.96)" },
   menuRow: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: space[3], borderBottomWidth: 1, borderBottomColor: colors.line },
   menuText: { fontFamily: font.bodySemi, fontSize: 16, color: colors.ink },
+  menuHint: { fontFamily: font.body, fontSize: 12, color: colors.muted },
 });

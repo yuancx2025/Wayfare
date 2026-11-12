@@ -351,6 +351,64 @@ On the Daily screen, open **Adjust Day → More food**, compare the proposed sch
 
 ---
 
+## Feature walkthrough — Calendar export (a native device feature)
+
+**Suggested time:** 45–60 minutes  
+**Goal:** See how one feature crosses every layer: pure logic, a native module, a React hook, and screen UI. The full design and its decisions are in [`features/calendar-export.md`](features/calendar-export.md).
+
+### Files to read
+
+| Order | File | Why |
+| --- | --- | --- |
+| 1 | [`src/domain/logic/calendarEvents.ts`](../frontend/src/domain/logic/calendarEvents.ts) | Pure conversion: `Day.date` + `startMin` → start/end `Date`s, one draft per activity |
+| 2 | [`src/lib/calendar.ts`](../frontend/src/lib/calendar.ts) | Permission, the "Wayfare" calendar, sync without duplicates, user-facing messages |
+| 3 | [`src/lib/useCalendarExport.ts`](../frontend/src/lib/useCalendarExport.ts) | Hook: export status via TanStack Query, `sync`, `remove`, permission `problem` |
+| 4 | [`src/components/CalendarSheet.tsx`](../frontend/src/components/CalendarSheet.tsx) | Confirmation sheet and permission message |
+| 5 | [`app/trip/[id]/index.tsx`](../frontend/app/trip/%5Bid%5D/index.tsx) | Trip options rows, confirmation dialogs, menu follow-ups |
+| 6 | [`app.config.ts`](../frontend/app.config.ts) | `expo-calendar` config plugin: iOS usage text, Android calendar permissions |
+
+### Trace: Trip options → Add to calendar
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Screen as Trip overview
+  participant Hook as useCalendarExport
+  participant Sync as lib/calendar.ts
+  participant OS as expo-calendar → EventKit / Calendar Provider
+  User->>Screen: Trip options → Add to calendar
+  Screen->>Screen: close menu, then open CalendarSheet
+  User->>Hook: Add 26 events
+  Hook->>OS: requestCalendarPermissions()
+  OS-->>Hook: granted / denied / blocked
+  Hook->>Sync: syncTripToCalendar(trip, namespace)
+  Sync->>Sync: tripToCalendarEvents(trip) → drafts
+  Sync->>OS: create / update / delete events
+  Sync->>Sync: save index (activity → event ID)
+  Hook-->>Screen: status "synced" → toast
+```
+
+### Concepts to understand
+
+- **Pure logic versus native calls.** `calendarEvents.ts` has no React or native imports, so its tests run instantly in Jest. Only `calendar.ts` imports `expo-calendar`; its tests replace that module with an in-memory fake calendar.
+- **The index is what prevents duplicates.** `syncTripToCalendar` saves which calendar event belongs to which activity (`wayfare:calendar:<guest or userId>` in AsyncStorage). A repeat export updates changed events, recreates ones the user deleted, and deletes events for removed activities. A *fingerprint* per event lets unchanged events be skipped.
+- **Native modules need a rebuild.** Adding `expo-calendar` and its config plugin changes the native app, so the dev client must be rebuilt (`npx expo prebuild --clean`, then `npx expo run:ios` / `run:android`). JS edits to these files only need Fast Refresh.
+- **Permissions have three outcomes.** `denied` can still ask again (Android's second chance); `blocked` can only be fixed in Settings (`Linking.openSettings()`). `calendarProblem` turns each into the message the sheet shows, the same pattern as Nearby's location messages.
+- **One modal at a time on iOS.** iOS fails silently when a modal is presented while another is dismissing, so menu actions that open a sheet or `Alert` wait for the menu's `onDismiss` on iOS. Android does not call `onDismiss` and runs them immediately.
+- **Platform limits.** Times use the phone's time zone (itineraries have no time zone). Web has no calendar module, so the rows are hidden there. On the Android emulator, Google Calendar does not display the local "Wayfare" calendar even though the events are written.
+
+### Hands-on exercise
+
+On an upcoming trip, choose **Trip options → Add to calendar** and find the events in the Calendar app. Apply a day adjustment, reopen Trip options, and confirm it now shows **Update calendar**. Then reset the permission (`xcrun simctl privacy booted reset calendar com.yuancx2025.wayfare`), deny it, and follow the message back to a working export.
+
+### Checkpoint
+
+**Question:** Why does exporting the same trip twice not create duplicate calendar events?
+
+**Expected answer:** The first export saves an index mapping each `tripId:activityId` key to the created event's ID. The next export looks each draft up in that index: unchanged fingerprints are skipped, changed ones update the existing event, and only unknown keys create new events. Writes run one at a time, and the index is saved even when a write fails partway, so a retry does not duplicate events either.
+
+---
+
 ## Stage 5 — Tests, cross-platform quality, and making a safe change
 
 **Suggested time:** 60–90 minutes  
@@ -455,6 +513,7 @@ Trips / Explore
 | Local trip scheduling behavior | `src/domain/logic/generate.ts` | Embedding planning algorithms into JSX |
 | Validation/contract | `src/domain/types.ts`, `src/domain/schemas.ts` | Trusting unvalidated external data |
 | Native map / web alternative | `TripMap.tsx`, `TripMap.web.tsx` | Importing native-only map module in web |
+| Device calendar export | `src/lib/calendar.ts`, `src/lib/useCalendarExport.ts` | Calling `expo-calendar` from screens or the store |
 | Shared appearance | `src/theme.ts` | Uncoordinated hardcoded styles |
 
 ## Completion checklist
@@ -466,6 +525,7 @@ Trips / Explore
 - [ ] I can explain SSE `step`/`done`/`error`, cancellation, and the purpose of an idempotency key.
 - [ ] I can explain web-vs-native maps, how polylines and markers render, and when a map is illustrative.
 - [ ] I can explain preview vs apply, including 409/410 error recovery.
+- [ ] I can explain how calendar export avoids duplicate events and why adding it required a native rebuild.
 - [ ] I can run typecheck/tests and make a small change without breaking offline or remote behavior.
 
 **After this guide:** Pair with a teammate on a small feature branch. Start with the file listed under **Who owns what?**, write one test before changing behavior, and trace both local and remote implementations when the feature interacts with `Api`. For corresponding server internals, move to the [backend study guide](backend-study-guide.md).

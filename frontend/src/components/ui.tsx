@@ -160,12 +160,14 @@ export function SectionHeading({ eyebrow, title, action }: { eyebrow?: string; t
   );
 }
 
-export function BottomSheet({ open, onClose, title, children, footer }: {
+export function BottomSheet({ open, onClose, onDismiss, title, children, footer }: {
+  /** iOS only: runs after the sheet has finished closing, when another modal can be presented. */
+  onDismiss?: () => void;
   open: boolean; onClose: () => void; title?: string; children: ReactNode; footer?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
       <View style={styles.sheetLayer}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close" />
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space[4]) }]}>

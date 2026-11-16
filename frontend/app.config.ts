@@ -40,7 +40,10 @@ const config: ExpoConfig = {
       "expo-location",
       { locationWhenInUsePermission: "Wayfare uses your location only when you ask, to show places near you." },
     ],
-    "@clerk/expo",
+    ["expo-calendar", { calendarPermission: "Wayfare adds your trip's activities to your calendar when you ask." }],
+    // Sign in with Apple is deferred (no paid Apple account); its entitlement would force code signing even for
+    // Simulator builds.
+    ["@clerk/expo", { appleSignIn: false }],
     "expo-secure-store",
     "expo-web-browser",
     "expo-notifications",
@@ -50,6 +53,7 @@ const config: ExpoConfig = {
       cameraPermission: "Wayfare uses the camera so you can take a profile picture.",
       microphonePermission: false,
     }],
+    "./plugins/withSceneLifecycle",
   ],
 };
 

@@ -14,6 +14,8 @@ import { BottomSheet, Button, SectionHeading } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import TripMap from "@/components/TripMap";
 import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
+import { TripReminder } from "@/components/TripReminder";
+import { cancelTripReminder } from "@/lib/tripReminders";
 import { colors, font, radius, space, touch } from "@/theme";
 import { goBack } from "@/lib/back";
 import { one } from "@/lib/params";
@@ -36,6 +38,8 @@ export default function Overview() {
     setMenu(false);
     try {
       await deleteTrip(id);
+      // A reminder for a deleted trip would open an empty screen.
+      await cancelTripReminder(id).catch(() => {});
       router.dismissAll();
       showToast(`${trip.destination} trip deleted`);
     } catch (e) {
@@ -70,6 +74,9 @@ export default function Overview() {
           <Stat n={String(trip.days.length)} label="days" />
           <Stat n={String(allStops.length)} label="stops" />
           <Stat n={String(trip.travelers)} label={trip.travelers === 1 ? "traveler" : "travelers"} />
+        </View>
+        <View style={styles.section}>
+          <TripReminder trip={trip} />
         </View>
         <View style={styles.section}>
           <SectionHeading eyebrow="Planned around" title="Your preferences" />

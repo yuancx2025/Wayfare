@@ -1,0 +1,2 @@
+city,days,synthetic_candidates,repeat,chunks,first_chunk_ms,first_complete_day_ms,full_json_ms,stream_end_ms,day_one_locally_valid,whole_plan_valid,usable_preview,usable_lead_ms,validation_error_count
+nyc,3,False,1,21,32480.172,32957.249,33928.788,33942.544,True,True,True,971.539,0

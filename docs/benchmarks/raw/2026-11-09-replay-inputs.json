@@ -1,0 +1,30 @@
+[
+  {
+    "id": "nyc-3-1", "days": 3, "firstMs": 1376, "doneMs": 2348,
+    "itinerary": [
+      {"title": "Art and Central Park", "stops": ["The Met", "Central Park", "Gray's Papaya", "American Museum of Natural History"]},
+      {"title": "Midtown landmarks", "stops": ["Museum of Modern Art", "Grand Central Terminal", "Katz's Delicatessen", "Top of the Rock"]},
+      {"title": "Downtown walks", "stops": ["The High Line", "Chelsea Market", "Whitney Museum of American Art", "Brooklyn Bridge"]}
+    ]
+  },
+  {
+    "id": "san-francisco-3-1", "days": 3, "firstMs": 1454, "doneMs": 2154,
+    "itinerary": [
+      {"title": "Waterfront and design", "stops": ["Ferry Building", "Exploratorium", "Hog Island Oyster Co.", "Coit Tower"]},
+      {"title": "Gardens and art", "stops": ["Golden Gate Park", "de Young Museum", "Tartine Bakery", "Japanese Tea Garden"]},
+      {"title": "Neighborhood colors", "stops": ["Palace of Fine Arts", "Lombard Street", "Swan Oyster Depot", "Chinatown"]}
+    ]
+  },
+  {
+    "id": "nyc-7-1", "days": 7, "firstMs": 2262, "doneMs": 3712,
+    "itinerary": [
+      {"title": "A day in Midtown", "stops": ["Museum of Modern Art", "Grand Central Terminal", "Ess-a-Bagel", "Top of the Rock"]},
+      {"title": "Museum mile", "stops": ["The Met", "Central Park", "Gray's Papaya", "American Museum of Natural History"]},
+      {"title": "Chelsea galleries", "stops": ["The High Line", "Chelsea Market", "Los Tacos No. 1", "Whitney Museum of American Art"]},
+      {"title": "Across the river", "stops": ["Brooklyn Bridge", "DUMBO", "Juliana's Pizza", "Brooklyn Bridge Park"]},
+      {"title": "Lower Manhattan", "stops": ["9/11 Memorial", "Battery Park", "Katz's Delicatessen", "Statue of Liberty"]},
+      {"title": "Village streets", "stops": ["SoHo", "Greenwich Village", "Joe's Pizza", "Washington Square Park"]},
+      {"title": "City lights", "stops": ["Vessel", "Broadway", "Ippudo", "Blue Note Jazz Club"]}
+    ]
+  }
+]

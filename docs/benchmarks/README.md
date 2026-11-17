@@ -46,3 +46,5 @@ The timings cover the local API. Mobile rendering, Neon network latency, and liv
 
 - Backend tests with disposable PostgreSQL and provider doubles, **94 passed**.
 - Frontend tests from a clean copy with locked dependencies, **114 passed**. Expo lint and TypeScript checks passed.
+
+[First-day streaming experiment](streaming.md)

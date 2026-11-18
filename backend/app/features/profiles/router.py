@@ -1,7 +1,7 @@
 from app.contracts.travel import Preferences
 from app.core.routing import ApiRouter
 from app.features.profiles.dependencies import ProfileServiceDep, UserIdDep
-from app.features.profiles.schemas import Me, ProfilePatch
+from app.features.profiles.schemas import Insights, Me, ProfilePatch
 
 router = ApiRouter(prefix="/me", tags=["me"])
 
@@ -14,6 +14,11 @@ async def get_me(profiles: ProfileServiceDep, user_id: UserIdDep) -> Me:
 @router.patch("", response_model=Me)
 async def patch_me(patch: ProfilePatch, profiles: ProfileServiceDep, user_id: UserIdDep) -> Me:
     return await profiles.update_profile(user_id, patch)
+
+
+@router.get("/insights", response_model=Insights)
+async def get_insights(profiles: ProfileServiceDep, user_id: UserIdDep) -> Insights:
+    return await profiles.insights(user_id)
 
 
 @router.get("/preferences", response_model=Preferences)

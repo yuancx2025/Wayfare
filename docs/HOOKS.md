@@ -375,6 +375,7 @@ Paths in this table are relative to `frontend/`.
 | [app/(tabs)/profile/edit.tsx](../frontend/app/%28tabs%29/profile/edit.tsx) | `useStore`, `useState`, `useRef`, `useForm` |
 | [app/(tabs)/profile/preferences.tsx](../frontend/app/%28tabs%29/profile/preferences.tsx) | `useStore`, `useState`, `useEffect` |
 | [app/(tabs)/profile/history.tsx](../frontend/app/%28tabs%29/profile/history.tsx) | `useStore`, `useRouter`, `useToday` |
+| [app/(tabs)/profile/insights.tsx](../frontend/app/%28tabs%29/profile/insights.tsx) | `useApi`, `useRouter`, `useStore`, `useQuery` |
 | [app/create/index.tsx](../frontend/app/create/index.tsx) | `useStore`, `useRouter`, `useForm`, `useEffect`, `useRef`, `useDebounced`, `useQuery`, `useState` |
 | [app/create/preferences.tsx](../frontend/app/create/preferences.tsx) | `useStore`, `useRouter` |
 | [app/create/generating.tsx](../frontend/app/create/generating.tsx) | `useStore`, `useRouter`, `useSafeAreaInsets`, `useState`, `useRef`, `useEffect` |

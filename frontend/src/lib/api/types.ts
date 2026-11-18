@@ -1,5 +1,5 @@
 import type {
-  Capabilities, DayRoute, DestinationCard, Me, NearbyRequest, NearbyResults, Place, PlaceDetails, Preferences, ProfilePatch, Proposal,
+  Capabilities, DayRoute, DestinationCard, Insights, Me, NearbyRequest, NearbyResults, Place, PlaceDetails, Preferences, ProfilePatch, Proposal,
   ProposalRequest, Suggestion, Trip,
   TripDraft, TripSummary,
 } from "@/domain/types";
@@ -15,6 +15,7 @@ export interface Api {
   mode: "remote" | "local";
   capabilities(): Promise<Capabilities>;
   getMe(): Promise<Me>;
+  getInsights(): Promise<Insights>;
   updateProfile(patch: ProfilePatch): Promise<Me>;
   getPreferences(): Promise<Preferences>;
   savePreferences(prefs: Preferences): Promise<Preferences>;

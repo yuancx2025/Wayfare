@@ -16,7 +16,7 @@ function missingBackendApi(): Api {
   const fail = () => Promise.reject(new ApiError(0, "Accounts need the Wayfare server. Set EXPO_PUBLIC_API_URL in frontend/.env and restart Expo."));
   return {
     mode: "remote",
-    capabilities: fail, getMe: fail, updateProfile: fail, getPreferences: fail, savePreferences: fail,
+    capabilities: fail, getMe: fail, getInsights: fail, updateProfile: fail, getPreferences: fail, savePreferences: fail,
     listTrips: fail, getTrip: fail, deleteTrip: fail, generateTrip: fail,
     autocomplete: fail, resolveDestination: fail, listDestinations: fail, placeDetails: fail, dayRoute: fail, nearbyPlaces: fail,
     alternatives: fail, propose: fail, applyProposal: fail,

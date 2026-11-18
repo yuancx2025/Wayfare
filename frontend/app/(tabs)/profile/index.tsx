@@ -62,6 +62,7 @@ export default function ProfileOverview() {
           <LinkRow icon="edit" title="Edit profile" subtitle="Name and home location" onPress={() => router.push("/profile/edit")} />
           <LinkRow icon="sliders" title="Travel preferences" subtitle="Defaults for your next trip" onPress={() => router.push("/profile/preferences")} />
           <LinkRow icon="calendar" title="Trip history" subtitle="Ongoing, upcoming, and past" onPress={() => router.push("/profile/history")} />
+          <LinkRow icon="chart" title="Travel insights" subtitle="What your trips have in common" onPress={() => router.push("/profile/insights")} />
         </View>
         {past.length > 0 ? (
           <View style={styles.recent}>

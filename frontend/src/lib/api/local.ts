@@ -8,6 +8,7 @@ import { proposeAdjustment, proposeReplacement, replacementCandidates } from "@/
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import { MAX_NEARBY_RADIUS_M, rankNearby } from "@/domain/logic/nearby";
 import { initials } from "@/domain/logic/profile";
+import { tripInsights } from "@/domain/logic/insights";
 import { addDays, todayISO } from "@/domain/lib/format";
 import { preferencesSchema, profileSchema, tripListSchema } from "@/domain/schemas";
 
@@ -136,6 +137,7 @@ export function createLocalApi(): Api {
     async getMe(): Promise<Me> {
       return toMe(await currentProfile(), await all());
     },
+    getInsights: async () => tripInsights(await all()),
     async updateProfile(patch: ProfilePatch): Promise<Me> {
       const next = profileSchema.parse({ ...(await currentProfile()), ...patch });
       await saveJSONStrict(KEYS.profile, next);

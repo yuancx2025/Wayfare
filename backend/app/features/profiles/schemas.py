@@ -4,7 +4,7 @@ from pydantic import ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 
 from app.contracts.base import ApiModel
-from app.contracts.travel import Preferences
+from app.contracts.travel import Category, Preferences
 
 DEFAULT_PREFS = Preferences(
     pace="balanced",
@@ -19,6 +19,21 @@ class Stats(ApiModel):
     trips: int
     days_planned: int
     countries: int
+
+
+class CategoryCount(ApiModel):
+    category: Category
+    places: int
+
+
+class Insights(ApiModel):
+    """Counts cover every planned trip. Nothing here says a trip was actually taken."""
+
+    trips: int
+    days: int
+    stops: int
+    destinations: int
+    top_categories: list[CategoryCount]
 
 
 class Me(ApiModel):

@@ -1,0 +1,77 @@
+run,arm,ttl_h,latency_ms,seed,users,kind,sku,google_requests,list_usd,cache_lookups,cache_hits,cache_misses,step,calls,p50_ms,p95_ms
+ttl6h-lat100ms-seed11,off,6,100,11,60,alt,,0,0.0,60,0,60,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,autocomplete,Autocomplete Requests,180,0.5094,0,0,0,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,dest,Place Details Enterprise + Atmosphere,6,0.15,6,0,6,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,details,Place Details Enterprise + Atmosphere,176,4.4,176,0,176,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,leg,Compute Routes Essentials,971,4.855,971,0,971,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,nearby,Nearby Search Enterprise + Atmosphere,180,7.2,180,0,180,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,photo-uri,Place Details Photos,120,0.84,120,0,120,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,photos,Place Details Essentials (IDs Only),120,0.0,120,0,120,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,ts,Text Search Enterprise + Atmosphere,268,10.72,268,0,268,,,,
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,me,60,6.7,9.8
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,autocomplete,180,107.2,109.5
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,resolve,60,6.7,112.3
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,generate,60,222.7,232.0
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,trip-image,120,206.7,208.7
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,day-map,272,108.7,111.8
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,place-details,116,107.3,110.3
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,alternatives,60,111.8,221.9
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,propose-replace,60,215.2,220.5
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,propose-more-food,60,313.8,322.0
+ttl6h-lat100ms-seed11,off,6,100,11,60,,,,,,,,apply,55,10.1,14.8
+ttl6h-lat100ms-seed11,on,6,100,11,60,alt,,0,0.0,60,60,0,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,autocomplete,Autocomplete Requests,180,0.5094,0,0,0,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,dest,Place Details Enterprise + Atmosphere,6,0.15,6,0,6,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,details,Place Details Enterprise + Atmosphere,66,1.65,116,50,66,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,leg,Compute Routes Essentials,331,1.655,971,640,331,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,nearby,Nearby Search Enterprise + Atmosphere,112,4.48,180,68,112,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,photo-uri,Place Details Photos,101,0.707,120,19,101,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,photos,Place Details Essentials (IDs Only),23,0.0,120,97,23,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,ts,Text Search Enterprise + Atmosphere,106,4.24,268,162,106,,,,
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,me,60,6.7,8.3
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,autocomplete,180,107.6,109.9
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,resolve,60,7.1,117.9
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,generate,60,227.9,245.9
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,trip-image,120,111.8,219.8
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,day-map,272,6.6,116.5
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,place-details,116,108.5,114.7
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,alternatives,60,116.0,232.1
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,propose-replace,60,116.4,124.9
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,propose-more-food,60,222.4,336.3
+ttl6h-lat100ms-seed11,on,6,100,11,60,,,,,,,,apply,55,9.0,17.2
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,alt,,0,0.0,60,0,60,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,autocomplete,Autocomplete Requests,180,0.5094,0,0,0,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,dest,Place Details Enterprise + Atmosphere,6,0.15,6,0,6,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,details,Place Details Enterprise + Atmosphere,176,4.4,176,0,176,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,leg,Compute Routes Essentials,971,4.855,971,0,971,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,nearby,Nearby Search Enterprise + Atmosphere,180,7.2,180,0,180,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,photo-uri,Place Details Photos,120,0.84,120,0,120,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,photos,Place Details Essentials (IDs Only),120,0.0,120,0,120,,,,
+ttl1h-lat0ms-seed11,off,1.0,0,11,60,ts,Text Search Enterprise + Atmosphere,268,10.72,268,0,268,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,alt,,0,0.0,60,60,0,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,autocomplete,Autocomplete Requests,180,0.5094,0,0,0,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,dest,Place Details Enterprise + Atmosphere,6,0.15,6,0,6,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,details,Place Details Enterprise + Atmosphere,100,2.5,116,16,100,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,leg,Compute Routes Essentials,552,2.76,971,419,552,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,nearby,Nearby Search Enterprise + Atmosphere,155,6.2,180,25,155,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,photo-uri,Place Details Photos,101,0.707,120,19,101,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,photos,Place Details Essentials (IDs Only),63,0.0,120,57,63,,,,
+ttl1h-lat0ms-seed11,on,1.0,0,11,60,ts,Text Search Enterprise + Atmosphere,196,7.84,268,72,196,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,alt,,0,0.0,60,0,60,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,autocomplete,Autocomplete Requests,180,0.5094,0,0,0,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,dest,Place Details Enterprise + Atmosphere,6,0.15,6,0,6,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,details,Place Details Enterprise + Atmosphere,176,4.4,176,0,176,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,leg,Compute Routes Essentials,971,4.855,971,0,971,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,nearby,Nearby Search Enterprise + Atmosphere,180,7.2,180,0,180,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,photo-uri,Place Details Photos,120,0.84,120,0,120,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,photos,Place Details Essentials (IDs Only),120,0.0,120,0,120,,,,
+ttl24h-lat0ms-seed11,off,24.0,0,11,60,ts,Text Search Enterprise + Atmosphere,268,10.72,268,0,268,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,alt,,0,0.0,60,60,0,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,autocomplete,Autocomplete Requests,180,0.5094,0,0,0,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,dest,Place Details Enterprise + Atmosphere,6,0.15,6,0,6,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,details,Place Details Enterprise + Atmosphere,36,0.9,116,80,36,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,leg,Compute Routes Essentials,186,0.93,971,785,186,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,nearby,Nearby Search Enterprise + Atmosphere,70,2.8,180,110,70,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,photo-uri,Place Details Photos,101,0.707,120,19,101,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,photos,Place Details Essentials (IDs Only),9,0.0,120,111,9,,,,
+ttl24h-lat0ms-seed11,on,24.0,0,11,60,ts,Text Search Enterprise + Atmosphere,45,1.8,268,223,45,,,,

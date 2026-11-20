@@ -104,10 +104,11 @@ class FixedRouter(EstimateTravelRouter):
     source = "google"
 
     def __init__(self, minutes: int = 7):
-        self.minutes, self.calls = minutes, 0
+        self.minutes, self.calls, self.pairs = minutes, 0, []
 
     async def pair_times(self, pairs, mode):
         self.calls += 1
+        self.pairs += [(a.place_id, b.place_id, mode) for a, b in pairs]
         return [(self.minutes, 1.0) for _ in pairs]
 
     async def leg_polyline(self, a, b, mode):

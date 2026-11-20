@@ -9,29 +9,27 @@ from app.integrations.routing.protocol import TravelRouter
 
 log = logging.getLogger(__name__)
 
-MATRIX_CHUNK = 10  # TRANSIT matrices are capped at 100 elements; pairs are read off the diagonal.
 
-
-async def resolve_legs(days: list[Day], transport: Transport, router: TravelRouter) -> LegTable:
-    """Fetch real travel times for every consecutive stop pair; anything that fails stays an estimate."""
-    by_mode: dict[LegMode, list[tuple]] = defaultdict(list)
-    for day in days:
-        for a, b, mode in needed_legs(day, transport):
-            by_mode[mode].append((a, b))
-    table = LegTable()
+async def resolve_legs(days: list[Day], transport: Transport, router: TravelRouter, known: LegTable | None = None) -> LegTable:
+    """Fetch real travel times for consecutive stop pairs not already in `known`; anything that fails stays an estimate."""
+    table = LegTable(dict(known.known) if known else {})
     if router.source == "estimate":
         return table
+    by_mode: dict[LegMode, dict[tuple[str, str], tuple]] = defaultdict(dict)
+    for day in days:
+        for a, b, mode in needed_legs(day, transport):
+            if (a.place_id, b.place_id, mode) not in table.known:
+                by_mode[mode].setdefault((a.place_id, b.place_id), (a, b))
 
-    async def run(mode: LegMode, chunk: list[tuple]):
+    async def run(mode: LegMode, pairs: list[tuple]):
         try:
-            return mode, chunk, await router.pair_times(chunk, mode)
+            return mode, pairs, await router.pair_times(pairs, mode)
         except UpstreamError as e:
-            log.warning("Routes matrix failed for %s: %s", mode, e)
-            return mode, chunk, [None] * len(chunk)
+            log.warning("Routes lookup failed for %s: %s", mode, e)
+            return mode, pairs, [None] * len(pairs)
 
-    jobs = [run(mode, pairs[i : i + MATRIX_CHUNK]) for mode, pairs in by_mode.items() for i in range(0, len(pairs), MATRIX_CHUNK)]
-    for mode, chunk, times in await asyncio.gather(*jobs):
-        for (a, b), t in zip(chunk, times):
+    for mode, pairs, times in await asyncio.gather(*(run(mode, list(pairs.values())) for mode, pairs in by_mode.items())):
+        for (a, b), t in zip(pairs, times):
             if t:
                 table.known[(a.place_id, b.place_id, mode)] = t
     return table

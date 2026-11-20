@@ -6,7 +6,7 @@ Each function returns a proposed Day plus a human-readable diff; nothing is pers
 from __future__ import annotations
 
 from app.contracts.travel import Activity, Day, Destination, Place, Trip
-from app.domain.scheduler import LEG_LABEL, describe_day, distance_km, js_round, retime_day, score_place, to_activity
+from app.domain.scheduler import LEG_LABEL, LegTable, describe_day, distance_km, js_round, retime_day, score_place, to_activity
 from app.features.adjustments.explanations import write_whys
 from app.features.adjustments.schemas import Change, Proposal
 from app.integrations.routing.legs import resolve_legs
@@ -23,9 +23,9 @@ def fmt_time(minutes: int) -> str:
 
 
 async def finish(day: Day, trip: Trip, services: Services) -> Day:
-    """Re-time with fresh legs. Keeps an LLM-written theme unless the original day had the generic one."""
+    """Re-time, looking up only legs the saved day doesn't have. Keeps an LLM-written theme unless the original day had the generic one."""
     original = trip.days[day.index]
-    table = await resolve_legs([day], trip.prefs.transport, services.router)
+    table = await resolve_legs([day], trip.prefs.transport, services.router, known=LegTable.from_day(original))
     timed = retime_day(day, trip.prefs, table)
     generic_theme, _ = describe_day(original.activities)
     theme, areas = describe_day(timed.activities)

@@ -90,6 +90,15 @@ class LegTable:
 
     known: dict[tuple[str, str, str], tuple[int, float]] = field(default_factory=dict)
 
+    @classmethod
+    def from_day(cls, day: Day) -> LegTable:
+        """The Google times already saved on `day`, so an edit only looks up the legs it changes."""
+        acts = day.activities
+        return cls({
+            (acts[i - 1].place_id, a.place_id, a.leg_in.mode): (a.leg_in.minutes, a.leg_in.km)
+            for i, a in enumerate(acts) if i and a.leg_in and a.leg_in.source == "google"
+        })
+
     def leg(self, a: Activity, b: Activity, transport: Transport, walk_cap_min: int | None) -> Leg:
         est = leg_between(a, b, transport, walk_cap_min)
         hit = self.known.get((a.place_id, b.place_id, est.mode))

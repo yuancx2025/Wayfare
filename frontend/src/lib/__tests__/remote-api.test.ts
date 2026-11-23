@@ -123,6 +123,15 @@ test("profile validation errors expose a field for each 422 entry", async () => 
   }));
 });
 
+test("insights come from the signed-in account's endpoint", async () => {
+  const insights = { trips: 1, days: 2, stops: 7, destinations: 1, topCategories: [{ category: "food", places: 3 }] };
+  mockFetch.mockResolvedValueOnce(response(insights));
+  expect(await createRemoteApi("http://localhost:8000").getInsights()).toEqual(insights);
+  expect(mockFetch).toHaveBeenCalledWith("http://localhost:8000/me/insights", expect.objectContaining({
+    headers: expect.objectContaining({ Authorization: "Bearer session-jwt" }),
+  }));
+});
+
 test("optional place details handle missing places but surface provider failures", async () => {
   mockFetch.mockResolvedValueOnce(response({ detail: "Not found" }, 404));
   mockFetch.mockResolvedValueOnce(response({ detail: "Places unavailable" }, 502));

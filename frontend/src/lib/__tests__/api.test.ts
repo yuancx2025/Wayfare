@@ -176,6 +176,22 @@ describe("local api", () => {
     expect(await createLocalApi().getMe()).toMatchObject({ name: "Alex Rivera", home: "Brooklyn, NY" });
   });
 
+  test("insights cover every saved trip", async () => {
+    const api = createLocalApi();
+    expect(await api.getInsights()).toEqual({ trips: 0, days: 0, stops: 0, destinations: 0, topCategories: [] });
+    const fixtures = await api.loadHistoryFixtures!();
+    const sample = await api.loadSample!();
+    const all = [...fixtures, sample];
+    const insights = await api.getInsights();
+    expect(insights).toMatchObject({
+      trips: 6,
+      days: all.reduce((n, t) => n + t.days.length, 0),
+      stops: all.reduce((n, t) => n + t.days.reduce((m, d) => m + d.activities.length, 0), 0),
+      destinations: 5,
+    });
+    expect(insights.topCategories.length).toBe(3);
+  });
+
   test("a rejected profile write leaves the stored and cached profile unchanged", async () => {
     const api = createLocalApi();
     await api.updateProfile({ name: "Sam Lee" });

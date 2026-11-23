@@ -20,6 +20,9 @@ class TripService:
     async def list_summaries(self, user_id: str) -> list[TripSummary]:
         return [repository.summary_from_row(r) for r in await repository.list_trip_rows(self.session, user_id)]
 
+    async def list_trips(self, user_id: str) -> list[Trip]:
+        return [repository.trip_from_row(r) for r in await repository.list_trip_rows(self.session, user_id)]
+
     async def get(self, user_id: str, trip_id: str) -> Trip | None:
         row = await repository.get_trip_row(self.session, user_id, trip_id)
         return repository.trip_from_row(row) if row else None

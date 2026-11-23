@@ -63,6 +63,7 @@ account starts with no trips. Another account's trip is a 404. Set `CLERK_ISSUER
 | --- | --- | --- |
 | GET | `/health` | capabilities (`google`, `llm`, `agent`) |
 | GET | `/me`, GET/PUT `/me/preferences` | Profile, Preferences prefill |
+| GET | `/me/insights` | Travel insights (planned-trip totals, top categories) |
 | GET | `/trips`, GET/DELETE `/trips/{id}` | Trips, Overview |
 | POST | `/trips/generate` | Generating. Server-sent events `step` → `done` / `error`; honors `Idempotency-Key` |
 | GET | `/trips/{id}/days/{n}/route` | Map polylines |

@@ -74,6 +74,7 @@ export function createRemoteApi(base: string, getToken: GetToken, onSessionEnded
     mode: "remote",
     capabilities: () => request("/health"),
     getMe: () => request("/me"),
+    getInsights: () => request("/me/insights"),
     updateProfile: (patch) => request("/me", json("PATCH", patch)),
     getPreferences: () => request("/me/preferences"),
     savePreferences: (prefs) => request("/me/preferences", json("PUT", prefs)),

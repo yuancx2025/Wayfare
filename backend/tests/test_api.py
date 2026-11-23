@@ -3,7 +3,10 @@
 import asyncio
 import json
 
+from app.bootstrap.seed import demo_trip
 from app.core.exceptions import UpstreamError
+from app.db.session import get_sessionmaker
+from app.features.trips.repository import save_trip
 from app.integrations.places.catalog import CatalogPlaceProvider
 from app.integrations.places.catalog_data import catalog_places
 from tests.conftest import FixedRouter, add_demo_trip, auth_headers
@@ -44,6 +47,27 @@ async def test_health_profile_and_preferences(make_client):
     assert (await client.put("/me/preferences", json=prefs)).json()["pace"] == "relaxed"
     assert (await client.get("/me/preferences")).json()["pace"] == "relaxed"
     assert (await client.get("/me", headers={"Authorization": "Bearer nope"})).status_code == 401
+
+
+async def test_insights_count_planned_trips_and_each_place_once(make_client):
+    client = await make_client()
+    assert (await client.get("/me/insights")).json() == {"trips": 0, "days": 0, "stops": 0, "destinations": 0, "topCategories": []}
+
+    seed = await add_demo_trip(client)
+    first = (await client.get("/me/insights")).json()
+    assert (first["trips"], first["days"], first["stops"], first["destinations"]) == (1, seed["dayCount"], seed["stopCount"], 1)
+    counts = [c["places"] for c in first["topCategories"]]
+    assert 1 <= len(counts) <= 3 and counts == sorted(counts, reverse=True)
+
+    user_id = (await client.get("/me")).json()["id"]
+    async with get_sessionmaker()() as session:
+        await save_trip(session, user_id, demo_trip().model_copy(update={"id": "trip-nyc-again"}))
+    second = (await client.get("/me/insights")).json()
+    assert (second["trips"], second["stops"], second["destinations"]) == (2, 2 * seed["stopCount"], 1)
+    assert second["topCategories"] == first["topCategories"], "a place planned twice still counts once"
+
+    assert (await client.get("/me/insights", headers=auth_headers("user_other"))).json()["trips"] == 0
+    assert (await client.get("/me/insights", headers={"Authorization": "Bearer nope"})).status_code == 401
 
 
 async def test_new_user_first_requests_can_race(make_client):

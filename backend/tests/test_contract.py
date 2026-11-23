@@ -16,7 +16,7 @@ TYPES_TS = Path(__file__).resolve().parents[2] / "frontend" / "src" / "domain" /
 # Client-only fields that intentionally have no server counterpart.
 CLIENT_ONLY = {"Destination": {"places"}, "TripDraft": {"simulateFailure"}}
 MODELS = [
-    "Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripDraft", "Me", "ProfilePatch",
+    "Preferences", "Place", "Destination", "Leg", "Activity", "Day", "Trip", "TripDraft", "Me", "ProfilePatch", "Insights", "CategoryCount",
     "NearbyRequest", "NearbyPlace", "NearbyResults",
 ]
 

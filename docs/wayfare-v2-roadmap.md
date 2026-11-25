@@ -65,3 +65,5 @@ Gallery selection and location demonstrations use seeded images and simulated co
 ## Deferred beyond the course
 
 Apple/store distribution, physical-device acceptance, cloud photo synchronization, advanced AI Travel DNA, public profiles, real-time collaboration, offline cloud editing, shareable recaps, continuous background location, geofencing, and automatic location-based itinerary changes.
+
+The [collaboration bonus sprints](sprints/bonus-sprints-collaboration.md) are a separate post-course track covering trip sharing, shared editing, and AI group planning.

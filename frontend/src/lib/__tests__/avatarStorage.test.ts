@@ -1,7 +1,7 @@
 import { beforeEach, expect, jest, test } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import { loadAvatar, persistAvatar, pickAvatarPhoto } from "@/lib/avatarStorage";
+import { cameraAccess, loadAvatar, persistAvatar, pickAvatarPhoto } from "@/lib/avatarStorage";
 import { INITIALS_AVATAR, type AvatarView } from "@/domain/avatar";
 
 // In-memory stand-in for expo-file-system's File/Directory classes.
@@ -39,7 +39,12 @@ jest.mock("expo-file-system", () => {
   return { File, Directory, Paths: { document: new Directory("doc") } };
 });
 jest.mock("expo-crypto", () => ({ randomUUID: () => `uuid-${++mockUuid}` }));
-jest.mock("expo-image-picker", () => ({ launchImageLibraryAsync: jest.fn() }));
+jest.mock("expo-image-picker", () => ({
+  CameraType: { front: "front" },
+  launchImageLibraryAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  requestCameraPermissionsAsync: jest.fn(),
+}));
 const mockResize = jest.fn();
 jest.mock("expo-image-manipulator", () => ({
   SaveFormat: { JPEG: "jpeg" },
@@ -148,4 +153,26 @@ test("a large pick is shrunk to 512px on its long side", async () => {
   });
   await expect(pickAvatarPhoto()).resolves.toBe("cache/prepared.jpg");
   expect(mockResize).toHaveBeenCalledWith({ width: 512, height: null });
+});
+
+test("the camera source opens the front camera with the same square crop", async () => {
+  jest.mocked(ImagePicker.launchImageLibraryAsync).mockClear();
+  jest.mocked(ImagePicker.launchCameraAsync).mockResolvedValueOnce({
+    canceled: false, assets: [{ uri: "cache/shot.jpg", width: 4032, height: 3024 } as ImagePicker.ImagePickerAsset],
+  });
+  await expect(pickAvatarPhoto("camera")).resolves.toBe("cache/prepared.jpg");
+  expect(ImagePicker.launchCameraAsync).toHaveBeenCalledWith(expect.objectContaining({ cameraType: "front", allowsEditing: true }));
+  expect(ImagePicker.launchImageLibraryAsync).not.toHaveBeenCalled();
+  expect(mockResize).toHaveBeenCalledWith({ width: 512, height: null });
+});
+
+test("camera access says whether only Settings can turn it back on", async () => {
+  const answer = (granted: boolean, canAskAgain: boolean) => ({ granted, canAskAgain }) as ImagePicker.CameraPermissionResponse;
+  jest.mocked(ImagePicker.requestCameraPermissionsAsync)
+    .mockResolvedValueOnce(answer(true, true))
+    .mockResolvedValueOnce(answer(false, true))
+    .mockResolvedValueOnce(answer(false, false));
+  await expect(cameraAccess()).resolves.toBe("granted");
+  await expect(cameraAccess()).resolves.toBe("denied");
+  await expect(cameraAccess()).resolves.toBe("blocked");
 });

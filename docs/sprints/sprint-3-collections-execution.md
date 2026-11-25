@@ -309,3 +309,30 @@ After merging main, all 220 frontend tests and 145 backend tests passed.
 Typecheck and lint passed. The iOS simulator displayed the three tabs and
 retained both existing saved records. The Profile entry, collection list,
 detail screen and both return actions were exercised in guest mode.
+
+### November 24: final collection scope and main integration
+
+The collection PR is limited to trip favorites, independent saved places and
+explicit visited status. The planned text journal, journal eligibility rules,
+journal photo storage and associated cleanup are deferred from this PR.
+
+- Merge `main@3fe5aaf`, which includes Clerk authentication, Nearby, trip-start
+  reminders and camera avatars. Preserve the collection icons and the new camera
+  icon, and include the collection metadata defaults in the reminder test data.
+- Connect the existing SavePlaceButton to Nearby results using the returned
+  provider source and place ID. Nearby searches, ranking and map rendering retain
+  their existing behavior; the shared collection handles saved state and removal.
+- Keep the existing authentication boundary: guest data is stored on-device and
+  signed-in accounts use the Clerk session through the shared API. Account and
+  guest collections remain separate. Existing databases need the applicable
+  SQL upgrades documented in `backend/scripts/sql/README.md` before deployment.
+- Release acceptance still needs real Clerk account switching, session lifecycle,
+  live-provider checks and native interaction/restart checks. These are integration
+  verification tasks, not additional collection features.
+
+Validation on the integrated branch: 238 frontend tests in 25 suites, typecheck,
+lint, and Expo JavaScript exports for iOS and Android passed. All 145 backend
+tests passed against disposable PostgreSQL 14, including authentication and
+collection ownership/persistence checks. Nearby save and remove were tested
+with catalog and Google-result fixtures. No live Clerk account, provider request,
+or new native simulator session was exercised during this verification.

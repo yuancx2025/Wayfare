@@ -9,6 +9,7 @@ import SavedPlaceOverview from "../../../app/saved-place/[id]";
 import Explore from "../../../app/(tabs)/explore";
 import DestinationOverview from "../../../app/destination/[id]";
 import { SavePlaceButton } from "@/components/SavePlaceButton";
+import { NearbySection } from "@/components/NearbySection";
 import ActivityDetailSheet from "@/components/ActivityDetailSheet";
 import { PlaceDetailsBody } from "@/components/SavedPlaceViews";
 import { type Api } from "@/lib/api";
@@ -16,6 +17,7 @@ import { catalogSavedPlaceDetails } from "@/domain/logic/savedPlaces";
 import { sampleTrip } from "@/lib/api/local";
 import type { SavedPlace, SavedPlaceDetails } from "@/domain/types";
 import { DESTINATIONS } from "@/domain/data/places";
+import { useCurrentLocation } from "@/state/location";
 
 jest.mock("react-native/Libraries/Components/Pressable/Pressable", () => {
   const React = jest.requireActual<typeof import("react")>("react");
@@ -24,7 +26,7 @@ jest.mock("react-native/Libraries/Components/Pressable/Pressable", () => {
 jest.mock("@/auth/session", () => ({ useAuthSession: () => ({ mode: "guest", userId: null }) }));
 jest.mock("@/lib/api", () => ({
   ApiError: jest.requireActual<typeof import("@/lib/api/types")>("@/lib/api/types").ApiError,
-  api: { mode: "local", imageUrl: (src: string) => src, listSavedPlaces: jest.fn(), savePlace: jest.fn(), removeSavedPlace: jest.fn(), getSavedPlaceDetails: jest.fn(), placeDetails: jest.fn(), listDestinations: jest.fn(), resolveDestination: jest.fn() },
+  api: { mode: "local", imageUrl: (src: string) => src, listSavedPlaces: jest.fn(), savePlace: jest.fn(), removeSavedPlace: jest.fn(), getSavedPlaceDetails: jest.fn(), placeDetails: jest.fn(), listDestinations: jest.fn(), resolveDestination: jest.fn(), nearbyPlaces: jest.fn() },
   useApi: () => jest.requireMock<{ api: unknown }>("@/lib/api").api,
 }));
 jest.mock("expo-router", () => {
@@ -32,9 +34,8 @@ jest.mock("expo-router", () => {
   const router = { navigate: jest.fn(), push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn(), canGoBack: () => false };
   return { useRouter: () => router, useLocalSearchParams: () => mockParams, useFocusEffect: (effect: () => void) => React.useEffect(effect, [effect]), router };
 });
-jest.mock("@/state/location", () => ({ useCurrentLocation: () => ({ status: "idle", permission: "undetermined", position: null, locate: jest.fn() }) }));
-// Nearby owns its own native map/location tests; these exercise collection entry points.
-jest.mock("@/components/NearbySection", () => ({ NearbySection: () => null }));
+jest.mock("@/state/location", () => ({ useCurrentLocation: jest.fn() }));
+jest.mock("@/components/TripMap", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/state/store", () => ({ useStore: () => ({ showToast: mockToast, startDraft: mockStartDraft }) }));
 jest.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 jest.mock("expo-image", () => {
@@ -47,7 +48,7 @@ jest.mock("@/components/Icon", () => {
 });
 jest.mock("@/components/ui", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  return Object.fromEntries(["Button", "BottomSheet", "Spinner"].map((name) => [name, (props: { children?: React.ReactNode; footer?: React.ReactNode }) => name === "BottomSheet" ? React.createElement(name, props, props.children, props.footer) : React.createElement(name, props)]));
+  return Object.fromEntries(["Button", "BottomSheet", "Spinner", "ChipGroup", "EmptyState", "SectionHeading"].map((name) => [name, (props: { children?: React.ReactNode; footer?: React.ReactNode }) => name === "BottomSheet" ? React.createElement(name, props, props.children, props.footer) : React.createElement(name, props)]));
 });
 
 const api = jest.requireMock<{ api: Api }>("@/lib/api").api;
@@ -79,6 +80,8 @@ beforeEach(() => {
   mockApi.placeDetails.mockReset();
   mockApi.listDestinations.mockReset().mockResolvedValue([DESTINATIONS[0]]);
   mockApi.resolveDestination.mockReset().mockResolvedValue(DESTINATIONS[0]);
+  mockApi.nearbyPlaces.mockReset();
+  jest.mocked(useCurrentLocation).mockReturnValue({ status: "idle", permission: "undetermined", position: null, approximate: false, locate: jest.fn<() => Promise<void>>(), openSettings: jest.fn() });
   mockParams.id = saved.id;
 });
 afterEach(async () => { if (screen) await act(async () => screen!.unmount()); screen = undefined; client.clear(); jest.restoreAllMocks(); });
@@ -199,4 +202,19 @@ test("a destination with missing provenance remains browsable without a fabricat
   expect(text("New York City")).toBe(true);
   expect(screen!.root.findAllByType(SavePlaceButton)).toHaveLength(0);
   expect(mockApi.savePlace).not.toHaveBeenCalled();
+});
+
+test.each(["catalog", "google"] as const)("Nearby saves the %s result and updates the shared collection", async (provider) => {
+  const place = { ...DESTINATIONS[0].places[0], name: "Nearby sight" };
+  const reference = { provider, kind: "place" as const, externalId: place.id };
+  const entry = { ...reference, id: "nearby-saved", createdAt: 20 };
+  jest.mocked(useCurrentLocation).mockReturnValue({ status: "ready", permission: "granted", position: { lat: place.lat, lng: place.lng }, approximate: false, locate: jest.fn<() => Promise<void>>(), openSettings: jest.fn() });
+  mockApi.nearbyPlaces.mockResolvedValue({ source: provider, places: [{ place, distanceM: 200 }] });
+  mockApi.listSavedPlaces.mockResolvedValue([]);
+  mockApi.savePlace.mockResolvedValue(entry);
+  await mount(React.createElement(NearbySection));
+  await press("Save Nearby sight to Saved");
+  expect(mockApi.savePlace).toHaveBeenCalledWith(reference);
+  await press("Remove Nearby sight from Saved");
+  expect(mockApi.removeSavedPlace).toHaveBeenCalledWith(entry.id);
 });

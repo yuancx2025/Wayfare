@@ -9,6 +9,7 @@ import type { NearbyCategory } from "@/domain/types";
 import { useApi } from "@/lib/api";
 import { useCurrentLocation } from "@/state/location";
 import { Button, ChipGroup, EmptyState, SectionHeading, Spinner } from "@/components/ui";
+import { SavePlaceButton } from "@/components/SavePlaceButton";
 import TripMap from "@/components/TripMap";
 import { colors, font, radius, space } from "@/theme";
 
@@ -39,6 +40,7 @@ export function NearbySection() {
   });
   const problem = loc.problem;
   const places = nearby.data?.places ?? [];
+  const source = nearby.data?.source;
   const visible = showAll ? places : places.slice(0, PREVIEW_COUNT);
   const wider = NEARBY_RADIUS_STEPS.find((r) => r > radiusM);
   const locate = () => { void loc.locate(); };
@@ -128,6 +130,7 @@ export function NearbySection() {
                     <Text style={styles.detail} numberOfLines={1}>{interestLabel(n.place.category)} · {n.place.area}</Text>
                   </View>
                   <Text style={styles.distance}>{fmtDistance(n.distanceM)}</Text>
+                  {source ? <SavePlaceButton reference={{ provider: source, kind: "place", externalId: n.place.id }} name={n.place.name} /> : null}
                 </View>
               ))}
               {nearby.data.places.length > PREVIEW_COUNT ? (

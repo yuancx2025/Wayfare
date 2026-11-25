@@ -1,9 +1,9 @@
 # Saved-place integration contract
 
 Implemented on `feature/collections-and-memories`, increments 3A and 3B, October 29, 2026.
-The branch now integrates `main@7e23d1b`, including the merged authentication
-and Nearby interfaces. It has not been deployed to a shared account database.
-The November 3 integration status below supersedes earlier handoff snapshots.
+The branch integrates `main@3fe5aaf`, including Clerk authentication, Nearby,
+trip reminders and camera avatars. It has not been deployed to a shared account
+database.
 
 ## Reference and stored record
 
@@ -62,8 +62,8 @@ cascades its remote references.
 
 ## Current UI and integration examples
 
-`SavePlaceButton` is shared by Explore, destination details, activity details and
-Saved. It reads one TanStack Query collection and waits for confirmed persistence.
+`SavePlaceButton` is shared by Explore, Nearby, destination details, activity
+details and Saved. It reads one TanStack Query collection and waits for confirmed persistence.
 Matching controls disable during a write; repeated matching requests share a
 promise. Reads started before or during a write are cancelled before merging
 confirmed state. Independent writes merge into the collection. A 404 removing an
@@ -90,7 +90,7 @@ await api.savePlace({
 });
 ```
 
-The shared component can be connected by the Nearby owner:
+Nearby uses the shared component:
 
 ```tsx
 <SavePlaceButton
@@ -99,9 +99,8 @@ The shared component can be connected by the Nearby owner:
 />
 ```
 
-The Nearby screen is not connected to Save yet. Its owner must first complete
-the shared API integration; its existing implementation is preserved in this branch. Destination saving needs explicit
-catalog provenance or a resolved Google `placeId`; presence of a `placeId` alone
+Nearby preserves its existing search, ranking and map behavior. Destination saving
+needs explicit catalog provenance or a resolved Google `placeId`; presence of a `placeId` alone
 does not prove Google provenance because the local catalog adapter also sets it.
 
 ## Detail resolution
@@ -146,8 +145,11 @@ available and omits the save action.
 - The subsequently authorized startup fix removes the duplicate root tree, protects
   collection routes, migrates Nearby to `useApi()` and completes its no-backend
   adapter. Typecheck/lint and 179 frontend tests pass. iOS guest startup and
-  Explore/Saved/detail navigation have been verified; real account lifecycle
-  acceptance and the Nearby Save entry point remain open.
+  Explore/Saved/detail navigation have been verified. The Nearby Save entry point
+  now uses the same collection; automated tests cover both provider sources.
+  Real account lifecycle acceptance remains open.
 - Finish Android/native acceptance and live provider checks before release.
 
-Increment 3B adds the screens and shared action. No journal/photo work or live Google acceptance is claimed by these increments.
+The final collection scope includes trip favorites, independent saved places and
+explicit visited status. Journal text and journal photos are deferred from this
+pull request, along with their associated release checks.

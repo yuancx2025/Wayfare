@@ -2,7 +2,7 @@ from app.contracts.travel import Trip
 from app.core.routing import ApiRouter
 from app.features.profiles.dependencies import UserIdDep
 from app.features.trips.dependencies import TripDep, TripServiceDep
-from app.features.trips.schemas import DayRoute, TripSummary
+from app.features.trips.schemas import DayRoute, TripMetadataPatch, TripMetadataResult, TripSummary
 from app.integrations.services import ServicesDep
 
 router = ApiRouter(prefix="/trips", tags=["trips"])
@@ -16,6 +16,13 @@ async def list_trips(trips: TripServiceDep, user_id: UserIdDep) -> list[TripSumm
 @router.get("/{trip_id}", response_model=Trip)
 async def get_trip(trip: TripDep) -> Trip:
     return trip
+
+
+@router.patch("/{trip_id}", response_model=TripMetadataResult)
+async def update_trip_metadata(
+    trip_id: str, patch: TripMetadataPatch, trips: TripServiceDep, user_id: UserIdDep,
+) -> TripMetadataResult:
+    return await trips.update_metadata(user_id, trip_id, patch)
 
 
 @router.delete("/{trip_id}", status_code=204)

@@ -26,7 +26,7 @@ const permission = (granted: boolean, canAskAgain = true) => ({ granted, canAskA
 
 const makeTrip = (startDate: string): Trip => ({
   id: "t1", destinationId: "chicago", destination: "Chicago", country: "Illinois", image: "", startDate, endDate: startDate,
-  travelers: 1, adjusted: false, createdAt: 0, prefs: {} as Trip["prefs"],
+  travelers: 1, adjusted: false, createdAt: 0, isFavorite: false, visited: false, prefs: {} as Trip["prefs"],
   days: [{
     index: 0, date: startDate, theme: "Loop", areas: "Loop", startMin: 540, bufferMin: 15,
     activities: [{ id: "a", placeId: "a", name: "Art Institute", category: "culture", area: "Loop", lat: 0, lng: 0, startMin: 540, durationMin: 60, description: "", why: "" }],

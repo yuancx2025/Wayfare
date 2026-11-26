@@ -138,3 +138,5 @@ class Trip(ApiModel):
     adjusted: bool = False
     created_at: int
     version: int = 1
+    is_favorite: bool = False
+    visited: bool = False

@@ -1,5 +1,5 @@
-import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type ReactNode } from "react";
-import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripSummary } from "@/domain/types";
+import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, createContext, type PropsWithChildren } from "react";
+import type { Capabilities, Me, Preferences, ProfilePatch, Trip, TripDraft, TripMetadataPatch, TripMetadataResult, TripSummary } from "@/domain/types";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import { ApiError, useApi } from "@/lib/api";
 import { summarize } from "@/lib/api/local";
@@ -8,6 +8,7 @@ import { INITIALS_AVATAR, type AvatarView } from "@/domain/avatar";
 
 interface State {
   hydrated: boolean;
+  refreshing: boolean;
   loadError: string | null;
   summaries: TripSummary[];
   trips: Record<string, Trip>;
@@ -16,14 +17,18 @@ interface State {
   draftNonce: number;
   me: Me | null;
   capabilities: Capabilities;
+  tripMetadataPending: Record<string, boolean>;
 }
 
 type Action =
-  | { type: "hydrate"; summaries: TripSummary[]; defaultPrefs: Preferences; me: Me; capabilities: Capabilities }
+  | { type: "hydrate"; summaries: TripSummary[]; defaultPrefs: Preferences; me: Me; capabilities: Capabilities; preserveMetadataIds: Set<string> }
+  | { type: "refreshStarted" }
   | { type: "loadFailed"; message: string }
   | { type: "startDraft"; destination?: string; destinationId?: string }
   | { type: "updateDraft"; patch: Partial<TripDraft> }
-  | { type: "putTrip"; trip: Trip; isNew?: boolean }
+  | { type: "putTrip"; trip: Trip; isNew?: boolean; preserveMetadata?: boolean }
+  | { type: "tripMetadata"; metadata: TripMetadataResult }
+  | { type: "tripMetadataPending"; id: string; pending: boolean }
   | { type: "deleteTrip"; id: string }
   | { type: "saveDefaultPrefs"; prefs: Preferences }
   | { type: "setMe"; me: Me };
@@ -42,26 +47,57 @@ const emptyDraft = (prefs: Preferences, destination = "", destinationId?: string
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case "hydrate":
+    case "refreshStarted":
+      return { ...state, refreshing: true };
+    case "hydrate": {
+      const summaries = action.summaries.map((summary) => {
+        const current = state.summaries.find((trip) => trip.id === summary.id) ?? state.trips[summary.id];
+        return current && action.preserveMetadataIds.has(summary.id)
+          ? { ...summary, isFavorite: current.isFavorite, visited: current.visited } : summary;
+      });
+      const trips = { ...state.trips };
+      for (const summary of summaries) {
+        if (trips[summary.id]) trips[summary.id] = { ...trips[summary.id], isFavorite: summary.isFavorite, visited: summary.visited };
+      }
       return {
-        ...state, hydrated: true, loadError: null, summaries: action.summaries, defaultPrefs: action.defaultPrefs,
+        ...state, hydrated: true, refreshing: false, loadError: null, summaries, trips, defaultPrefs: action.defaultPrefs,
         draft: emptyDraft(action.defaultPrefs), me: action.me, capabilities: action.capabilities,
       };
+    }
     case "loadFailed":
-      return { ...state, hydrated: true, loadError: action.message };
+      return { ...state, hydrated: true, refreshing: false, loadError: action.message };
     case "startDraft":
       return { ...state, draftNonce: state.draftNonce + 1, draft: emptyDraft(state.defaultPrefs, action.destination, action.destinationId) };
     case "updateDraft":
       return { ...state, draft: { ...state.draft, ...action.patch } };
     case "putTrip": {
-      const summary = summarize(action.trip);
+      const current = state.trips[action.trip.id];
+      const base = current && (current.version ?? 1) > (action.trip.version ?? 1) ? current : action.trip;
+      const metadata = state.summaries.find((trip) => trip.id === base.id) ?? current;
+      const trip = action.preserveMetadata && metadata
+        ? { ...base, isFavorite: metadata.isFavorite, visited: metadata.visited } : base;
+      const summary = summarize(trip);
       const summaries = state.summaries.some((s) => s.id === summary.id)
         ? state.summaries.map((s) => (s.id === summary.id ? summary : s))
         : [summary, ...state.summaries];
       return {
-        ...state, summaries, trips: { ...state.trips, [action.trip.id]: action.trip },
+        ...state, summaries, trips: { ...state.trips, [trip.id]: trip },
         draft: action.isNew ? emptyDraft(state.defaultPrefs) : state.draft,
       };
+    }
+    case "tripMetadata": {
+      const { id, isFavorite, visited } = action.metadata;
+      return {
+        ...state,
+        summaries: state.summaries.map((trip) => trip.id === id ? { ...trip, isFavorite, visited } : trip),
+        trips: state.trips[id] ? { ...state.trips, [id]: { ...state.trips[id], isFavorite, visited } } : state.trips,
+      };
+    }
+    case "tripMetadataPending": {
+      const tripMetadataPending = { ...state.tripMetadataPending };
+      if (action.pending) tripMetadataPending[action.id] = true;
+      else delete tripMetadataPending[action.id];
+      return { ...state, tripMetadataPending };
     }
     case "deleteTrip": {
       const { [action.id]: _gone, ...trips } = state.trips;
@@ -82,6 +118,8 @@ interface Store extends State {
   deleteTrip: (id: string) => Promise<void>;
   saveDefaultPrefs: (prefs: Preferences) => Promise<void>;
   saveProfile: (patch: ProfilePatch) => Promise<void>;
+  setTripFavorite: (id: string, isFavorite: boolean) => Promise<void>;
+  setTripVisited: (id: string, visited: boolean) => Promise<void>;
   /** Offline only; undefined when the backend is configured. */
   loadSample?: () => Promise<void>;
   /** Offline only: past, ongoing, and today-boundary trips for history. */
@@ -101,10 +139,11 @@ const StoreContext = createContext<Store | null>(null);
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong");
 
 /** One identity's trips and profile. app/_layout.tsx remounts it when the identity changes. */
-export function StoreProvider({ scope, children }: { scope: AvatarScope; children: ReactNode }) {
+export function StoreProvider({ scope, children }: PropsWithChildren<{ scope: AvatarScope }>) {
   const api = useApi();
   const [state, dispatchNow] = useReducer(reducer, {
     hydrated: false,
+    refreshing: false,
     loadError: null,
     summaries: [],
     trips: {},
@@ -113,10 +152,15 @@ export function StoreProvider({ scope, children }: { scope: AvatarScope; childre
     draftNonce: 0,
     me: null,
     capabilities: NO_CAPABILITIES,
+    tripMetadataPending: {},
   });
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef(new Map<string, Promise<Trip>>());
+  const pendingMetadata = useRef(new Map<string, { patch: TripMetadataPatch; promise: Promise<void> }>());
+  const metadataEpoch = useRef(new Map<string, number>());
+  const removedTrips = useRef(new Set<string>());
+  const refreshEpoch = useRef(0);
 
   // A response that arrives after sign-out or an account switch belongs to the previous identity: drop it.
   const alive = useRef(true);
@@ -129,13 +173,21 @@ export function StoreProvider({ scope, children }: { scope: AvatarScope; childre
   }, []);
 
   const refresh = useCallback(async () => {
+    const mine = ++refreshEpoch.current;
+    const epochs = new Map(metadataEpoch.current);
+    const preserveMetadataIds = new Set(pendingMetadata.current.keys());
+    dispatch({ type: "refreshStarted" });
     try {
       const [summaries, defaultPrefs, me, capabilities] = await Promise.all([
         api.listTrips(), api.getPreferences(), api.getMe(), api.capabilities().catch(() => NO_CAPABILITIES),
       ]);
-      dispatch({ type: "hydrate", summaries, defaultPrefs, me, capabilities });
+      if (mine !== refreshEpoch.current) return;
+      for (const [id, epoch] of metadataEpoch.current) {
+        if (epochs.get(id) !== epoch) preserveMetadataIds.add(id);
+      }
+      dispatch({ type: "hydrate", summaries: summaries.filter((trip) => !removedTrips.current.has(trip.id)), defaultPrefs, me, capabilities, preserveMetadataIds });
     } catch (e) {
-      dispatch({ type: "loadFailed", message: errorMessage(e) });
+      if (mine === refreshEpoch.current) dispatch({ type: "loadFailed", message: errorMessage(e) });
     }
   }, [api, dispatch]);
 
@@ -178,12 +230,46 @@ export function StoreProvider({ scope, children }: { scope: AvatarScope; childre
   const loadTrip = useCallback((id: string) => {
     const inflight = pending.current.get(id);
     if (inflight) return inflight;
+    const epoch = metadataEpoch.current.get(id);
+    const wasPending = pendingMetadata.current.has(id);
     const p = api.getTrip(id)
-      .then((trip) => { dispatch({ type: "putTrip", trip }); return trip; })
+      .then((trip) => {
+        if (removedTrips.current.has(id)) throw new ApiError(404, "Trip not found");
+        dispatch({ type: "putTrip", trip, preserveMetadata: wasPending || epoch !== metadataEpoch.current.get(id) });
+        return trip;
+      })
       .finally(() => pending.current.delete(id));
     pending.current.set(id, p);
     return p;
   }, [api, dispatch]);
+
+  // Serialize every metadata intent per trip, including different fields. The map
+  // holds the tail so a later intent cannot jump ahead of an already queued write.
+  const writeTripMetadata = useCallback((id: string, patch: TripMetadataPatch): Promise<void> => {
+    if (!alive.current) return Promise.reject(new Error("Account scope ended"));
+    if (removedTrips.current.has(id)) return Promise.reject(new ApiError(404, "Trip not found"));
+    const previous = pendingMetadata.current.get(id);
+    if (previous && previous.patch.isFavorite === patch.isFavorite && previous.patch.visited === patch.visited) return previous.promise;
+    metadataEpoch.current.set(id, (metadataEpoch.current.get(id) ?? 0) + 1);
+    dispatch({ type: "tripMetadataPending", id, pending: true });
+    const run = async () => {
+      if (previous) await previous.promise.catch(() => undefined);
+      if (!alive.current) throw new Error("Account scope ended");
+      if (removedTrips.current.has(id)) throw new ApiError(404, "Trip not found");
+      const metadata = await api.updateTripMetadata(id, patch);
+      if (!removedTrips.current.has(id)) dispatch({ type: "tripMetadata", metadata });
+    };
+    const promise = run().finally(() => {
+      if (pendingMetadata.current.get(id)?.promise === promise) {
+        pendingMetadata.current.delete(id);
+        dispatch({ type: "tripMetadataPending", id, pending: false });
+      }
+    });
+    pendingMetadata.current.set(id, { patch, promise });
+    return promise;
+  }, [api, dispatch]);
+  const setTripFavorite = useCallback((id: string, isFavorite: boolean) => writeTripMetadata(id, { isFavorite }), [writeTripMetadata]);
+  const setTripVisited = useCallback((id: string, visited: boolean) => writeTripMetadata(id, { visited }), [writeTripMetadata]);
 
   const value = useMemo<Store>(() => ({
     ...state,
@@ -191,13 +277,21 @@ export function StoreProvider({ scope, children }: { scope: AvatarScope; childre
     showToast,
     refresh,
     loadTrip,
+    setTripFavorite,
+    setTripVisited,
     avatar,
     saveAvatar,
     startDraft: (destination, destinationId) => dispatch({ type: "startDraft", destination, destinationId }),
     updateDraft: (patch) => dispatch({ type: "updateDraft", patch }),
-    putTrip: (trip, opts) => { dispatch({ type: "putTrip", trip, isNew: opts?.isNew }); refreshMe(); },
+    putTrip: (trip, opts) => {
+      if (opts?.isNew) removedTrips.current.delete(trip.id);
+      if (removedTrips.current.has(trip.id)) return;
+      dispatch({ type: "putTrip", trip, isNew: opts?.isNew, preserveMetadata: !opts?.isNew });
+      refreshMe();
+    },
     deleteTrip: async (id) => {
       await api.deleteTrip(id);
+      removedTrips.current.add(id);
       dispatch({ type: "deleteTrip", id });
       refreshMe();
     },
@@ -213,6 +307,7 @@ export function StoreProvider({ scope, children }: { scope: AvatarScope; childre
     loadSample: api.loadSample
       ? async () => {
         const trip = await api.loadSample!();
+        removedTrips.current.delete(trip.id);
         dispatch({ type: "putTrip", trip });
         refreshMe();
       }
@@ -220,11 +315,14 @@ export function StoreProvider({ scope, children }: { scope: AvatarScope; childre
     loadHistoryFixtures: api.loadHistoryFixtures
       ? async () => {
         const trips = await api.loadHistoryFixtures!();
-        for (const trip of trips) dispatch({ type: "putTrip", trip });
+        for (const trip of trips) {
+          removedTrips.current.delete(trip.id);
+          dispatch({ type: "putTrip", trip });
+        }
         refreshMe();
       }
       : undefined,
-  }), [api, dispatch, state, toast, showToast, refresh, loadTrip, refreshMe, avatar, saveAvatar]);
+  }), [api, dispatch, state, toast, showToast, refresh, loadTrip, refreshMe, setTripFavorite, setTripVisited, avatar, saveAvatar]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

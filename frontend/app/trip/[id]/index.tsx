@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,7 +13,7 @@ import { useToday } from "@/lib/useToday";
 import { BottomSheet, Button, SectionHeading } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import TripMap from "@/components/TripMap";
-import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
+import { FavoriteButton, PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
 import { TripReminder } from "@/components/TripReminder";
 import { cancelTripReminder } from "@/lib/tripReminders";
 import { colors, font, radius, space, touch } from "@/theme";
@@ -62,10 +62,16 @@ export default function Overview() {
           <LinearGradient colors={["rgba(0,0,0,0.05)", "rgba(6,24,19,0.84)"]} style={StyleSheet.absoluteFill} />
           <View style={[styles.heroBar, { top: insets.top + space[3] }]}>
             <Pressable style={styles.glass} onPress={goBack} accessibilityLabel="Back to trips"><Icon name="back" color={colors.white} /></Pressable>
-            <Pressable style={styles.glass} onPress={() => setMenu(true)} accessibilityLabel="Trip options"><Icon name="more" color={colors.white} /></Pressable>
+            <View style={styles.heroActions}>
+              <FavoriteButton trip={trip} />
+              <Pressable style={styles.glass} onPress={() => setMenu(true)} accessibilityLabel="Trip options"><Icon name="more" color={colors.white} /></Pressable>
+            </View>
           </View>
           <View style={styles.heroCopy}>
-            <Text style={styles.status}>{tripStatus(trip, today)}</Text>
+            <View style={styles.statusRow}>
+              <Text style={styles.status}>{tripStatus(trip, today)}</Text>
+              {trip.visited ? <Text style={[styles.status, styles.visitedStatus]}>Visited</Text> : null}
+            </View>
             <Text style={styles.heroTitle}>{trip.destination}</Text>
             <Text style={styles.heroDates}>{fmtRange(trip.startDate, trip.endDate)}</Text>
           </View>
@@ -115,6 +121,7 @@ export default function Overview() {
         <Button trailing="arrow" onPress={() => openDay(0)}>Open Daily Itinerary</Button>
       </View>
       <BottomSheet open={menu} onClose={() => setMenu(false)} title="Trip options">
+        <TripVisitAction trip={trip} onSaved={() => setMenu(false)} />
         <Pressable style={styles.menuRow} onPress={() => { setMenu(false); session.bind(id, 0); router.push(`/trip/${id}/map`); }}>
           <Icon name="map" color={colors.ink} /><Text style={styles.menuText}>View map</Text>
         </Pressable>
@@ -124,6 +131,43 @@ export default function Overview() {
       </BottomSheet>
     </View>
   );
+}
+
+/** Explicit confirmation only. Travel dates never change this status. */
+function TripVisitAction({ trip, onSaved }: {
+  trip: { id: string; destination: string; visited: boolean };
+  onSaved: () => void;
+}) {
+  const { tripMetadataPending, setTripVisited, showToast } = useStore();
+  const active = useRef(false);
+  const busy = Boolean(tripMetadataPending[trip.id]);
+  const save = async () => {
+    if (busy || active.current) return;
+    active.current = true;
+    try {
+      await setTripVisited(trip.id, !trip.visited);
+      showToast(trip.visited ? "Removed visited status" : "Marked as visited");
+      onSaved();
+    } catch {
+      showToast("Couldn't save visited status. Try again.");
+    } finally {
+      active.current = false;
+    }
+  };
+  return <View>
+    <Pressable
+      onPress={() => { void save(); }}
+      disabled={busy}
+      accessibilityRole="button"
+      accessibilityLabel={trip.visited ? `Remove visited status for ${trip.destination}` : `Mark ${trip.destination} as visited`}
+      accessibilityState={{ selected: trip.visited, disabled: busy, busy }}
+      style={({ pressed }) => [styles.menuRow, pressed && !busy && styles.menuPressed]}
+    >
+      {busy ? <ActivityIndicator size="small" color={colors.forest} /> : <Icon name="check" color={trip.visited ? colors.forest : colors.ink} />}
+      <Text style={styles.menuText}>{busy ? "Saving trip changes…" : trip.visited ? "Remove visited status" : "Mark as visited"}</Text>
+    </Pressable>
+    <Text style={styles.visitNote}>Only you mark a trip as visited. Travel dates do not change this status.</Text>
+  </View>;
 }
 
 function Stat({ n, label }: { n: string; label: string }) {
@@ -139,8 +183,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   hero: { justifyContent: "flex-end" },
   heroBar: { position: "absolute", left: space[4], right: space[4], flexDirection: "row", justifyContent: "space-between" },
+  heroActions: { flexDirection: "row", alignItems: "center", gap: space[2] },
   glass: { width: touch, height: touch, borderRadius: touch / 2, backgroundColor: "rgba(15,30,25,0.38)", alignItems: "center", justifyContent: "center" },
   heroCopy: { padding: space[5], paddingBottom: 44 },
+  statusRow: { flexDirection: "row", flexWrap: "wrap", gap: space[2] },
+  visitedStatus: { backgroundColor: colors.mint, color: colors.forest },
   status: { alignSelf: "flex-start", backgroundColor: "rgba(255,254,250,0.92)", color: colors.ink, borderRadius: 999, overflow: "hidden", paddingVertical: 7, paddingHorizontal: 11, fontFamily: font.bodyBold, fontSize: 12 },
   heroTitle: { marginTop: 10, color: colors.white, fontFamily: font.display, fontSize: 36 },
   heroDates: { marginTop: 6, color: "rgba(255,255,255,0.9)", fontFamily: font.body, fontSize: 15 },
@@ -161,4 +208,6 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", left: 0, right: 0, bottom: 0, padding: space[4], borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: "rgba(255,254,250,0.96)" },
   menuRow: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: space[3], borderBottomWidth: 1, borderBottomColor: colors.line },
   menuText: { fontFamily: font.bodySemi, fontSize: 16, color: colors.ink },
+  visitNote: { fontFamily: font.body, fontSize: 12, lineHeight: 18, color: colors.muted, paddingVertical: space[3] },
+  menuPressed: { opacity: 0.7 },
 });

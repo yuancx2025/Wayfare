@@ -165,7 +165,7 @@ export function buildTrip(id: string, dest: Destination, draft: TripDraft): Trip
   return {
     id, destinationId: dest.id, destination: dest.name, country: dest.country, image: dest.image,
     startDate: draft.startDate, endDate: draft.endDate, travelers: draft.travelers, prefs, days,
-    adjusted: false, createdAt: Date.now(),
+    adjusted: false, createdAt: Date.now(), isFavorite: false, visited: false,
   };
 }
 

@@ -536,7 +536,9 @@
     }
    ],
    "adjusted": false,
-   "createdAt": 0
+   "createdAt": 0,
+   "isFavorite": false,
+   "visited": false
   },
   "adjustments": [
    {
@@ -3096,7 +3098,9 @@
     }
    ],
    "adjusted": false,
-   "createdAt": 0
+   "createdAt": 0,
+   "isFavorite": false,
+   "visited": false
   },
   "adjustments": [
    {
@@ -4731,7 +4735,9 @@
     }
    ],
    "adjusted": false,
-   "createdAt": 0
+   "createdAt": 0,
+   "isFavorite": false,
+   "visited": false
   },
   "adjustments": [
    {
@@ -6198,7 +6204,9 @@
     }
    ],
    "adjusted": false,
-   "createdAt": 0
+   "createdAt": 0,
+   "isFavorite": false,
+   "visited": false
   },
   "adjustments": [
    {

@@ -11,7 +11,7 @@ const day = (index: number, date: string, activities: Activity[]): Day => ({
 });
 const trip: Trip = {
   id: "t1", destinationId: "nyc", destination: "New York City", country: "New York", image: "",
-  startDate: "2026-11-10", endDate: "2026-11-11", travelers: 2, adjusted: false, createdAt: 0,
+  startDate: "2026-11-10", endDate: "2026-11-11", travelers: 2, adjusted: false, createdAt: 0, isFavorite: false, visited: false,
   prefs: {} as Trip["prefs"],
   days: [day(0, "2026-11-10", [stop("a", 9 * 60), stop("b", 13 * 60)]), day(1, "2026-11-11", [stop("c", 10 * 60)])],
 };

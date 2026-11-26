@@ -1,21 +1,34 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 import { create, type ReactTestRenderer } from "react-test-renderer";
+import { Text } from "react-native";
 import { router } from "expo-router";
+import ProfileOverview from "../../../app/(tabs)/profile/index";
 import EditProfile from "../../../app/(tabs)/profile/edit";
 import ProfilePreferences from "../../../app/(tabs)/profile/preferences";
 import { DEFAULT_PREFS } from "@/domain/logic/labels";
 import type { Preferences, ProfilePatch } from "@/domain/types";
 import { useStore } from "@/state/store";
+import { sampleTrip, summarize } from "@/lib/api/local";
 import { goBackToProfile } from "@/lib/back";
 
-jest.mock("expo-router", () => ({
-  router: { canGoBack: jest.fn(), back: jest.fn(), replace: jest.fn() },
-}));
+jest.mock("expo-router", () => {
+  const router = { canGoBack: jest.fn(), back: jest.fn(), replace: jest.fn(), push: jest.fn() };
+  return { router, useRouter: () => router };
+});
 jest.mock("@/state/store", () => ({
   useStore: () => mockStore,
   errorMessage: (error: unknown) => error instanceof Error ? error.message : "Something went wrong",
 }));
+jest.mock("@/lib/useToday", () => ({ useToday: () => "2026-11-11" }));
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
+jest.mock("@/components/auth/AccountCard", () => ({ AccountCard: () => null }));
+jest.mock("react-native/Libraries/Components/Pressable/Pressable", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  return { default: (props: object) => React.createElement("Pressable", props) };
+});
 jest.mock("@/lib/api", () => jest.requireActual("@/lib/api/types"));
 jest.mock("@/components/Icon", () => ({ Icon: () => null }));
 jest.mock("@/components/PreferencesForm", () => {
@@ -42,7 +55,7 @@ jest.mock("@/components/ui", () => {
 });
 
 let mockStore: Pick<ReturnType<typeof useStore>,
-  "hydrated" | "loadError" | "defaultPrefs" | "refresh" | "saveDefaultPrefs" | "saveProfile" | "showToast" | "me" | "avatar"
+  "hydrated" | "loadError" | "defaultPrefs" | "refresh" | "saveDefaultPrefs" | "saveProfile" | "showToast" | "me" | "avatar" | "summaries"
 >;
 let screen: ReactTestRenderer;
 const saveProfile = jest.fn<(patch: ProfilePatch) => Promise<void>>();
@@ -53,7 +66,7 @@ const packed: Preferences = { ...DEFAULT_PREFS, pace: "packed" };
 const hosts = (name: string) => screen.root.findAll((node) => node.type === name);
 const button = (label: string) => hosts("Button").find((node) => node.props.children === label)!;
 const preferences = () => hosts("PreferencesForm")[0];
-const mount = async (component: typeof ProfilePreferences | typeof EditProfile) => {
+const mount = async (component: typeof ProfilePreferences | typeof EditProfile | typeof ProfileOverview) => {
   await act(async () => { screen = create(React.createElement(component)); });
 };
 const rerenderPreferences = async () => {
@@ -66,7 +79,7 @@ beforeEach(() => {
   saveDefaultPrefs.mockReset().mockResolvedValue(undefined);
   jest.mocked(router.canGoBack).mockReturnValue(false);
   mockStore = {
-    hydrated: true, loadError: null, defaultPrefs: DEFAULT_PREFS,
+    hydrated: true, loadError: null, defaultPrefs: DEFAULT_PREFS, summaries: [],
     refresh: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
     saveDefaultPrefs, saveProfile, showToast: jest.fn(), avatar: { kind: "initials" },
     me: {
@@ -189,4 +202,26 @@ test.each([true, false])("profile back navigation handles existing history: %s",
   expect(router.back).toHaveBeenCalledTimes(hasHistory ? 1 : 0);
   if (hasHistory) expect(router.replace).not.toHaveBeenCalled();
   else expect(router.replace).toHaveBeenCalledWith("/profile");
+});
+
+test("Profile opens both collection routes and shows Favorite trips without a count", async () => {
+  mockStore.summaries = [{
+    ...summarize(sampleTrip()),
+    startDate: "2026-11-12",
+    endDate: "2026-11-16",
+    isFavorite: true,
+  }];
+  await mount(ProfileOverview);
+  const rows = hosts("Pressable");
+  const favorite = rows.findIndex((row) => row.props.accessibilityLabel === "Favorite trips");
+  const saved = rows.findIndex((row) => row.props.accessibilityLabel === "Saved places");
+  expect(favorite).toBeGreaterThanOrEqual(0);
+  expect(saved).toBe(favorite + 1);
+  expect(rows[favorite].findAllByType(Text).map((text) => text.props.children)).toEqual([
+    "Favorite trips", "The plans you want to keep close",
+  ]);
+  await act(async () => rows[favorite].props.onPress());
+  expect(router.push).toHaveBeenLastCalledWith("/profile/favorites");
+  await act(async () => rows[saved].props.onPress());
+  expect(router.push).toHaveBeenLastCalledWith("/profile/saved");
 });

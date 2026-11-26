@@ -62,6 +62,8 @@ export default function ProfileOverview() {
           <LinkRow icon="edit" title="Edit profile" subtitle="Name and home location" onPress={() => router.push("/profile/edit")} />
           <LinkRow icon="sliders" title="Travel preferences" subtitle="Defaults for your next trip" onPress={() => router.push("/profile/preferences")} />
           <LinkRow icon="calendar" title="Trip history" subtitle="Ongoing, upcoming, and past" onPress={() => router.push("/profile/history")} />
+          <LinkRow icon="heart-outline" title="Favorite trips" subtitle="The plans you want to keep close" onPress={() => router.push("/profile/favorites")} />
+          <LinkRow icon="bookmark" title="Saved places" subtitle="Destinations and places you saved" onPress={() => router.push("/profile/saved")} />
         </View>
         {past.length > 0 ? (
           <View style={styles.recent}>
@@ -99,7 +101,13 @@ function Stat({ n, label }: { n: number; label: string }) {
 
 function LinkRow({ icon, title, subtitle, onPress }: { icon: IconName; title: string; subtitle: string; onPress: () => void }) {
   return (
-    <Pressable style={({ pressed }) => [styles.link, pressed && styles.pressed]} onPress={onPress} accessibilityRole="button">
+    <Pressable
+      style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={subtitle}
+    >
       <View style={styles.linkIcon}><Icon name={icon} size={18} color={colors.forest} /></View>
       <View style={{ flex: 1 }}>
         <Text style={styles.linkTitle}>{title}</Text>

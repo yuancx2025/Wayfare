@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import type { Activity, Day, Leg, Preferences, TripSummary } from "@/domain/types";
 import { fmtDayNum, fmtDuration, fmtRange, fmtTime, fmtWeekday, plural } from "@/domain/lib/format";
@@ -7,12 +7,45 @@ import { statusLabel } from "@/domain/logic/tripHistory";
 import { CATEGORY_LABEL, budgetLabel, foodLabel, interestLabel, paceLabel, transportLabel } from "@/domain/logic/labels";
 import { Icon, type IconName } from "./Icon";
 import { Button, EmptyState, Spinner } from "./ui";
-import { FavoriteButton } from "./FavoriteButton";
 import { useApi } from "@/lib/api";
+import { useStore } from "@/state/store";
 import { colors, font, radius, space } from "@/theme";
 
 export function tripStatus(trip: { startDate: string; endDate: string }, today: string) {
   return statusLabel(trip, today);
+}
+
+/** Shared card/detail action. Only confirmed persistence changes the heart. */
+export function FavoriteButton({ trip }: { trip: { id: string; destination: string; isFavorite: boolean } }) {
+  const { tripMetadataPending, setTripFavorite, showToast } = useStore();
+  const active = useRef(false);
+  const busy = Boolean(tripMetadataPending[trip.id]);
+  const save = async () => {
+    if (busy || active.current) return;
+    active.current = true;
+    const next = !trip.isFavorite;
+    try {
+      await setTripFavorite(trip.id, next);
+      showToast(next ? "Added to Favorite trips" : "Removed from Favorite trips");
+    } catch {
+      showToast("Couldn't save favorite. Try again.");
+    } finally {
+      active.current = false;
+    }
+  };
+  return (
+    <Pressable
+      onPress={() => { void save(); }}
+      disabled={busy}
+      accessibilityRole="button"
+      accessibilityLabel={busy ? `Saving ${trip.destination} trip changes` : `${trip.isFavorite ? "Remove" : "Add"} ${trip.destination} ${trip.isFavorite ? "from" : "to"} favorites`}
+      accessibilityHint="Find favorite trips in Profile"
+      accessibilityState={{ selected: trip.isFavorite, disabled: busy, busy }}
+      style={({ pressed }) => [styles.favoriteButton, trip.isFavorite && styles.favoriteSaved, pressed && !busy && styles.favoritePressed]}
+    >
+      {busy ? <ActivityIndicator size="small" color={colors.forest} /> : <Icon name={trip.isFavorite ? "heart" : "heart-outline"} color={colors.forest} size={24} />}
+    </Pressable>
+  );
 }
 
 export function TripCard({ trip, today, onPress }: { trip: TripSummary; today: string; onPress: () => void }) {
@@ -187,6 +220,9 @@ const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, overflow: "hidden", backgroundColor: colors.white },
   cardImage: { height: 174, width: "100%", backgroundColor: colors.cream },
   favoriteAction: { position: "absolute", top: 12, right: 14 },
+  favoriteButton: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" },
+  favoriteSaved: { backgroundColor: colors.mint },
+  favoritePressed: { opacity: 0.7 },
   badges: { position: "absolute", top: 14, left: 14, right: 66, flexDirection: "row" },
   badgeLight: { backgroundColor: "rgba(255,254,250,0.92)", color: colors.ink, borderRadius: 999, overflow: "hidden", paddingVertical: 7, paddingHorizontal: 11, fontFamily: font.bodyBold, fontSize: 12 },
   cardCopy: { padding: 18, gap: 8, minHeight: 132 },

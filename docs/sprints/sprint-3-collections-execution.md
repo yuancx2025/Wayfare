@@ -145,7 +145,7 @@ The retired authentication branch was removed locally and remotely, with committ
 - The four icon-and-label tabs are Trips, Explore, Saved and Profile. Saved is a truthful coming-soon shell; place saving is still increment 3.
 - Store merges metadata without replacing itinerary data. Metadata epochs protect writes from delayed list/detail reads; itinerary versions protect newer cached plans. Repeated matching writes coalesce, opposing writes serialize and late responses do not resurrect deleted trips.
 - The remote PATCH applies its owner predicate in the SQL UPDATE, changes only supplied booleans and the update timestamp, and returns narrow metadata. It preserves itinerary versions and valid adjustment proposals.
-- Models define the new columns for fresh databases. `backend/scripts/sql/001_trip_collection_metadata.sql` is an explicit, one-time legacy upgrade; review the target schema with the account database owner before applying it. Startup never runs it automatically. The upgrade was exercised only in a disposable test database.
+- Models define the new columns for fresh databases. Additive legacy schema changes have been exercised only in disposable PostgreSQL; review the target schema with the account database owner before applying them. Startup never runs schema upgrades automatically.
 - October 29 validation: frontend typecheck/lint and all 96 tests in 9 Jest suites passed with `--runInBand --watchman=false`; iOS and Android JavaScript exports passed. Backend regression: all 96 tests passed against isolated PostgreSQL 14. Tests include strict payloads, owner filtering, concurrent itinerary/metadata writes, independent partial metadata updates, transaction rollback and legacy upgrade preservation.
 - Backend tests used new loopback-only development/test databases, separate from any shared database. The TS parity fixture was regenerated with the added default flags; scheduler output still matches.
 
@@ -202,7 +202,7 @@ Next session: finish design import/review and outstanding Android/native checks,
   and mutations by guest or Clerk account. Preserve metadata epochs and the shared
   Store's existing unmount guard. No guest-to-account data migration is implied.
 - Adapt collection backend fixtures to signed JWTs and explicit demo-trip creation.
-  Verify SQL upgrades 001/002 against the authenticated model in disposable
+  Verify additive collection schema changes against the authenticated model in disposable
   PostgreSQL. No development or shared database is migrated.
 - Leave upstream-owned implementation issues unchanged: root layout provider and
   navigation integration, Nearby's retired API singleton import, and its missing
@@ -302,8 +302,7 @@ reusing the existing identity/API boundaries. Device-local photos remain increme
 The local Figma design and app place Saved places directly below Favorite trips
 in Profile. Both remove the favorite count from the Profile row. The bottom bar
 uses Trips, Explore and Profile. The Saved places list uses the Profile stack and
-its detail screens return to that list. Existing
-`/saved` links redirect to `/profile/saved`.
+its detail screens return to that list at `/profile/saved`.
 
 After merging main, all 220 frontend tests and 145 backend tests passed.
 Typecheck and lint passed. The iOS simulator displayed the three tabs and
@@ -324,8 +323,9 @@ journal photo storage and associated cleanup are deferred from this PR.
   their existing behavior; the shared collection handles saved state and removal.
 - Keep the existing authentication boundary: guest data is stored on-device and
   signed-in accounts use the Clerk session through the shared API. Account and
-  guest collections remain separate. Existing databases need the applicable
-  SQL upgrades documented in `backend/scripts/sql/README.md` before deployment.
+  guest collections remain separate. Existing account databases need reviewed
+  additive schema changes for `TripRow` and `SavedPlaceRow` through Neon MCP
+  before deployment. Fresh demo databases use the existing bootstrap.
 - Release acceptance still needs real Clerk account switching, session lifecycle,
   live-provider checks and native interaction/restart checks. These are integration
   verification tasks, not additional collection features.
@@ -336,3 +336,16 @@ tests passed against disposable PostgreSQL 14, including authentication and
 collection ownership/persistence checks. Nearby save and remove were tested
 with catalog and Google-result fixtures. No live Clerk account, provider request,
 or new native simulator session was exercised during this verification.
+
+### November 25: review consolidation
+
+- Place the visited action in the trip overview and the favorite button in the
+  shared trip components. Keep metadata normalization beside its schema.
+- Remove the temporary `/saved` redirect; all app navigation uses `/profile/saved`.
+- Remove standalone schema scripts. Test additive schema changes with the current
+  SQLAlchemy model definitions in disposable PostgreSQL. Existing account schema
+  changes are a Neon MCP deployment handoff; no hosted database is modified.
+
+Review validation: all 238 frontend tests and 145 backend tests passed, together
+with typecheck, lint, and iOS/Android JavaScript exports. The visited tests now
+exercise the real trip overview and options sheet.

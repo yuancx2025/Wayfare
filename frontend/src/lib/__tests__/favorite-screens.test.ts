@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import { FlatList, Text } from "react-native";
 import FavoriteTrips from "../../../app/(tabs)/profile/favorites";
-import { FavoriteButton } from "@/components/FavoriteButton";
+import { FavoriteButton } from "@/components/trip";
 import { useStore } from "@/state/store";
 import { sampleTrip, summarize } from "@/lib/api/local";
 

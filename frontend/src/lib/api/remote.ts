@@ -4,8 +4,7 @@ import { ApiError } from "./types";
 import { readEvents } from "./sse";
 import type { Trip, TripDraft, TripSummary } from "@/domain/types";
 import { GenerationError } from "@/domain/logic/generate";
-import { withTripMetadata } from "@/domain/logic/tripMetadata";
-import { savedPlaceDetailsSchema, savedPlaceListSchema, savedPlaceReferenceSchema, savedPlaceSchema, tripMetadataPatchSchema, tripMetadataResultSchema } from "@/domain/schemas";
+import { savedPlaceDetailsSchema, savedPlaceListSchema, savedPlaceReferenceSchema, savedPlaceSchema, tripMetadataPatchSchema, tripMetadataResultSchema, withTripMetadata } from "@/domain/schemas";
 import { savedPlaceKey } from "@/domain/logic/savedPlaces";
 
 /** Clerk's `useAuth().getToken`: the current session JWT, or null when signed out. */

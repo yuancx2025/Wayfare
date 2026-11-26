@@ -1,15 +1,16 @@
 """Metadata is an owned, independent write over real PostgreSQL, not a full-trip replacement."""
 
 import asyncio
-from pathlib import Path
 
 import pytest
 
 from tests.conftest import add_demo_trip, auth_headers
 from sqlalchemy import text
+from sqlalchemy.schema import CreateColumn
 
 from app.db.session import get_engine
 from app.features.trips import repository
+from app.features.trips.models import TripRow
 
 
 async def seed_trip(client):
@@ -147,8 +148,9 @@ async def test_failed_metadata_transaction_rolls_back(make_client, monkeypatch):
 async def test_legacy_upgrade_preserves_existing_rows_and_versions(make_client):
     client = await make_client()
     before = await seed_trip(client)
-    script = Path(__file__).parents[1] / "scripts/sql/001_trip_collection_metadata.sql"
     async with get_engine().begin() as connection:
         await connection.execute(text("ALTER TABLE trips DROP COLUMN is_favorite, DROP COLUMN visited"))
-        await connection.execute(text(script.read_text()))
+        for name in ("is_favorite", "visited"):
+            column = CreateColumn(TripRow.__table__.c[name]).compile(dialect=connection.dialect)
+            await connection.execute(text(f"ALTER TABLE trips ADD COLUMN {column}"))
     assert (await client.get(f"/trips/{before['id']}")).json() == before

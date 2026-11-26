@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,14 +13,12 @@ import { useToday } from "@/lib/useToday";
 import { BottomSheet, Button, SectionHeading } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import TripMap from "@/components/TripMap";
-import { PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
+import { FavoriteButton, PrefsSummary, TripPlaceholder, tripStatus } from "@/components/trip";
 import { TripReminder } from "@/components/TripReminder";
 import { cancelTripReminder } from "@/lib/tripReminders";
 import { colors, font, radius, space, touch } from "@/theme";
 import { goBack } from "@/lib/back";
 import { one } from "@/lib/params";
-import { TripVisitAction } from "@/components/TripVisitAction";
-import { FavoriteButton } from "@/components/FavoriteButton";
 
 export default function Overview() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
@@ -135,6 +133,43 @@ export default function Overview() {
   );
 }
 
+/** Explicit confirmation only. Travel dates never change this status. */
+function TripVisitAction({ trip, onSaved }: {
+  trip: { id: string; destination: string; visited: boolean };
+  onSaved: () => void;
+}) {
+  const { tripMetadataPending, setTripVisited, showToast } = useStore();
+  const active = useRef(false);
+  const busy = Boolean(tripMetadataPending[trip.id]);
+  const save = async () => {
+    if (busy || active.current) return;
+    active.current = true;
+    try {
+      await setTripVisited(trip.id, !trip.visited);
+      showToast(trip.visited ? "Removed visited status" : "Marked as visited");
+      onSaved();
+    } catch {
+      showToast("Couldn't save visited status. Try again.");
+    } finally {
+      active.current = false;
+    }
+  };
+  return <View>
+    <Pressable
+      onPress={() => { void save(); }}
+      disabled={busy}
+      accessibilityRole="button"
+      accessibilityLabel={trip.visited ? `Remove visited status for ${trip.destination}` : `Mark ${trip.destination} as visited`}
+      accessibilityState={{ selected: trip.visited, disabled: busy, busy }}
+      style={({ pressed }) => [styles.menuRow, pressed && !busy && styles.menuPressed]}
+    >
+      {busy ? <ActivityIndicator size="small" color={colors.forest} /> : <Icon name="check" color={trip.visited ? colors.forest : colors.ink} />}
+      <Text style={styles.menuText}>{busy ? "Saving trip changes…" : trip.visited ? "Remove visited status" : "Mark as visited"}</Text>
+    </Pressable>
+    <Text style={styles.visitNote}>Only you mark a trip as visited. Travel dates do not change this status.</Text>
+  </View>;
+}
+
 function Stat({ n, label }: { n: string; label: string }) {
   return (
     <View style={styles.stat}>
@@ -173,4 +208,6 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", left: 0, right: 0, bottom: 0, padding: space[4], borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: "rgba(255,254,250,0.96)" },
   menuRow: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: space[3], borderBottomWidth: 1, borderBottomColor: colors.line },
   menuText: { fontFamily: font.bodySemi, fontSize: 16, color: colors.ink },
+  visitNote: { fontFamily: font.body, fontSize: 12, lineHeight: 18, color: colors.muted, paddingVertical: space[3] },
+  menuPressed: { opacity: 0.7 },
 });

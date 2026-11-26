@@ -130,15 +130,17 @@ available and omits the save action.
   page so the prototype can link between the Profile entry and the collection.
 - Complete precise design comparison and Android native acceptance. The bottom
   tabs are Trips, Explore and Profile. Saved places is directly below Favorite
-  trips in Profile. Existing `/saved` links redirect to `/profile/saved`.
+  trips in Profile. The collection route is `/profile/saved`.
 - Collection list, detail and mutation keys now include `guest` or the Clerk
   account ID, and consumers use `useApi()`. Tests cover separate account caches,
   late writes, and favorite responses after a Store remount. Full session lifecycle
   acceptance remains pending real account testing. The authorized startup fix
   now places location and collection screens inside one identity-keyed provider tree.
-- Upgrades 001/002 have been checked against the Clerk-enabled model in a disposable
-  database. They retain internal `users.id` ownership. They do not add missing
-  Clerk fields to a pre-auth database; no shared database was changed.
+- The model definitions have been checked against the Clerk-enabled schema in
+  disposable PostgreSQL. They retain internal `users.id` ownership. Fresh demo
+  databases use the existing bootstrap. For an existing account database, the
+  database owner should use Neon MCP to review and apply the additive changes
+  represented by `TripRow` and `SavedPlaceRow`. No shared database was changed.
 - Backend collection tests now use signed JWTs through the real verifier. Missing
   sessions and forged identity headers are rejected; foreign records return 404.
   Test-key verification is not live Clerk acceptance.

@@ -2,13 +2,12 @@
 
 import asyncio
 import hashlib
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from tests.conftest import add_demo_trip, auth_headers
-from sqlalchemy import delete, insert, select, text
+from sqlalchemy import delete, insert, select
 from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_engine, get_sessionmaker
@@ -165,12 +164,9 @@ async def test_legacy_upgrade_matches_models_and_preserves_users_and_trips(make_
     client = await make_client()
     await add_demo_trip(client)
     before = (await client.get("/trips")).json()
-    script = Path(__file__).parents[1] / "scripts/sql/002_saved_places.sql"
     async with get_engine().begin() as connection:
-        await connection.execute(text("DROP TABLE saved_places"))
-        for statement in script.read_text().split(";"):
-            if statement.strip():
-                await connection.execute(text(statement))
+        await connection.run_sync(SavedPlaceRow.__table__.drop)
+        await connection.run_sync(SavedPlaceRow.__table__.create)
     saved = await save(client)
     assert (await client.get(PATH)).json() == [saved]
     assert (await client.get("/trips")).json() == before
